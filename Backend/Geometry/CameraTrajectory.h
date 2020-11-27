@@ -16,32 +16,33 @@
 #ifndef _CAMERA_TRAJECTORY_H_
 #define _CAMERA_TRAJECTORY_H_
 
-#include "Camera.h"
 #include "AlignedVector.h"
+#include "Camera.h"
 
-#define CT_FLAG_DEFAULT         0
-#define CT_FLAG_INVERSE         1
-#define CT_FLAG_LEFT_HAND       2
-#define CT_FLAG_XYZW            4
-#define CT_FLAG_ORIGIN          8
-#define CT_FLAG_ORIGIN_GRAVITY  16
-#define CT_FLAG_TIME_RESET      32
-#define CT_FLAG_MOTION          64
-#define CT_FLAG_MOTION_BABW     128
+#define CT_FLAG_DEFAULT 0
+#define CT_FLAG_INVERSE 1
+#define CT_FLAG_LEFT_HAND 2
+#define CT_FLAG_XYZW 4
+#define CT_FLAG_ORIGIN 8
+#define CT_FLAG_ORIGIN_GRAVITY 16
+#define CT_FLAG_TIME_RESET 32
+#define CT_FLAG_MOTION 64
+#define CT_FLAG_MOTION_BABW 128
 
 class CameraTrajectory {
-
  public:
-
   inline CameraTrajectory(const ubyte flag = CT_FLAG_DEFAULT) : m_flag(flag) {}
 
-  inline void operator = (const CameraTrajectory &CT) {
+  inline void operator=(const CameraTrajectory &CT) {
     m_flag = CT.m_flag;
     m_Cs.Set(CT.m_Cs);
     m_ts = CT.m_ts;
   }
 
-  inline void Resize(const int N) { m_Cs.Resize(N); m_ts.resize(N); }
+  inline void Resize(const int N) {
+    m_Cs.Resize(N);
+    m_ts.resize(N);
+  }
   inline int Size() const { return m_Cs.Size(); }
   inline bool Empty() const { return m_Cs.Empty(); }
   inline void Swap(CameraTrajectory &CT) {
@@ -49,12 +50,19 @@ class CameraTrajectory {
     m_Cs.Swap(CT.m_Cs);
     m_ts.swap(CT.m_ts);
   }
-  inline void Push(const Camera &C, const float t) { m_Cs.Push(C); m_ts.push_back(t); }
-  inline void Push(const CameraTrajectory &CT, const int i) { Push(CT.m_Cs[i], CT.m_ts[i]); }
+  inline void Push(const Camera &C, const float t) {
+    m_Cs.Push(C);
+    m_ts.push_back(t);
+  }
+  inline void Push(const CameraTrajectory &CT, const int i) {
+    Push(CT.m_Cs[i], CT.m_ts[i]);
+  }
   inline bool Load(const std::string fileName, const double tFactor = 1.0,
-                   const double tFirst = 0.0, const std::vector<float> *ts = NULL,
-                   const float dtMax = FLT_MAX, const ubyte flag = CT_FLAG_DEFAULT,
-                   const Rigid3D *Ts = NULL, const Rotation3D *Ru = NULL) {
+                   const double tFirst = 0.0,
+                   const std::vector<float> *ts = NULL,
+                   const float dtMax = FLT_MAX,
+                   const ubyte flag = CT_FLAG_DEFAULT, const Rigid3D *Ts = NULL,
+                   const Rotation3D *Ru = NULL) {
     m_flag = flag;
     Resize(0);
     FILE *fp = fopen(fileName.c_str(), "r");
@@ -96,7 +104,8 @@ class CameraTrajectory {
       }
       const int n2 = static_cast<int>(vs.size());
 #ifdef CFG_DEBUG
-      UT_ASSERT(n2 == 1 || n2 == 7 || n2 == 8 || n2 == 12 || n2 == 13 || n2 == 17);
+      UT_ASSERT(n2 == 1 || n2 == 7 || n2 == 8 || n2 == 12 || n2 == 13 ||
+                n2 == 17);
 #endif
       const int i = Size();
       const double *_v = vs.data();
@@ -128,7 +137,8 @@ class CameraTrajectory {
         if (flag & CT_FLAG_XYZW) {
           q.Set(_v + 3);
         } else {
-          q.xyzw().vset_all_lane(float(_v[4]), float(_v[5]), float(_v[6]), float(_v[3]));
+          q.xyzw().vset_all_lane(float(_v[4]), float(_v[5]), float(_v[6]),
+                                 float(_v[3]));
         }
         if (flag & CT_FLAG_INVERSE) {
           q.Inverse();
@@ -190,12 +200,12 @@ class CameraTrajectory {
     if (ts) {
       const int Nt = static_cast<int>(ts->size());
       CameraTrajectory CTGT(m_flag);
-      //if (dtMax == FLT_MAX) {
+      // if (dtMax == FLT_MAX) {
       if (dtMax < 0.0f || dtMax == FLT_MAX) {
         CTGT.Resize(Nt);
         for (int i = 0; i < Nt; ++i) {
           const float t = ts->at(i);
-          Interpolate(t, CTGT.m_Cs[i]); 
+          Interpolate(t, CTGT.m_Cs[i]);
           CTGT.m_ts[i] = t;
         }
       } else {
@@ -219,7 +229,8 @@ class CameraTrajectory {
       TransformBias(*Ru, m_Cs, m_ba, m_bw);
     }
     if (flag & CT_FLAG_ORIGIN) {
-      AlignToOrigin(m_Cs, (flag & CT_FLAG_ORIGIN_GRAVITY) != 0, (m_flag & CT_FLAG_MOTION) != 0);
+      AlignToOrigin(m_Cs, (flag & CT_FLAG_ORIGIN_GRAVITY) != 0,
+                    (m_flag & CT_FLAG_MOTION) != 0);
     }
     return true;
   }
@@ -241,8 +252,8 @@ class CameraTrajectory {
 
   inline int Search(const float t, const float dtMax = 0.0f) const {
     const int N = static_cast<int>(m_ts.size());
-    const int i2 = static_cast<int>(std::lower_bound(m_ts.begin(), m_ts.end(), t) -
-                                                     m_ts.begin());
+    const int i2 = static_cast<int>(
+        std::lower_bound(m_ts.begin(), m_ts.end(), t) - m_ts.begin());
     const int i1 = i2 - 1;
     const float dt1 = i1 >= 0 && i1 < N ? fabs(m_ts[i1] - t) : FLT_MAX;
     const float dt2 = i2 >= 0 && i2 < N ? fabs(m_ts[i2] - t) : FLT_MAX;
@@ -255,7 +266,8 @@ class CameraTrajectory {
     }
   }
 
-  inline int Search(const float t, Camera &Ci, float &ti, const float dtMax = 0.0f) const {
+  inline int Search(const float t, Camera &Ci, float &ti,
+                    const float dtMax = 0.0f) const {
     const int i = Search(t, dtMax);
     if (i == -1) {
       Ci.Invalidate();
@@ -295,7 +307,8 @@ class CameraTrajectory {
       C = m_Cs.Back();
       return;
     }
-    const int i2 = int(std::upper_bound(m_ts.begin(), m_ts.end(), t) - m_ts.begin());
+    const int i2 =
+        int(std::upper_bound(m_ts.begin(), m_ts.end(), t) - m_ts.begin());
     const int i1 = i2 - 1;
 #endif
     const float t1 = m_ts[i1], t2 = m_ts[i2];
@@ -318,7 +331,8 @@ class CameraTrajectory {
     }
   }
 
-  static inline void TransformPose(const Rigid3D &T, AlignedVector<Camera> &Cs) {
+  static inline void TransformPose(const Rigid3D &T,
+                                   AlignedVector<Camera> &Cs) {
     const int N = Cs.Size();
     for (int i = 0; i < N; ++i) {
       Camera &C = Cs[i];
@@ -326,8 +340,10 @@ class CameraTrajectory {
       C.m_T.GetPosition(C.m_p);
     }
   }
-  static inline void TransformBias(const Rotation3D &R, AlignedVector<Camera> &Cs,
-                                   LA::AlignedVector3f &ba, LA::AlignedVector3f &bw) {
+  static inline void TransformBias(const Rotation3D &R,
+                                   AlignedVector<Camera> &Cs,
+                                   LA::AlignedVector3f &ba,
+                                   LA::AlignedVector3f &bw) {
     const int N = Cs.Size();
     for (int i = 0; i < N; ++i) {
       Camera &C = Cs[i];
@@ -341,8 +357,8 @@ class CameraTrajectory {
     ba = R.GetApplied(ba);
     bw = R.GetApplied(bw);
   }
-  static inline void AlignToOrigin(AlignedVector<Camera> &Cs, const bool g = true,
-                                   const bool m = true) {
+  static inline void AlignToOrigin(AlignedVector<Camera> &Cs,
+                                   const bool g = true, const bool m = true) {
     if (Cs.Empty()) {
       return;
     }
@@ -368,12 +384,10 @@ class CameraTrajectory {
   }
 
  public:
-
   ubyte m_flag;
   LA::AlignedVector3f m_ba, m_bw;
   AlignedVector<Camera> m_Cs;
   std::vector<float> m_ts;
-
 };
 
 #endif

@@ -17,29 +17,29 @@
 #define _VECTOR_N_H_
 
 #include "AlignedVector.h"
+#include "Vector12.h"
 #include "Vector4.h"
 #include "Vector6.h"
 #include "Vector8.h"
 #include "Vector9.h"
-#include "Vector12.h"
 
 namespace LA {
 
-template<int N>
+template <int N>
 class SIMD_ALIGN_DECLSPEC AlignedVectorNf {
  public:
-  inline operator const float* () const { return (const float *) this; }
-  inline operator       float* ()       { return (      float *) this; }
-  inline const float& operator[] (const int i) const { return m_data[i]; }
-  inline       float& operator[] (const int i)       { return m_data[i]; }
-  inline const float& operator() (const int row, const int col = 0) const {
+  inline operator const float *() const { return (const float *)this; }
+  inline operator float *() { return (float *)this; }
+  inline const float &operator[](const int i) const { return m_data[i]; }
+  inline float &operator[](const int i) { return m_data[i]; }
+  inline const float &operator()(const int row, const int col = 0) const {
     return m_data[row];
   }
-  inline float& operator() (const int row, const int col = 0) {
+  inline float &operator()(const int row, const int col = 0) {
     return m_data[row];
   }
 
-  inline void operator += (const AlignedVectorNf<N> &other) {
+  inline void operator+=(const AlignedVectorNf<N> &other) {
     // TODO (yanghongtian) : rooms for optimizations
     const int NF4 = N >> 2;
     for (int i = 0; i < NF4; ++i) {
@@ -54,7 +54,7 @@ class SIMD_ALIGN_DECLSPEC AlignedVectorNf {
       }
     }
   }
-  inline void operator -= (const AlignedVectorNf<N> &other) {
+  inline void operator-=(const AlignedVectorNf<N> &other) {
     // TODO (yanghongtian) : rooms for optimizations
     const int NF4 = N >> 2;
     for (int i = 0; i < NF4; ++i) {
@@ -69,12 +69,12 @@ class SIMD_ALIGN_DECLSPEC AlignedVectorNf {
       }
     }
   }
-  inline AlignedVectorNf<N> operator - (const AlignedVectorNf<N> &b) const {
+  inline AlignedVectorNf<N> operator-(const AlignedVectorNf<N> &b) const {
     AlignedVectorNf<N> amb;
     LA::AlignedVectorNf<N>::amb(*this, b, amb);
     return amb;
   }
-  inline void operator *= (const xp128f &s) {
+  inline void operator*=(const xp128f &s) {
     // TODO (yanghongtian) : rooms for optimizations
     const int NF4 = N >> 2;
     for (int i = 0; i < NF4; ++i) {
@@ -90,9 +90,7 @@ class SIMD_ALIGN_DECLSPEC AlignedVectorNf {
     }
   }
 
-  inline void Set(const float *v) {
-    memcpy(this, v, sizeof(float) * N);
-  }
+  inline void Set(const float *v) { memcpy(this, v, sizeof(float) * N); }
 
   inline void GetBlock(const int i, AlignedVector4f &v) const {
 #ifdef CFG_DEBUG
@@ -126,9 +124,7 @@ class SIMD_ALIGN_DECLSPEC AlignedVectorNf {
     memcpy(&m_data[i], &v, 32);
   }
 
-  inline void MakeZero() {
-    memset(this, 0, sizeof(AlignedVectorNf<N>));
-  }
+  inline void MakeZero() { memset(this, 0, sizeof(AlignedVectorNf<N>)); }
   inline void MakeMinus() {
     const int NF4 = N >> 2;
     for (int i = 0; i < NF4; ++i) {
@@ -160,20 +156,23 @@ class SIMD_ALIGN_DECLSPEC AlignedVectorNf {
 #ifdef CFG_DEBUG
     UT_ASSERT(N >= 6);
 #endif
-    return (m_data4[0] * v.v0123()).vsum_all() + m_data[4] * v.v4() + m_data[5] * v.v5();
+    return (m_data4[0] * v.v0123()).vsum_all() + m_data[4] * v.v4() +
+           m_data[5] * v.v5();
   }
   inline float Dot(const AlignedVector9f &v) const {
 #ifdef CFG_DEBUG
     UT_ASSERT(N >= 9);
 #endif
-    return (m_data4[0] * v.v0123() + m_data4[1] * v.v4567()).vsum_all() + m_data[8] * v.v8();
+    return (m_data4[0] * v.v0123() + m_data4[1] * v.v4567()).vsum_all() +
+           m_data[8] * v.v8();
   }
   inline float Dot(const AlignedVector12f &v) const {
 #ifdef CFG_DEBUG
     UT_ASSERT(N >= 12);
 #endif
     return (m_data4[0] * v.v0123() + m_data4[1] * v.v4567() +
-            m_data4[2] * v.v_8_9_10_11()).vsum_all();
+            m_data4[2] * v.v_8_9_10_11())
+        .vsum_all();
   }
   inline float Dot(const AlignedVectorNf<N> &v) const {
     // TODO (yanghongtian) : rooms for optimizations
@@ -210,7 +209,10 @@ class SIMD_ALIGN_DECLSPEC AlignedVectorNf {
     v.m_data4[1] = m_data4[1] * s.v4567();
     v.m_data[8] = m_data[8] * s.v8();
   }
-  inline void Scale(const float s) { const xp128f _s = xp128f::get(s); Scale(_s); }
+  inline void Scale(const float s) {
+    const xp128f _s = xp128f::get(s);
+    Scale(_s);
+  }
   inline void Scale(const xp128f &s) {
     const int NF4 = N >> 2;
     for (int i = 0; i < NF4; ++i) {
@@ -251,16 +253,14 @@ class SIMD_ALIGN_DECLSPEC AlignedVectorNf {
     UT::Print("\n");
   }
 
-  inline bool AssertEqual(const AlignedVectorNf<N> &v,
-                          const int verbose = 1,
-                          const std::string str = "",
-                          const float epsAbs = 0.0f,
+  inline bool AssertEqual(const AlignedVectorNf<N> &v, const int verbose = 1,
+                          const std::string str = "", const float epsAbs = 0.0f,
                           const float epsRel = 0.0f) const {
     bool equal = true;
     for (int i = 0; i < N && equal; ++i) {
-      equal = UT::AssertEqual(m_data[i], v[i], verbose,
-                              UT::String("%s[%d]", str.c_str(), i),
-                              epsAbs, epsRel);
+      equal =
+          UT::AssertEqual(m_data[i], v[i], verbose,
+                          UT::String("%s[%d]", str.c_str(), i), epsAbs, epsRel);
     }
     if (equal) {
       return true;
@@ -276,13 +276,15 @@ class SIMD_ALIGN_DECLSPEC AlignedVectorNf {
     return false;
   }
   inline bool AssertZero(const int verbose = 1, const std::string str = "",
-                         const float epsAbs = 0.0f, const float epsRel = 0.0f) const {
+                         const float epsAbs = 0.0f,
+                         const float epsRel = 0.0f) const {
     bool zero = true;
-    //const int verbose1 = verbose & 3, verbose2 = verbose >> 2;
+    // const int verbose1 = verbose & 3, verbose2 = verbose >> 2;
     const int verbose1 = verbose, verbose2 = verbose;
     for (int i = 0; i < N && zero; ++i) {
-      zero = UT::AssertZero(m_data[i], verbose1, UT::String("%s[%d]", str.c_str(), i),
-                            epsAbs, epsRel);
+      zero =
+          UT::AssertZero(m_data[i], verbose1,
+                         UT::String("%s[%d]", str.c_str(), i), epsAbs, epsRel);
     }
     if (zero) {
       return true;
@@ -293,12 +295,10 @@ class SIMD_ALIGN_DECLSPEC AlignedVectorNf {
     return false;
   }
 
-  inline void Random(const float vMax) {
-    UT::Random(m_data, N, -vMax, vMax);
-  }
+  inline void Random(const float vMax) { UT::Random(m_data, N, -vMax, vMax); }
 
-  static inline void apb(const AlignedVectorNf<N> &a, const AlignedVectorNf<N> &b,
-                         AlignedVectorNf<N> &apb) {
+  static inline void apb(const AlignedVectorNf<N> &a,
+                         const AlignedVectorNf<N> &b, AlignedVectorNf<N> &apb) {
     const int NF4 = N >> 2;
     for (int i = 0; i < NF4; ++i) {
       apb.m_data4[i] = a.m_data4[i] + b.m_data4[i];
@@ -312,8 +312,8 @@ class SIMD_ALIGN_DECLSPEC AlignedVectorNf {
       }
     }
   }
-  static inline void amb(const AlignedVectorNf<N> &a, const AlignedVectorNf<N> &b,
-                         AlignedVectorNf<N> &amb) {
+  static inline void amb(const AlignedVectorNf<N> &a,
+                         const AlignedVectorNf<N> &b, AlignedVectorNf<N> &amb) {
     const int NF4 = N >> 2;
     for (int i = 0; i < NF4; ++i) {
       amb.m_data4[i] = a.m_data4[i] - b.m_data4[i];
@@ -371,12 +371,16 @@ class SIMD_ALIGN_DECLSPEC AlignedVector14f : public AlignedVectorNf<14> {
     other.m_data[12] = m_data[12] * s[0];
     other.m_data[13] = m_data[13] * s[0];
   }
+
  public:
-  static inline void AddsATo(const float s, const AlignedVectorNf<14> &a, AlignedVectorNf<14> &sa) {
-    xp128f _s; _s.vdup_all_lane(s);
+  static inline void AddsATo(const float s, const AlignedVectorNf<14> &a,
+                             AlignedVectorNf<14> &sa) {
+    xp128f _s;
+    _s.vdup_all_lane(s);
     AddsATo(_s, a, sa);
   }
-  static inline void AddsATo(const xp128f &s, const AlignedVectorNf<14> &a, AlignedVectorNf<14> &sa) {
+  static inline void AddsATo(const xp128f &s, const AlignedVectorNf<14> &a,
+                             AlignedVectorNf<14> &sa) {
     sa.m_data4[0] += a.m_data4[0] * s;
     sa.m_data4[1] += a.m_data4[1] * s;
     sa.m_data4[2] += a.m_data4[2] * s;
@@ -385,53 +389,65 @@ class SIMD_ALIGN_DECLSPEC AlignedVector14f : public AlignedVectorNf<14> {
   }
 };
 
-class SIMD_ALIGN_DECLSPEC AlignedVector18f : public AlignedVectorNf<18> {
-};
+class SIMD_ALIGN_DECLSPEC AlignedVector18f : public AlignedVectorNf<18> {};
 
-template<typename TYPE>
+template <typename TYPE>
 class AlignedVectorX : public AlignedVector<TYPE> {
-
  public:
-
   inline AlignedVectorX() : AlignedVector<TYPE>() {}
-  inline AlignedVectorX(void *V, const int N, const bool own = true) :
-                        AlignedVector<TYPE>(V, N, own) {}
+  inline AlignedVectorX(void *V, const int N, const bool own = true)
+      : AlignedVector<TYPE>(V, N, own) {}
   inline AlignedVectorX(const AlignedVectorX<TYPE> &V) { *this = V; }
 
-  inline void operator = (const AlignedVectorX<TYPE> &V) { Set(V); }
-  //inline void operator = (AlignedVectorX<TYPE> &V) { Bind(V.Data(), V.Size()); }
+  inline void operator=(const AlignedVectorX<TYPE> &V) { Set(V); }
+  // inline void operator = (AlignedVectorX<TYPE> &V) { Bind(V.Data(),
+  // V.Size()); }
 
-  inline void operator += (const TYPE v) { SIMD::Add(this->Size(), v, this->Data()); }
-  inline void operator += (const AlignedVectorX<TYPE> &V) {
+  inline void operator+=(const TYPE v) {
+    SIMD::Add(this->Size(), v, this->Data());
+  }
+  inline void operator+=(const AlignedVectorX<TYPE> &V) {
     const int N = this->Size();
 #ifdef CFG_DEBUG
     UT_ASSERT(V.Size() == N);
 #endif
     SIMD::Add(N, V.Data(), this->Data());
   }
-  inline void operator -= (const TYPE v) { SIMD::Add(this->Size(), -v, this->Data()); }
-  inline void operator -= (const TYPE *V) { SIMD::Subtract(this->Size(), this->Data(), V); }
-  inline void operator -= (const AlignedVectorX<TYPE> &V) {
+  inline void operator-=(const TYPE v) {
+    SIMD::Add(this->Size(), -v, this->Data());
+  }
+  inline void operator-=(const TYPE *V) {
+    SIMD::Subtract(this->Size(), this->Data(), V);
+  }
+  inline void operator-=(const AlignedVectorX<TYPE> &V) {
     const int N = this->Size();
 #ifdef CFG_DEBUG
     UT_ASSERT(V.Size() == N);
 #endif
     SIMD::Subtract(N, this->Data(), V.Data());
   }
-  inline AlignedVectorX<TYPE> operator - (const AlignedVectorX<TYPE> &V) const {
+  inline AlignedVectorX<TYPE> operator-(const AlignedVectorX<TYPE> &V) const {
     AlignedVectorX<TYPE> Vamb;
     AmB(*this, V, Vamb);
     return Vamb;
   }
-  inline void operator *= (const TYPE s) { SIMD::Multiply(this->Size(), s, this->Data()); }
-  inline void operator *= (const AlignedVectorX<TYPE> &S) {
+  inline void operator*=(const TYPE s) {
+    SIMD::Multiply(this->Size(), s, this->Data());
+  }
+  inline void operator*=(const AlignedVectorX<TYPE> &S) {
     SIMD::Multiply(this->Size(), S.Data(), this->Data());
   }
-  inline void operator /= (const TYPE d) { SIMD::Multiply(this->Size(), 1 / d, this->Data()); }
+  inline void operator/=(const TYPE d) {
+    SIMD::Multiply(this->Size(), 1 / d, this->Data());
+  }
 
   inline void Set(const TYPE v) { SIMD::Set(this->Size(), this->Data(), v); }
-  inline void Set(const AlignedVectorX<TYPE> &V) { AlignedVector<TYPE>::Set(V); }
-  inline void Set(const TYPE *V, const int N) { AlignedVector<TYPE>::Set(V, N); }
+  inline void Set(const AlignedVectorX<TYPE> &V) {
+    AlignedVector<TYPE>::Set(V);
+  }
+  inline void Set(const TYPE *V, const int N) {
+    AlignedVector<TYPE>::Set(V, N);
+  }
   inline void Set(const TYPE *V) { AlignedVector<TYPE>::Set(V); }
 
   inline void Get(TYPE *V) const { AlignedVector<TYPE>::Get(V); }
@@ -454,29 +470,42 @@ class AlignedVectorX : public AlignedVector<TYPE> {
   inline void IncreaseBlock(const int i, const AlignedVector3f &v);
   inline void IncreaseBlock(const int i, const Vector6f &v);
 
-  inline TYPE SquaredLength() const { return SIMD::SquaredLength(this->Size(), this->Data()); }
+  inline TYPE SquaredLength() const {
+    return SIMD::SquaredLength(this->Size(), this->Data());
+  }
   inline void MakeSquared() { SIMD::Square(this->Size(), this->Data()); }
   inline void MakeSquareRoot() { SIMD::SquareRoot(this->Size(), this->Data()); }
   inline void MakeMinus() { SIMD::Minus(this->Size(), this->Data()); }
-  inline void MakeMinus(const int i) { SIMD::Minus(i, this->Size(), this->Data()); }
-  inline void MakeInverse(const TYPE s = 1, const bool chkZero = false, const TYPE eps = 0) {
+  inline void MakeMinus(const int i) {
+    SIMD::Minus(i, this->Size(), this->Data());
+  }
+  inline void MakeInverse(const TYPE s = 1, const bool chkZero = false,
+                          const TYPE eps = 0) {
     SIMD::Inverse(this->Size(), this->Data(), s, chkZero, eps);
   }
-  inline void GetInverse(AlignedVectorX<TYPE> &V, const TYPE s = 1, const bool chkZero = false,
-                         const TYPE eps = 0) const {
+  inline void GetInverse(AlignedVectorX<TYPE> &V, const TYPE s = 1,
+                         const bool chkZero = false, const TYPE eps = 0) const {
     V = *this;
     V.MakeInverse(s, chkZero, eps);
   }
   inline TYPE Sum() const { return Sum(this->Size()); }
   inline TYPE Sum(const int N) const { return SIMD::Sum(N, this->Data()); }
-  inline TYPE Sum(const int i1, const int i2) const { return SIMD::Sum(i1, i2, this->Data()); }
+  inline TYPE Sum(const int i1, const int i2) const {
+    return SIMD::Sum(i1, i2, this->Data());
+  }
   inline TYPE Mean() const { return SIMD::Mean(this->Size(), this->Data()); }
-  inline TYPE Variance() const { return SIMD::Variance(this->Size(), this->Data()); }
+  inline TYPE Variance() const {
+    return SIMD::Variance(this->Size(), this->Data());
+  }
   inline TYPE Variance(const TYPE u) const {
     return SIMD::Variance(this->Size(), this->Data(), u);
   }
-  inline TYPE Maximal() const { return SIMD::Maximal(this->Size(), this->Data()); }
-  inline TYPE Minimal() const { return SIMD::Minimal(this->Size(), this->Data()); }
+  inline TYPE Maximal() const {
+    return SIMD::Maximal(this->Size(), this->Data());
+  }
+  inline TYPE Minimal() const {
+    return SIMD::Minimal(this->Size(), this->Data());
+  }
   inline TYPE Dot(const AlignedVectorX<TYPE> &V) const {
 #ifdef CFG_DEBUG
     UT_ASSERT(V.Size() == this->Size());
@@ -501,7 +530,8 @@ class AlignedVectorX : public AlignedVector<TYPE> {
     V.Resize(N);
     SIMD::Multiply(N, s, this->Data(), V.Data());
   }
-  inline void GetScaled(const AlignedVector<TYPE> &S, AlignedVector<TYPE> &V) const {
+  inline void GetScaled(const AlignedVector<TYPE> &S,
+                        AlignedVector<TYPE> &V) const {
     const int N = this->Size();
 #ifdef CFG_DEBUG
     UT_ASSERT(S.Size() == N);
@@ -510,7 +540,9 @@ class AlignedVectorX : public AlignedVector<TYPE> {
     SIMD::Multiply(N, S.Data(), this->Data(), V.Data());
   }
 
-  inline void Random(const TYPE vMax) { UT::Random(this->Data(), this->Size(), -vMax, vMax); }
+  inline void Random(const TYPE vMax) {
+    UT::Random(this->Data(), this->Size(), -vMax, vMax);
+  }
 
   inline void Print(const bool e = false) const {
     const AlignedVector<TYPE> &V = *this;
@@ -538,20 +570,18 @@ class AlignedVectorX : public AlignedVector<TYPE> {
     fclose(fp);
     UT::PrintSaved(fileName);
   }
-  inline bool AssertEqual(const AlignedVectorX<TYPE> &V,
-                          const int verbose = 1,
-                          const std::string str = "",
-                          const TYPE epsAbs = 0,
+  inline bool AssertEqual(const AlignedVectorX<TYPE> &V, const int verbose = 1,
+                          const std::string str = "", const TYPE epsAbs = 0,
                           const TYPE epsRel = 0) const {
     const AlignedVector<TYPE> &_V = *this;
     const int N = _V.Size();
     bool equal = V.Size() == N;
-    //const int verbose1 = verbose & 3, verbose2 = verbose >> 2;
+    // const int verbose1 = verbose & 3, verbose2 = verbose >> 2;
     const int verbose1 = verbose, verbose2 = verbose;
     for (int i = 0; i < N && equal; ++i) {
-      equal = UT::AssertEqual(_V[i], V[i], verbose1,
-                              UT::String("%s[%d]", str.c_str(), i),
-                              epsAbs, epsRel);
+      equal =
+          UT::AssertEqual(_V[i], V[i], verbose1,
+                          UT::String("%s[%d]", str.c_str(), i), epsAbs, epsRel);
     }
     if (equal) {
       return true;
@@ -566,10 +596,8 @@ class AlignedVectorX : public AlignedVector<TYPE> {
     }
     return false;
   }
-  inline bool AssertEqual(const std::string fileName,
-                          const int verbose = 1,
-                          const std::string str = "",
-                          const TYPE epsAbs = 0,
+  inline bool AssertEqual(const std::string fileName, const int verbose = 1,
+                          const std::string str = "", const TYPE epsAbs = 0,
                           const TYPE epsRel = 0) const {
     AlignedVectorX<TYPE> V;
     V.LoadB(fileName);
@@ -578,13 +606,13 @@ class AlignedVectorX : public AlignedVector<TYPE> {
   inline bool AssertZero(const int verbose = 1, const std::string str = "",
                          const TYPE epsAbs = 0, const TYPE epsRel = 0) const {
     bool zero = true;
-    //const int verbose1 = verbose & 3, verbose2 = verbose >> 2;
+    // const int verbose1 = verbose & 3, verbose2 = verbose >> 2;
     const int verbose1 = verbose, verbose2 = verbose;
     const AlignedVector<TYPE> &V = *this;
     const int N = V.Size();
     for (int i = 0; i < N && zero; ++i) {
-      zero = UT::AssertZero(V[i], verbose1, UT::String("%s[%d]", str.c_str(), i),
-                            epsAbs, epsRel);
+      zero = UT::AssertZero(
+          V[i], verbose1, UT::String("%s[%d]", str.c_str(), i), epsAbs, epsRel);
     }
     if (zero) {
       return true;
@@ -595,7 +623,8 @@ class AlignedVectorX : public AlignedVector<TYPE> {
     return false;
   }
 
-  static inline void ApB(const AlignedVectorX<TYPE> &A, const AlignedVectorX<TYPE> &B,
+  static inline void ApB(const AlignedVectorX<TYPE> &A,
+                         const AlignedVectorX<TYPE> &B,
                          AlignedVectorX<TYPE> &ApB) {
     const int N = A.Size();
 #ifdef CFG_DEBUG
@@ -604,7 +633,8 @@ class AlignedVectorX : public AlignedVector<TYPE> {
     ApB.Resize(N);
     SIMD::Add(N, A.Data(), B.Data(), ApB.Data());
   }
-  static inline void AmB(const AlignedVectorX<TYPE> &A, const AlignedVectorX<TYPE> &B,
+  static inline void AmB(const AlignedVectorX<TYPE> &A,
+                         const AlignedVectorX<TYPE> &B,
                          AlignedVectorX<TYPE> &AmB) {
     const int N = A.Size();
 #ifdef CFG_DEBUG
@@ -613,12 +643,14 @@ class AlignedVectorX : public AlignedVector<TYPE> {
     AmB.Resize(N);
     SIMD::Subtract(N, A.Data(), B.Data(), AmB.Data());
   }
-  static inline void AmB(const AlignedVectorX<TYPE> &A, const TYPE B, AlignedVectorX<TYPE> &AmB) {
+  static inline void AmB(const AlignedVectorX<TYPE> &A, const TYPE B,
+                         AlignedVectorX<TYPE> &AmB) {
     const int N = A.Size();
     AmB.Resize(N);
     SIMD::Subtract(N, A.Data(), B, AmB.Data());
   }
-  static inline void AB(const AlignedVectorX<TYPE> &A, const AlignedVectorX<TYPE> &B,
+  static inline void AB(const AlignedVectorX<TYPE> &A,
+                        const AlignedVectorX<TYPE> &B,
                         AlignedVectorX<TYPE> &AB) {
     const int N = A.Size();
 #ifdef CFG_DEBUG
@@ -627,7 +659,8 @@ class AlignedVectorX : public AlignedVector<TYPE> {
     AB.Resize(N);
     SIMD::Multiply(N, A.Data(), B.Data(), AB.Data());
   }
-  static inline void AddABTo(const AlignedVectorX<TYPE> &A, const AlignedVectorX<TYPE> &B,
+  static inline void AddABTo(const AlignedVectorX<TYPE> &A,
+                             const AlignedVectorX<TYPE> &B,
                              AlignedVectorX<TYPE> &AB) {
     const int N = A.Size();
 #ifdef CFG_DEBUG
@@ -637,26 +670,30 @@ class AlignedVectorX : public AlignedVector<TYPE> {
   }
 };
 
-template<> inline void AlignedVectorX<float>::GetBlock(const int i, Vector2f &v) const {
+template <>
+inline void AlignedVectorX<float>::GetBlock(const int i, Vector2f &v) const {
 #ifdef CFG_DEBUG
   UT_ASSERT(i >= 0 && i + 2 <= this->Size());
 #endif
   memcpy(&v, this->Data() + i, sizeof(Vector2f));
 }
-template<> inline void AlignedVectorX<double>::GetBlock(const int i, Vector2f &v) const {
+template <>
+inline void AlignedVectorX<double>::GetBlock(const int i, Vector2f &v) const {
 #ifdef CFG_DEBUG
   UT_ASSERT(i >= 0 && i + 2 <= this->Size());
 #endif
   v.v0() = static_cast<float>(m_data[i]);
   v.v1() = static_cast<float>(m_data[i + 1]);
 }
-template<> inline void AlignedVectorX<float>::GetBlock(const int i, Vector3f &v) const {
+template <>
+inline void AlignedVectorX<float>::GetBlock(const int i, Vector3f &v) const {
 #ifdef CFG_DEBUG
   UT_ASSERT(i >= 0 && i + 3 <= this->Size());
 #endif
   memcpy(&v, this->Data() + i, sizeof(Vector3f));
 }
-template<> inline void AlignedVectorX<double>::GetBlock(const int i, Vector3f &v) const {
+template <>
+inline void AlignedVectorX<double>::GetBlock(const int i, Vector3f &v) const {
 #ifdef CFG_DEBUG
   UT_ASSERT(i >= 0 && i + 3 <= this->Size());
 #endif
@@ -664,13 +701,15 @@ template<> inline void AlignedVectorX<double>::GetBlock(const int i, Vector3f &v
   v.v1() = static_cast<float>(m_data[i + 1]);
   v.v2() = static_cast<float>(m_data[i + 2]);
 }
-template<> inline void AlignedVectorX<float>::GetBlock(const int i, Vector6f &v) const {
+template <>
+inline void AlignedVectorX<float>::GetBlock(const int i, Vector6f &v) const {
 #ifdef CFG_DEBUG
   UT_ASSERT(i >= 0 && i + 6 <= m_N);
 #endif
   memcpy(&v, m_data + i, 24);
 }
-template<> inline void AlignedVectorX<double>::GetBlock(const int i, Vector6f &v) const {
+template <>
+inline void AlignedVectorX<double>::GetBlock(const int i, Vector6f &v) const {
 #ifdef CFG_DEBUG
   UT_ASSERT(i >= 0 && i + 6 <= m_N);
 #endif
@@ -678,13 +717,15 @@ template<> inline void AlignedVectorX<double>::GetBlock(const int i, Vector6f &v
     v[_i] = static_cast<float>(m_data[i + _i]);
   }
 }
-template<> inline void AlignedVectorX<float>::GetBlock(const int i, Vector9f &v) const {
+template <>
+inline void AlignedVectorX<float>::GetBlock(const int i, Vector9f &v) const {
 #ifdef CFG_DEBUG
   UT_ASSERT(i >= 0 && i + 9 <= m_N);
 #endif
   memcpy(&v, m_data + i, 36);
 }
-template<> inline void AlignedVectorX<double>::GetBlock(const int i, Vector9f &v) const {
+template <>
+inline void AlignedVectorX<double>::GetBlock(const int i, Vector9f &v) const {
 #ifdef CFG_DEBUG
   UT_ASSERT(i >= 0 && i + 9 <= m_N);
 #endif
@@ -692,13 +733,17 @@ template<> inline void AlignedVectorX<double>::GetBlock(const int i, Vector9f &v
     v[_i] = static_cast<float>(m_data[i + _i]);
   }
 }
-template<> inline void AlignedVectorX<float>::GetBlock(const int i, AlignedVector3f &v) const {
+template <>
+inline void AlignedVectorX<float>::GetBlock(const int i,
+                                            AlignedVector3f &v) const {
 #ifdef CFG_DEBUG
   UT_ASSERT(i >= 0 && i + 3 <= m_N);
 #endif
   memcpy(&v, m_data + i, 12);
 }
-template<> inline void AlignedVectorX<double>::GetBlock(const int i, AlignedVector3f &v) const {
+template <>
+inline void AlignedVectorX<double>::GetBlock(const int i,
+                                             AlignedVector3f &v) const {
 #ifdef CFG_DEBUG
   UT_ASSERT(i >= 0 && i + 3 <= m_N);
 #endif
@@ -706,13 +751,17 @@ template<> inline void AlignedVectorX<double>::GetBlock(const int i, AlignedVect
   v.v1() = static_cast<float>(m_data[i + 1]);
   v.v2() = static_cast<float>(m_data[i + 2]);
 }
-template<> inline void AlignedVectorX<float>::GetBlock(const int i, AlignedVector6f &v) const {
+template <>
+inline void AlignedVectorX<float>::GetBlock(const int i,
+                                            AlignedVector6f &v) const {
 #ifdef CFG_DEBUG
   UT_ASSERT(i >= 0 && i + 6 <= m_N);
 #endif
   memcpy(&v, m_data + i, 24);
 }
-template<> inline void AlignedVectorX<double>::GetBlock(const int i, AlignedVector6f &v) const {
+template <>
+inline void AlignedVectorX<double>::GetBlock(const int i,
+                                             AlignedVector6f &v) const {
 #ifdef CFG_DEBUG
   UT_ASSERT(i >= 0 && i + 6 <= m_N);
 #endif
@@ -720,13 +769,17 @@ template<> inline void AlignedVectorX<double>::GetBlock(const int i, AlignedVect
     v[_i] = static_cast<float>(m_data[i + _i]);
   }
 }
-template<> inline void AlignedVectorX<float>::GetBlock(const int i, AlignedVector9f &v) const {
+template <>
+inline void AlignedVectorX<float>::GetBlock(const int i,
+                                            AlignedVector9f &v) const {
 #ifdef CFG_DEBUG
   UT_ASSERT(i >= 0 && i + 9 <= m_N);
 #endif
   memcpy(&v, m_data + i, 36);
 }
-template<> inline void AlignedVectorX<double>::GetBlock(const int i, AlignedVector9f &v) const {
+template <>
+inline void AlignedVectorX<double>::GetBlock(const int i,
+                                             AlignedVector9f &v) const {
 #ifdef CFG_DEBUG
   UT_ASSERT(i >= 0 && i + 9 <= m_N);
 #endif
@@ -734,13 +787,17 @@ template<> inline void AlignedVectorX<double>::GetBlock(const int i, AlignedVect
     v[_i] = static_cast<float>(m_data[i + _i]);
   }
 }
-template<> inline void AlignedVectorX<float>::GetBlock(const int i, AlignedVectorX<float> &V) const {
+template <>
+inline void AlignedVectorX<float>::GetBlock(const int i,
+                                            AlignedVectorX<float> &V) const {
 #ifdef CFG_DEBUG
   UT_ASSERT(i >= 0 && i + V.Size() <= this->Size());
 #endif
   V.Set(this->Data() + i, V.Size());
 }
-template<> inline void AlignedVectorX<double>::GetBlock(const int i, AlignedVectorX<float> &V) const {
+template <>
+inline void AlignedVectorX<double>::GetBlock(const int i,
+                                             AlignedVectorX<float> &V) const {
   const int N = V.Size();
 #ifdef CFG_DEBUG
   UT_ASSERT(i >= 0 && i + N <= this->Size());
@@ -750,26 +807,30 @@ template<> inline void AlignedVectorX<double>::GetBlock(const int i, AlignedVect
   }
 }
 
-template<> inline void AlignedVectorX<float>::SetBlock(const int i, const Vector2f &v) {
+template <>
+inline void AlignedVectorX<float>::SetBlock(const int i, const Vector2f &v) {
 #ifdef CFG_DEBUG
   UT_ASSERT(i >= 0 && i + 2 <= this->Size());
 #endif
   memcpy(this->Data() + i, &v, sizeof(Vector2f));
 }
-template<> inline void AlignedVectorX<double>::SetBlock(const int i, const Vector2f &v) {
+template <>
+inline void AlignedVectorX<double>::SetBlock(const int i, const Vector2f &v) {
 #ifdef CFG_DEBUG
   UT_ASSERT(i >= 0 && i + 2 <= this->Size());
 #endif
   m_data[i] = static_cast<double>(v.v0());
   m_data[i + 1] = static_cast<double>(v.v1());
 }
-template<> inline void AlignedVectorX<float>::SetBlock(const int i, const Vector3f &v) {
+template <>
+inline void AlignedVectorX<float>::SetBlock(const int i, const Vector3f &v) {
 #ifdef CFG_DEBUG
   UT_ASSERT(i >= 0 && i + 3 <= this->Size());
 #endif
   memcpy(this->Data() + i, &v, sizeof(Vector3f));
 }
-template<> inline void AlignedVectorX<double>::SetBlock(const int i, const Vector3f &v) {
+template <>
+inline void AlignedVectorX<double>::SetBlock(const int i, const Vector3f &v) {
 #ifdef CFG_DEBUG
   UT_ASSERT(i >= 0 && i + 3 <= this->Size());
 #endif
@@ -777,13 +838,15 @@ template<> inline void AlignedVectorX<double>::SetBlock(const int i, const Vecto
   m_data[i + 1] = static_cast<double>(v.v1());
   m_data[i + 2] = static_cast<double>(v.v2());
 }
-template<> inline void AlignedVectorX<float>::SetBlock(const int i, const Vector6f &v) {
+template <>
+inline void AlignedVectorX<float>::SetBlock(const int i, const Vector6f &v) {
 #ifdef CFG_DEBUG
   UT_ASSERT(i >= 0 && i + 6 <= m_N);
 #endif
   memcpy(m_data + i, &v, 24);
 }
-template<> inline void AlignedVectorX<double>::SetBlock(const int i, const Vector6f &v) {
+template <>
+inline void AlignedVectorX<double>::SetBlock(const int i, const Vector6f &v) {
 #ifdef CFG_DEBUG
   UT_ASSERT(i >= 0 && i + 6 <= m_N);
 #endif
@@ -791,13 +854,15 @@ template<> inline void AlignedVectorX<double>::SetBlock(const int i, const Vecto
     m_data[i + _i] = static_cast<double>(v[_i]);
   }
 }
-template<> inline void AlignedVectorX<float>::SetBlock(const int i, const Vector9f &v) {
+template <>
+inline void AlignedVectorX<float>::SetBlock(const int i, const Vector9f &v) {
 #ifdef CFG_DEBUG
   UT_ASSERT(i >= 0 && i + 9 <= m_N);
 #endif
   memcpy(m_data + i, &v, 36);
 }
-template<> inline void AlignedVectorX<double>::SetBlock(const int i, const Vector9f &v) {
+template <>
+inline void AlignedVectorX<double>::SetBlock(const int i, const Vector9f &v) {
 #ifdef CFG_DEBUG
   UT_ASSERT(i >= 0 && i + 9 <= m_N);
 #endif
@@ -805,13 +870,17 @@ template<> inline void AlignedVectorX<double>::SetBlock(const int i, const Vecto
     m_data[i + _i] = static_cast<double>(v[_i]);
   }
 }
-template<> inline void AlignedVectorX<float>::SetBlock(const int i, const AlignedVector3f &v) {
+template <>
+inline void AlignedVectorX<float>::SetBlock(const int i,
+                                            const AlignedVector3f &v) {
 #ifdef CFG_DEBUG
   UT_ASSERT(i >= 0 && i + 3 <= this->Size());
 #endif
   memcpy(this->Data() + i, &v, sizeof(Vector3f));
 }
-template<> inline void AlignedVectorX<double>::SetBlock(const int i, const AlignedVector3f &v) {
+template <>
+inline void AlignedVectorX<double>::SetBlock(const int i,
+                                             const AlignedVector3f &v) {
 #ifdef CFG_DEBUG
   UT_ASSERT(i >= 0 && i + 3 <= this->Size());
 #endif
@@ -819,13 +888,17 @@ template<> inline void AlignedVectorX<double>::SetBlock(const int i, const Align
   m_data[i + 1] = static_cast<double>(v.v1());
   m_data[i + 2] = static_cast<double>(v.v2());
 }
-template<> inline void AlignedVectorX<float>::SetBlock(const int i, const AlignedVector6f &v) {
+template <>
+inline void AlignedVectorX<float>::SetBlock(const int i,
+                                            const AlignedVector6f &v) {
 #ifdef CFG_DEBUG
   UT_ASSERT(i >= 0 && i + 6 <= m_N);
 #endif
   memcpy(m_data + i, &v, 24);
 }
-template<> inline void AlignedVectorX<double>::SetBlock(const int i, const AlignedVector6f &v) {
+template <>
+inline void AlignedVectorX<double>::SetBlock(const int i,
+                                             const AlignedVector6f &v) {
 #ifdef CFG_DEBUG
   UT_ASSERT(i >= 0 && i + 6 <= m_N);
 #endif
@@ -833,13 +906,17 @@ template<> inline void AlignedVectorX<double>::SetBlock(const int i, const Align
     m_data[i + _i] = static_cast<double>(v[_i]);
   }
 }
-template<> inline void AlignedVectorX<float>::SetBlock(const int i, const AlignedVector9f &v) {
+template <>
+inline void AlignedVectorX<float>::SetBlock(const int i,
+                                            const AlignedVector9f &v) {
 #ifdef CFG_DEBUG
   UT_ASSERT(i >= 0 && i + 9 <= m_N);
 #endif
   memcpy(m_data + i, &v, 36);
 }
-template<> inline void AlignedVectorX<double>::SetBlock(const int i, const AlignedVector9f &v) {
+template <>
+inline void AlignedVectorX<double>::SetBlock(const int i,
+                                             const AlignedVector9f &v) {
 #ifdef CFG_DEBUG
   UT_ASSERT(i >= 0 && i + 9 <= m_N);
 #endif
@@ -848,21 +925,27 @@ template<> inline void AlignedVectorX<double>::SetBlock(const int i, const Align
   }
 }
 
-template<> inline void AlignedVectorX<float>::IncreaseBlock(const int i, const Vector2f &v) {
+template <>
+inline void AlignedVectorX<float>::IncreaseBlock(const int i,
+                                                 const Vector2f &v) {
 #ifdef CFG_DEBUG
   UT_ASSERT(i >= 0 && i + 2 <= this->Size());
 #endif
   m_data[i] += v.v0();
   m_data[i + 1] += v.v1();
 }
-template<> inline void AlignedVectorX<double>::IncreaseBlock(const int i, const Vector2f &v) {
+template <>
+inline void AlignedVectorX<double>::IncreaseBlock(const int i,
+                                                  const Vector2f &v) {
 #ifdef CFG_DEBUG
   UT_ASSERT(i >= 0 && i + 2 <= this->Size());
 #endif
   m_data[i] += static_cast<double>(v.v0());
   m_data[i + 1] += static_cast<double>(v.v1());
 }
-template<> inline void AlignedVectorX<float>::IncreaseBlock(const int i, const AlignedVector3f &v) {
+template <>
+inline void AlignedVectorX<float>::IncreaseBlock(const int i,
+                                                 const AlignedVector3f &v) {
 #ifdef CFG_DEBUG
   UT_ASSERT(i >= 0 && i + 3 <= this->Size());
 #endif
@@ -870,7 +953,9 @@ template<> inline void AlignedVectorX<float>::IncreaseBlock(const int i, const A
   m_data[i + 1] += v.v1();
   m_data[i + 2] += v.v2();
 }
-template<> inline void AlignedVectorX<double>::IncreaseBlock(const int i, const AlignedVector3f &v) {
+template <>
+inline void AlignedVectorX<double>::IncreaseBlock(const int i,
+                                                  const AlignedVector3f &v) {
 #ifdef CFG_DEBUG
   UT_ASSERT(i >= 0 && i + 3 <= this->Size());
 #endif
@@ -878,7 +963,9 @@ template<> inline void AlignedVectorX<double>::IncreaseBlock(const int i, const 
   m_data[i + 1] += static_cast<double>(v.v1());
   m_data[i + 2] += static_cast<double>(v.v2());
 }
-template<> inline void AlignedVectorX<float>::IncreaseBlock(const int i, const Vector6f &v) {
+template <>
+inline void AlignedVectorX<float>::IncreaseBlock(const int i,
+                                                 const Vector6f &v) {
 #ifdef CFG_DEBUG
   UT_ASSERT(i >= 0 && i + 6 <= this->Size());
 #endif
@@ -886,7 +973,9 @@ template<> inline void AlignedVectorX<float>::IncreaseBlock(const int i, const V
     m_data[i + _i] += v[_i];
   }
 }
-template<> inline void AlignedVectorX<double>::IncreaseBlock(const int i, const Vector6f &v) {
+template <>
+inline void AlignedVectorX<double>::IncreaseBlock(const int i,
+                                                  const Vector6f &v) {
 #ifdef CFG_DEBUG
   UT_ASSERT(i >= 0 && i + 6 <= this->Size());
 #endif
@@ -898,17 +987,19 @@ template<> inline void AlignedVectorX<double>::IncreaseBlock(const int i, const 
 class AlignedVectorXf : public AlignedVectorX<float> {
  public:
   inline AlignedVectorXf() : AlignedVectorX<float>() {}
-  inline AlignedVectorXf(void *V, const int N, const bool own = true) :
-                         AlignedVectorX<float>(V, N, own) {}
+  inline AlignedVectorXf(void *V, const int N, const bool own = true)
+      : AlignedVectorX<float>(V, N, own) {}
   inline AlignedVectorXf(const AlignedVectorX<float> &V) { *this = V; }
-  //inline void operator = (const AlignedVectorX<double> &V) {
+  // inline void operator = (const AlignedVectorX<double> &V) {
   //  const int N = V.Size();
   //  Resize(N);
   //  SIMD::Convert<double, float>(N, V.Data(), this->Data());
   //}
-  inline void operator *= (const float s) { SIMD::Multiply(Size(), s, Data()); }
-  inline void operator *= (const xp128f &s) { SIMD::Multiply<0>(Size(), s, Data()); }
-  inline void operator *= (const AlignedVectorXf &S) {
+  inline void operator*=(const float s) { SIMD::Multiply(Size(), s, Data()); }
+  inline void operator*=(const xp128f &s) {
+    SIMD::Multiply<0>(Size(), s, Data());
+  }
+  inline void operator*=(const AlignedVectorXf &S) {
     SIMD::Multiply(this->Size(), S.Data(), this->Data());
   }
   inline void Bind(void *V, const int N) {
@@ -923,14 +1014,15 @@ class AlignedVectorXf : public AlignedVectorX<float> {
     V.Resize(Size());
     AlignedVectorX<float>::Get(V.Data());
   }
-  inline void GetHistogram(AlignedVector<int> &H, AlignedVectorXf &P, const int Nb,
-                           const float vMin = FLT_MAX, const float vMax = FLT_MAX) const {
+  inline void GetHistogram(AlignedVector<int> &H, AlignedVectorXf &P,
+                           const int Nb, const float vMin = FLT_MAX,
+                           const float vMax = FLT_MAX) const {
     P.Set(*this);
     const float _vMin = vMin == FLT_MAX ? P.Minimal() : vMin;
     const float _vMax = vMax == FLT_MAX ? P.Maximal() : vMax;
     P -= _vMin;
     P *= (Nb - 1) / (_vMax - _vMin);
-    int *ibs = (int *) P.Data();
+    int *ibs = (int *)P.Data();
     const int N = P.Size();
     SIMD::Convert(N, P.Data(), ibs);
 
@@ -952,10 +1044,10 @@ class AlignedVectorXf : public AlignedVectorX<float> {
 class AlignedVectorXd : public AlignedVectorX<double> {
  public:
   inline AlignedVectorXd() : AlignedVectorX<double>() {}
-  inline AlignedVectorXd(void *V, const int N, const bool own = true) :
-                         AlignedVectorX<double>(V, N, own) {}
+  inline AlignedVectorXd(void *V, const int N, const bool own = true)
+      : AlignedVectorX<double>(V, N, own) {}
   inline AlignedVectorXd(const AlignedVectorX<double> &V) { *this = V; }
-  inline void operator = (const AlignedVectorX<float> &V) {
+  inline void operator=(const AlignedVectorX<float> &V) {
     const int N = V.Size();
     Resize(N);
     SIMD::Convert<float, double>(N, V.Data(), this->Data());
@@ -980,20 +1072,24 @@ class AlignedVectorXd : public AlignedVectorX<double> {
 }
 
 #ifdef CFG_DEBUG_EIGEN
-template<int N>
+template <int N>
 class EigenVectorNf : public Eigen::Matrix<float, N, 1> {
  public:
   inline EigenVectorNf() : Eigen::Matrix<float, N, 1>() {}
-  inline EigenVectorNf(const Eigen::Matrix<float, N, 1> &e_v) : Eigen::Matrix<float, N, 1>(e_v) {}
-  inline EigenVectorNf(const LA::AlignedVectorNf<N> &v) : Eigen::Matrix<float, N, 1>() {
+  inline EigenVectorNf(const Eigen::Matrix<float, N, 1> &e_v)
+      : Eigen::Matrix<float, N, 1>(e_v) {}
+  inline EigenVectorNf(const LA::AlignedVectorNf<N> &v)
+      : Eigen::Matrix<float, N, 1>() {
     EigenVectorNf<N> &e_v = *this;
     for (int i = 0; i < N; ++i) {
       e_v(i, 0) = v[i];
     }
   }
-  inline void operator = (const Eigen::Matrix<float, N, 1> &e_v) { *((Eigen::Matrix<float, N, 1> *) this) = e_v; }
-  inline const float& operator[] (const int i) const { return (*this)(i, 0); }
-  inline       float& operator[] (const int i)       { return (*this)(i, 0); }
+  inline void operator=(const Eigen::Matrix<float, N, 1> &e_v) {
+    *((Eigen::Matrix<float, N, 1> *)this) = e_v;
+  }
+  inline const float &operator[](const int i) const { return (*this)(i, 0); }
+  inline float &operator[](const int i) { return (*this)(i, 0); }
   inline LA::AlignedVectorNf<N> GetAlignedVectorNf() const {
     LA::AlignedVectorNf<N> v;
     const EigenVectorNf<N> &e_v = *this;
@@ -1002,32 +1098,42 @@ class EigenVectorNf : public Eigen::Matrix<float, N, 1> {
     }
     return v;
   }
-  inline void Print(const bool e = false) const { GetAlignedVectorNf().Print(e); }
+  inline void Print(const bool e = false) const {
+    GetAlignedVectorNf().Print(e);
+  }
   inline bool AssertEqual(const LA::AlignedVectorNf<N> &v,
                           const int verbose = 1, const std::string str = "",
-                          const float epsAbs = 0.0f, const float epsRel = 0.0f) const {
+                          const float epsAbs = 0.0f,
+                          const float epsRel = 0.0f) const {
     return GetAlignedVectorNf().AssertEqual(v, verbose, str, epsAbs, epsRel);
   }
-  inline bool AssertEqual(const EigenVectorNf &e_v,
-                          const int verbose = 1, const std::string str = "",
-                          const float epsAbs = 0.0f, const float epsRel = 0.0f) const {
+  inline bool AssertEqual(const EigenVectorNf &e_v, const int verbose = 1,
+                          const std::string str = "", const float epsAbs = 0.0f,
+                          const float epsRel = 0.0f) const {
     return AssertEqual(e_v.GetAlignedVectorNf(), verbose, str, epsAbs, epsRel);
   }
 };
 class EigenVector12f : public EigenVectorNf<12> {
  public:
   inline EigenVector12f() : EigenVectorNf<12>() {}
-  inline EigenVector12f(const EigenVectorNf<12> &e_v) : EigenVectorNf<12>(e_v) {}
-  inline EigenVector12f(const Eigen::Matrix<float, 12, 1> &e_v) : EigenVectorNf<12>(e_v) {}
-  inline EigenVector12f(const LA::AlignedVectorNf<12> &v) : EigenVectorNf<12>(v) {}
+  inline EigenVector12f(const EigenVectorNf<12> &e_v)
+      : EigenVectorNf<12>(e_v) {}
+  inline EigenVector12f(const Eigen::Matrix<float, 12, 1> &e_v)
+      : EigenVectorNf<12>(e_v) {}
+  inline EigenVector12f(const LA::AlignedVectorNf<12> &v)
+      : EigenVectorNf<12>(v) {}
 };
 class EigenVector13f : public EigenVectorNf<13> {
  public:
   inline EigenVector13f() : EigenVectorNf<13>() {}
-  inline EigenVector13f(const EigenVectorNf<13> &e_v) : EigenVectorNf<13>(e_v) {}
-  inline EigenVector13f(const Eigen::Matrix<float, 13, 1> &e_v) : EigenVectorNf<13>(e_v) {}
-  inline EigenVector13f(const LA::AlignedVectorNf<13> &v) : EigenVectorNf<13>(v) {}
-  inline EigenVector13f(const float &e_v0, const EigenVector6f &e_v1, const EigenVector6f &e_v2) {
+  inline EigenVector13f(const EigenVectorNf<13> &e_v)
+      : EigenVectorNf<13>(e_v) {}
+  inline EigenVector13f(const Eigen::Matrix<float, 13, 1> &e_v)
+      : EigenVectorNf<13>(e_v) {}
+  inline EigenVector13f(const LA::AlignedVectorNf<13> &v)
+      : EigenVectorNf<13>(v) {}
+  inline EigenVector13f(const float &e_v0, const EigenVector6f &e_v1,
+                        const EigenVector6f &e_v2) {
     EigenVector13f &v = *this;
     v[0] = e_v0;
     v.block<6, 1>(1, 0) = e_v1;
@@ -1037,9 +1143,12 @@ class EigenVector13f : public EigenVectorNf<13> {
 class EigenVector14f : public EigenVectorNf<14> {
  public:
   inline EigenVector14f() : EigenVectorNf<14>() {}
-  inline EigenVector14f(const EigenVectorNf<14> &e_v) : EigenVectorNf<14>(e_v) {}
-  inline EigenVector14f(const Eigen::Matrix<float, 14, 1> &e_v) : EigenVectorNf<14>(e_v) {}
-  inline EigenVector14f(const LA::AlignedVectorNf<14> &v) : EigenVectorNf<14>(v) {}
+  inline EigenVector14f(const EigenVectorNf<14> &e_v)
+      : EigenVectorNf<14>(e_v) {}
+  inline EigenVector14f(const Eigen::Matrix<float, 14, 1> &e_v)
+      : EigenVectorNf<14>(e_v) {}
+  inline EigenVector14f(const LA::AlignedVectorNf<14> &v)
+      : EigenVectorNf<14>(v) {}
   inline EigenVector14f(const EigenVector13f &e_v0, const float &e_v1) {
     EigenVector14f &v = *this;
     v.block<13, 1>(0, 0) = e_v0;
@@ -1049,15 +1158,20 @@ class EigenVector14f : public EigenVectorNf<14> {
 class EigenVector15f : public EigenVectorNf<15> {
  public:
   inline EigenVector15f() : EigenVectorNf<15>() {}
-  inline EigenVector15f(const EigenVectorNf<15> &e_v) : EigenVectorNf<15>(e_v) {}
-  inline EigenVector15f(const Eigen::Matrix<float, 15, 1> &e_v) : EigenVectorNf<15>(e_v) {}
+  inline EigenVector15f(const EigenVectorNf<15> &e_v)
+      : EigenVectorNf<15>(e_v) {}
+  inline EigenVector15f(const Eigen::Matrix<float, 15, 1> &e_v)
+      : EigenVectorNf<15>(e_v) {}
 };
 class EigenVector30f : public EigenVectorNf<30> {
  public:
   inline EigenVector30f() : EigenVectorNf<30>() {}
-  inline EigenVector30f(const EigenVectorNf<30> &e_v) : EigenVectorNf<30>(e_v) {}
-  inline EigenVector30f(const Eigen::Matrix<float, 30, 1> &e_v) : EigenVectorNf<30>(e_v) {}
-  inline EigenVector30f(const LA::AlignedVectorNf<30> &v) : EigenVectorNf<30>(v) {}
+  inline EigenVector30f(const EigenVectorNf<30> &e_v)
+      : EigenVectorNf<30>(e_v) {}
+  inline EigenVector30f(const Eigen::Matrix<float, 30, 1> &e_v)
+      : EigenVectorNf<30>(e_v) {}
+  inline EigenVector30f(const LA::AlignedVectorNf<30> &v)
+      : EigenVectorNf<30>(v) {}
   inline EigenVector30f(const EigenVector6f &e_v0, const EigenVector9f &e_v1,
                         const EigenVector6f &e_v2, const EigenVector9f &e_v3) {
     EigenVector30f &v = *this;
@@ -1068,13 +1182,14 @@ class EigenVector30f : public EigenVectorNf<30> {
   }
 };
 
-template<typename TYPE>
+template <typename TYPE>
 class EigenVectorX : public Eigen::Matrix<TYPE, Eigen::Dynamic, 1> {
  public:
   inline EigenVectorX() : Eigen::Matrix<TYPE, Eigen::Dynamic, 1>() {}
-  inline EigenVectorX(const Eigen::Matrix<TYPE, Eigen::Dynamic, 1> &e_V) :
-    Eigen::Matrix<TYPE, Eigen::Dynamic, 1>(e_V) {}
-  inline EigenVectorX(const AlignedVector<TYPE> &V) : Eigen::Matrix<TYPE, Eigen::Dynamic, 1>() {
+  inline EigenVectorX(const Eigen::Matrix<TYPE, Eigen::Dynamic, 1> &e_V)
+      : Eigen::Matrix<TYPE, Eigen::Dynamic, 1>(e_V) {}
+  inline EigenVectorX(const AlignedVector<TYPE> &V)
+      : Eigen::Matrix<TYPE, Eigen::Dynamic, 1>() {
     const int N = V.Size();
     Resize(N);
     EigenVectorX<TYPE> &e_V = *this;
@@ -1082,11 +1197,11 @@ class EigenVectorX : public Eigen::Matrix<TYPE, Eigen::Dynamic, 1> {
       e_V[i] = V[i];
     }
   }
-  inline void operator = (const Eigen::Matrix<TYPE, Eigen::Dynamic, 1> &e_V) {
-    *((Eigen::Matrix<TYPE, Eigen::Dynamic, 1> *) this) = e_V;
+  inline void operator=(const Eigen::Matrix<TYPE, Eigen::Dynamic, 1> &e_V) {
+    *((Eigen::Matrix<TYPE, Eigen::Dynamic, 1> *)this) = e_V;
   }
-  inline const TYPE& operator[] (const int i) const { return (*this)(i, 0); }
-  inline       TYPE& operator[] (const int i)       { return (*this)(i, 0); }
+  inline const TYPE &operator[](const int i) const { return (*this)(i, 0); }
+  inline TYPE &operator[](const int i) { return (*this)(i, 0); }
   inline int Size() const { return int(this->rows()); }
   inline void Resize(const int N) { this->resize(N); }
   inline void MakeZero() { this->setZero(); }
@@ -1144,24 +1259,27 @@ class EigenVectorX : public Eigen::Matrix<TYPE, Eigen::Dynamic, 1> {
     }
     return V;
   }
-  inline void Print(const bool e = false) const { GetAlignedVectorXf().Print(e); }
-  inline bool AssertEqual(const LA::AlignedVectorXf &V,
-                          const int verbose = 1, const std::string str = "",
-                          const float epsAbs = 0.0f, const float epsRel = 0.0f) const {
+  inline void Print(const bool e = false) const {
+    GetAlignedVectorXf().Print(e);
+  }
+  inline bool AssertEqual(const LA::AlignedVectorXf &V, const int verbose = 1,
+                          const std::string str = "", const float epsAbs = 0.0f,
+                          const float epsRel = 0.0f) const {
     return GetAlignedVectorXf().AssertEqual(V, verbose, str, epsAbs, epsRel);
   }
-  inline bool AssertEqual(const LA::AlignedVectorXd &V,
-                          const int verbose = 1, const std::string str = "",
-                          const double epsAbs = 0.0, const double epsRel = 0.0) const {
+  inline bool AssertEqual(const LA::AlignedVectorXd &V, const int verbose = 1,
+                          const std::string str = "", const double epsAbs = 0.0,
+                          const double epsRel = 0.0) const {
     return GetAlignedVectorXd().AssertEqual(V, verbose, str, epsAbs, epsRel);
   }
-  inline bool AssertEqual(const EigenVectorX<TYPE> &e_V, 
-                          const int verbose = 1, const std::string str = "",
-                          const float epsAbs = 0.0f, const float epsRel = 0.0f) const {
+  inline bool AssertEqual(const EigenVectorX<TYPE> &e_V, const int verbose = 1,
+                          const std::string str = "", const float epsAbs = 0.0f,
+                          const float epsRel = 0.0f) const {
     return AssertEqual(e_V.GetAlignedVectorXf(), verbose, str, epsAbs, epsRel);
   }
   inline bool AssertZero(const int verbose = 1, const std::string str = "",
-                         const float epsAbs = 0.0f, const float epsRel = 0.0f) const {
+                         const float epsAbs = 0.0f,
+                         const float epsRel = 0.0f) const {
     return GetAlignedVectorXf().AssertZero(verbose, str, epsAbs, epsRel);
   }
 };

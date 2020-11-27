@@ -21,36 +21,36 @@
 
 #ifdef __IBA_SSE__
 #include <xmmintrin.h>
-#endif // __IBA_SSE__
+#endif  // __IBA_SSE__
 
 #ifdef __SSE2__
 #include <emmintrin.h>
-#endif // __SSE2__
+#endif  // __SSE2__
 
 #ifdef __SSE4_1__
 #include <smmintrin.h>
-#endif // __SSE4_1__
+#endif  // __SSE4_1__
 
-#include <string.h>     // for memcpy
+#include <string.h>  // for memcpy
 #include <cmath>
 
 #include "../IBA/IBA_config.h"
 
-#include <climits>      // for USHRT_MAX
+#include <climits>  // for USHRT_MAX
 
 #ifdef __ARM_NEON__
 #include <arm_neon.h>
 #endif
-//BYTE-ALIGNMENT for data allocation (16 required for SSE, 32 required for AVX)
-//PREVIOUS version uses only SSE. The new version will include AVX.
-//SO the alignment is increased from 16 to 32
+// BYTE-ALIGNMENT for data allocation (16 required for SSE, 32 required for AVX)
+// PREVIOUS version uses only SSE. The new version will include AVX.
+// SO the alignment is increased from 16 to 32
 #define SIMD_ALIGN 16
 #ifdef _WIN32
 // _CRT_ALIGN(X) is __declspec(align(X))
-#  define SIMD_ALIGN_DECLSPEC _CRT_ALIGN(SIMD_ALIGN)
+#define SIMD_ALIGN_DECLSPEC _CRT_ALIGN(SIMD_ALIGN)
 #else
 // This requires c++11 to work
-#  define SIMD_ALIGN_DECLSPEC __attribute__((aligned(SIMD_ALIGN)))
+#define SIMD_ALIGN_DECLSPEC __attribute__((aligned(SIMD_ALIGN)))
 #endif
 
 struct SIMD_ALIGN_DECLSPEC xp128f {
@@ -62,12 +62,13 @@ struct SIMD_ALIGN_DECLSPEC xp128f {
     tmp.vdup_all_lane(s);
     return tmp;
   }
-  static inline xp128f get(const float x0, const float x1, const float x2, const float x3) {
+  static inline xp128f get(const float x0, const float x1, const float x2,
+                           const float x3) {
     xp128f tmp;
     tmp.vset_all_lane(x0, x1, x2, x3);
     return tmp;
   }
-  static inline xp128f get(const float *src) {
+  static inline xp128f get(const float* src) {
     xp128f tmp;
     tmp.vload_unalign(src);
     return tmp;
@@ -124,7 +125,7 @@ struct SIMD_ALIGN_DECLSPEC xp128f {
     float32x4_t _s = vdupq_n_f32(s);
     vec = vaddq_f32(vec, _s);
 #else
-    for(int i = 0; i < 4; ++i) {
+    for (int i = 0; i < 4; ++i) {
       val[i] += s;
     }
 #endif
@@ -137,7 +138,7 @@ struct SIMD_ALIGN_DECLSPEC xp128f {
     float32x4_t _s = vdupq_n_f32(s);
     vec = vsubq_f32(vec, _s);
 #else
-    for(int i = 0; i < 4; ++i) {
+    for (int i = 0; i < 4; ++i) {
       val[i] -= s;
     }
 #endif
@@ -149,7 +150,7 @@ struct SIMD_ALIGN_DECLSPEC xp128f {
 #elif __ARM_NEON__
     vec = vmulq_n_f32(vec, s);
 #else
-    for(int i = 0; i < 4; ++i) {
+    for (int i = 0; i < 4; ++i) {
       val[i] *= s;
     }
 #endif
@@ -238,13 +239,9 @@ struct SIMD_ALIGN_DECLSPEC xp128f {
 #endif
   }
 
-  inline float& operator[](int lane) {
-    return val[lane];
-  }
+  inline float& operator[](int lane) { return val[lane]; }
 
-  inline const float& operator[](int lane) const {
-    return val[lane];
-  }
+  inline const float& operator[](int lane) const { return val[lane]; }
 
   inline void vset_all_lane(const float x0, const float x1 = 0.f,
                             const float x2 = 0.f, const float x3 = 0.f) {
@@ -274,9 +271,7 @@ struct SIMD_ALIGN_DECLSPEC xp128f {
     return *s012 + val[3];
   }
 
-  inline float vsum_012(void) const {
-    return val[0] + val[1] + val[2];
-  }
+  inline float vsum_012(void) const { return val[0] + val[1] + val[2]; }
   inline void normalize012() {
 #ifdef __IBA_SSE__
     __m128 vtmp = vec;
@@ -287,7 +282,8 @@ struct SIMD_ALIGN_DECLSPEC xp128f {
     vec = vmulq_f32(vec, vec);
     vec = vmulq_n_f32(vec, 1.0f / sqrtf(vsum_012()));
 #else
-    float div = 1.f / sqrtf(val[0] * val[0] + val[1] * val[1] + val[2] * val[2]);
+    float div =
+        1.f / sqrtf(val[0] * val[0] + val[1] * val[1] + val[2] * val[2]);
     val[0] *= div;
     val[1] *= div;
     val[2] *= div;

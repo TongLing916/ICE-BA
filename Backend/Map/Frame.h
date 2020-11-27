@@ -16,19 +16,21 @@
 #ifndef _FRAME_H_
 #define _FRAME_H_
 
-#include "IMU.h"
 #include "Feature.h"
+#include "IMU.h"
 
 namespace FRM {
 
-template<class TYPE> inline void VectorSaveB(const std::vector<TYPE> &V, FILE *fp) {
+template <class TYPE>
+inline void VectorSaveB(const std::vector<TYPE> &V, FILE *fp) {
   const int N = static_cast<int>(V.size());
   UT::SaveB(N, fp);
   for (int i = 0; i < N; ++i) {
     V[i].SaveB(fp);
   }
 }
-template<class TYPE> inline void VectorLoadB(std::vector<TYPE> &V, FILE *fp) {
+template <class TYPE>
+inline void VectorLoadB(std::vector<TYPE> &V, FILE *fp) {
   const int N = UT::LoadB<int>(fp);
   V.resize(N);
   for (int i = 0; i < N; ++i) {
@@ -36,14 +38,16 @@ template<class TYPE> inline void VectorLoadB(std::vector<TYPE> &V, FILE *fp) {
   }
 }
 
-template<class TYPE> inline void VectorSaveB(const SIMD::vector<TYPE> &V, FILE *fp) {
+template <class TYPE>
+inline void VectorSaveB(const SIMD::vector<TYPE> &V, FILE *fp) {
   const int N = static_cast<int>(V.size());
   UT::SaveB(N, fp);
   for (int i = 0; i < N; ++i) {
     V[i].SaveB(fp);
   }
 }
-template<class TYPE> inline void VectorLoadB(SIMD::vector<TYPE> &V, FILE *fp) {
+template <class TYPE>
+inline void VectorLoadB(SIMD::vector<TYPE> &V, FILE *fp) {
   const int N = UT::LoadB<int>(fp);
   V.resize(N);
   for (int i = 0; i < N; ++i) {
@@ -51,14 +55,17 @@ template<class TYPE> inline void VectorLoadB(SIMD::vector<TYPE> &V, FILE *fp) {
   }
 }
 
-template<class TYPE> inline void ListSaveB(const std::list<TYPE> &L, FILE *fp) {
+template <class TYPE>
+inline void ListSaveB(const std::list<TYPE> &L, FILE *fp) {
   const int N = int(L.size());
   UT::SaveB(N, fp);
-  for (typename std::list<TYPE>::const_iterator it = L.begin(); it != L.end(); ++it) {
+  for (typename std::list<TYPE>::const_iterator it = L.begin(); it != L.end();
+       ++it) {
     it->SaveB(fp);
   }
 }
-template<class TYPE> inline void ListLoadB(std::list<TYPE> &L, FILE *fp) {
+template <class TYPE>
+inline void ListLoadB(std::list<TYPE> &L, FILE *fp) {
   const int N = UT::LoadB<int>(fp);
   L.resize(N);
   for (typename std::list<TYPE>::iterator it = L.begin(); it != L.end(); ++it) {
@@ -70,12 +77,22 @@ class Tag {
  public:
   inline Tag() {}
   inline Tag(const int iFrm, const float t) : m_iFrm(iFrm), m_t(t) {}
-  inline bool operator == (const Tag &T) const { return m_iFrm == T.m_iFrm && m_t == T.m_t; }
-  inline bool operator != (const Tag &T) const { return m_iFrm != T.m_iFrm || m_t != T.m_t; }
-  inline bool operator < (const Tag &T) const { return m_iFrm < T.m_iFrm && m_t < T.m_t; }
-  inline bool operator < (const int iFrm) const { return m_iFrm < iFrm; }
-  inline bool operator <= (const Tag &T) const { return m_iFrm <= T.m_iFrm && m_t <= T.m_t; }
-  inline bool operator > (const Tag &T) const { return m_iFrm > T.m_iFrm && m_t > T.m_t; }
+  inline bool operator==(const Tag &T) const {
+    return m_iFrm == T.m_iFrm && m_t == T.m_t;
+  }
+  inline bool operator!=(const Tag &T) const {
+    return m_iFrm != T.m_iFrm || m_t != T.m_t;
+  }
+  inline bool operator<(const Tag &T) const {
+    return m_iFrm < T.m_iFrm && m_t < T.m_t;
+  }
+  inline bool operator<(const int iFrm) const { return m_iFrm < iFrm; }
+  inline bool operator<=(const Tag &T) const {
+    return m_iFrm <= T.m_iFrm && m_t <= T.m_t;
+  }
+  inline bool operator>(const Tag &T) const {
+    return m_iFrm > T.m_iFrm && m_t > T.m_t;
+  }
   inline bool Valid() const { return m_iFrm >= 0; }
   inline bool Invalid() const { return m_iFrm == -1; }
   inline void Invalidate() { m_iFrm = -1; }
@@ -95,6 +112,7 @@ class Tag {
     UT::StringLoadB(m_fileNameRight, fp);
 #endif
   }
+
  public:
   int m_iFrm;
   float m_t;
@@ -107,46 +125,56 @@ class Tag {
 class Measurement {
  public:
   inline Measurement() {}
-  inline Measurement(const int iKF, const int ik, const int iz1, const int iz2) :
-                     m_iKF(iKF), m_ik(ik), m_iz1(iz1), m_iz2(iz2) {}
-  inline bool operator == (const Measurement &Z) const {
-    return m_iKF == Z.m_iKF && m_ik == Z.m_ik && m_iz1 == Z.m_iz1 && m_iz2 == Z.m_iz2;
+  inline Measurement(const int iKF, const int ik, const int iz1, const int iz2)
+      : m_iKF(iKF), m_ik(ik), m_iz1(iz1), m_iz2(iz2) {}
+  inline bool operator==(const Measurement &Z) const {
+    return m_iKF == Z.m_iKF && m_ik == Z.m_ik && m_iz1 == Z.m_iz1 &&
+           m_iz2 == Z.m_iz2;
   }
-  inline bool operator < (const int iKF) const { return m_iKF < iKF; }
+  inline bool operator<(const int iKF) const { return m_iKF < iKF; }
   inline int CountFeatureMeasurements() const { return m_iz2 - m_iz1; }
   inline bool Inside(const int iz) const { return iz >= m_iz1 && iz < m_iz2; }
   inline void AssertConsistency() const {
     UT_ASSERT(m_iKF >= 0 && m_ik >= 0 && m_iz1 <= m_iz2);
   }
+
  public:
   int m_iKF, m_ik, m_iz1, m_iz2;
 };
 
 class Frame {
  public:
-  inline void Initialize(const Tag &T) { m_T = T; m_d.Initialize(); ClearMeasurements(); }
+  inline void Initialize(const Tag &T) {
+    m_T = T;
+    m_d.Initialize();
+    ClearMeasurements();
+  }
   inline void Initialize(const Frame &F) { *this = F; }
   inline bool Valid() const { return m_T.Valid(); }
   inline bool Invalid() const { return m_T.Invalid(); }
   inline void Invalidate() { m_T.Invalidate(); }
-  inline void DeleteKeyFrame(const int iKF, const std::vector<Measurement>::iterator *iZ = NULL,
-                             const std::vector<int>::iterator *ik = NULL) {
-    const std::vector<Measurement>::iterator _iZ = iZ ? *iZ : std::lower_bound(m_Zs.begin(),
-                                                                               m_Zs.end(), iKF);
-    const std::vector<int>::iterator _ik = ik ? *ik : std::lower_bound(m_iKFsMatch.begin(),
-                                                                       m_iKFsMatch.end(), iKF);
+  inline void DeleteKeyFrame(
+      const int iKF, const std::vector<Measurement>::iterator *iZ = NULL,
+      const std::vector<int>::iterator *ik = NULL) {
+    const std::vector<Measurement>::iterator _iZ =
+        iZ ? *iZ : std::lower_bound(m_Zs.begin(), m_Zs.end(), iKF);
+    const std::vector<int>::iterator _ik =
+        ik ? *ik
+           : std::lower_bound(m_iKFsMatch.begin(), m_iKFsMatch.end(), iKF);
     if (_iZ != m_Zs.end()) {
       const bool Z = _iZ->m_iKF == iKF;
       if (Z) {
         const int Nz = _iZ->CountFeatureMeasurements();
-        for (std::vector<Measurement>::iterator jZ = _iZ + 1; jZ != m_Zs.end(); ++jZ) {
+        for (std::vector<Measurement>::iterator jZ = _iZ + 1; jZ != m_Zs.end();
+             ++jZ) {
           jZ->m_iz1 -= Nz;
           jZ->m_iz2 -= Nz;
         }
         m_zs.erase(m_zs.begin() + _iZ->m_iz1, m_zs.begin() + _iZ->m_iz2);
       }
       const bool k = _ik != m_iKFsMatch.end() && *_ik == iKF;
-      for (std::vector<Measurement>::iterator jZ = Z ? _iZ + 1 : _iZ; jZ != m_Zs.end(); ++jZ) {
+      for (std::vector<Measurement>::iterator jZ = Z ? _iZ + 1 : _iZ;
+           jZ != m_Zs.end(); ++jZ) {
         --jZ->m_iKF;
         if (k) {
           --jZ->m_ik;
@@ -163,25 +191,30 @@ class Frame {
       --m_iKFNearest;
     }
   }
-  inline void InsertMatchKeyFrame(const int iKF, const std::vector<int>::iterator *ik = NULL) {
+  inline void InsertMatchKeyFrame(const int iKF,
+                                  const std::vector<int>::iterator *ik = NULL) {
     if (m_iKFsMatch.empty() || iKF > m_iKFsMatch.back()) {
       m_iKFsMatch.push_back(iKF);
       return;
     }
-    const std::vector<int>::iterator _ik = ik ? *ik : std::lower_bound(m_iKFsMatch.begin(),
-                                                                       m_iKFsMatch.end(), iKF);
+    const std::vector<int>::iterator _ik =
+        ik ? *ik
+           : std::lower_bound(m_iKFsMatch.begin(), m_iKFsMatch.end(), iKF);
     if (_ik != m_iKFsMatch.end() && *_ik == iKF) {
       return;
     }
     m_iKFsMatch.insert(_ik, iKF);
-    const std::vector<Measurement>::iterator iZ = std::lower_bound(m_Zs.begin(), m_Zs.end(), iKF);
+    const std::vector<Measurement>::iterator iZ =
+        std::lower_bound(m_Zs.begin(), m_Zs.end(), iKF);
     for (std::vector<Measurement>::iterator jZ = iZ; jZ != m_Zs.end(); ++jZ) {
       ++jZ->m_ik;
     }
   }
-  inline void DeleteMatchKeyFrame(const int iKF, const std::vector<int>::iterator *ik = NULL) {
-    const std::vector<int>::iterator _ik = ik ? *ik : std::lower_bound(m_iKFsMatch.begin(),
-                                                                       m_iKFsMatch.end(), iKF);
+  inline void DeleteMatchKeyFrame(const int iKF,
+                                  const std::vector<int>::iterator *ik = NULL) {
+    const std::vector<int>::iterator _ik =
+        ik ? *ik
+           : std::lower_bound(m_iKFsMatch.begin(), m_iKFsMatch.end(), iKF);
     if (_ik != m_iKFsMatch.end()) {
       const bool k = *_ik == iKF;
       for (std::vector<int>::iterator jk = k ? _ik + 1 : _ik;
@@ -240,8 +273,10 @@ class Frame {
     const int NZ = static_cast<int>(m_Zs.size());
     for (int iZ = 0; iZ < NZ; ++iZ) {
       Measurement &Z = m_Zs[iZ];
-      for (int iz = Z.m_iz1; iz <= Nz1 && (Z.m_iz1 = izs[iz]) < 0; ++iz);
-      for (int iz = Z.m_iz2; iz <= Nz1 && (Z.m_iz2 = izs[iz]) < 0; ++iz);
+      for (int iz = Z.m_iz1; iz <= Nz1 && (Z.m_iz1 = izs[iz]) < 0; ++iz)
+        ;
+      for (int iz = Z.m_iz2; iz <= Nz1 && (Z.m_iz2 = izs[iz]) < 0; ++iz)
+        ;
     }
   }
   inline void ClearMeasurements() {
@@ -259,8 +294,8 @@ class Frame {
       Z.m_ik = static_cast<int>(m_iKFsMatch.size());
       m_iKFsMatch.push_back(iKF);
     } else {
-      const std::vector<int>::iterator ik = std::lower_bound(m_iKFsMatch.begin(),
-                                                             m_iKFsMatch.end(), iKF);
+      const std::vector<int>::iterator ik =
+          std::lower_bound(m_iKFsMatch.begin(), m_iKFsMatch.end(), iKF);
       Z.m_ik = static_cast<int>(ik - m_iKFsMatch.begin());
       if (*ik != iKF) {
         m_iKFsMatch.insert(ik, iKF);
@@ -270,7 +305,8 @@ class Frame {
     Z.m_iz2 = Z.m_iz1 + Nz;
     m_zs.resize(Z.m_iz2);
   }
-  inline void PushFrameMeasurement(const int iKF, const std::vector<FTR::Measurement> &zs) {
+  inline void PushFrameMeasurement(const int iKF,
+                                   const std::vector<FTR::Measurement> &zs) {
     const int iZ = static_cast<int>(m_Zs.size());
     m_Zs.resize(iZ + 1);
     Measurement &Z = m_Zs[iZ];
@@ -279,8 +315,8 @@ class Frame {
       Z.m_ik = static_cast<int>(m_iKFsMatch.size());
       m_iKFsMatch.push_back(iKF);
     } else {
-      const std::vector<int>::iterator ik = std::lower_bound(m_iKFsMatch.begin(),
-                                                             m_iKFsMatch.end(), iKF);
+      const std::vector<int>::iterator ik =
+          std::lower_bound(m_iKFsMatch.begin(), m_iKFsMatch.end(), iKF);
       Z.m_ik = static_cast<int>(ik - m_iKFsMatch.begin());
       if (*ik != iKF) {
         m_iKFsMatch.insert(ik, iKF);
@@ -291,7 +327,8 @@ class Frame {
     Z.m_iz2 = Z.m_iz1 + Nz;
     m_zs.insert(m_zs.end(), zs.begin(), zs.end());
   }
-  inline void PushFeatureMeasurements(const int iKF, const std::vector<FTR::Measurement> &zs,
+  inline void PushFeatureMeasurements(const int iKF,
+                                      const std::vector<FTR::Measurement> &zs,
                                       int *iZ, int *iz) {
     if (m_Zs.empty() || iKF > m_Zs.back().m_iKF) {
       *iZ = static_cast<int>(m_Zs.size());
@@ -299,28 +336,31 @@ class Frame {
       PushFrameMeasurement(iKF, zs);
     } else {
       const int Nz = static_cast<int>(zs.size());
-      const std::vector<Measurement>::iterator _iZ = std::lower_bound(m_Zs.begin(),
-                                                                      m_Zs.end(), iKF);
+      const std::vector<Measurement>::iterator _iZ =
+          std::lower_bound(m_Zs.begin(), m_Zs.end(), iKF);
       *iZ = static_cast<int>(_iZ - m_Zs.begin());
       if (_iZ->m_iKF == iKF) {
         *iz = _iZ->m_iz2;
         _iZ->m_iz2 += Nz;
-        for (std::vector<Measurement>::iterator jZ = _iZ + 1; jZ != m_Zs.end(); ++jZ) {
+        for (std::vector<Measurement>::iterator jZ = _iZ + 1; jZ != m_Zs.end();
+             ++jZ) {
           jZ->m_iz1 += Nz;
           jZ->m_iz2 += Nz;
         }
       } else {
-        const std::vector<int>::iterator ik = std::lower_bound(m_iKFsMatch.begin(),
-                                                               m_iKFsMatch.begin() + _iZ->m_ik, iKF);
+        const std::vector<int>::iterator ik = std::lower_bound(
+            m_iKFsMatch.begin(), m_iKFsMatch.begin() + _iZ->m_ik, iKF);
         const int _ik = static_cast<int>(ik - m_iKFsMatch.begin());
         if (ik == m_iKFsMatch.end() || *ik != iKF) {
           m_iKFsMatch.insert(ik, iKF);
-          for (std::vector<Measurement>::iterator jZ = _iZ; jZ != m_Zs.end(); ++jZ) {
+          for (std::vector<Measurement>::iterator jZ = _iZ; jZ != m_Zs.end();
+               ++jZ) {
             ++jZ->m_ik;
           }
         }
         *iz = _iZ->m_iz1;
-        for (std::vector<Measurement>::iterator jZ = _iZ; jZ != m_Zs.end(); ++jZ) {
+        for (std::vector<Measurement>::iterator jZ = _iZ; jZ != m_Zs.end();
+             ++jZ) {
           jZ->m_iz1 += Nz;
           jZ->m_iz2 += Nz;
         }
@@ -331,7 +371,8 @@ class Frame {
   }
   inline void PopFrameMeasurement() {
 #ifdef CFG_DEBUG
-    UT_ASSERT(!m_Zs.empty() && !m_iKFsMatch.empty() && m_Zs.back().m_iKF == m_iKFsMatch.back() &&
+    UT_ASSERT(!m_Zs.empty() && !m_iKFsMatch.empty() &&
+              m_Zs.back().m_iKF == m_iKFsMatch.back() &&
               m_Zs.back().m_ik == static_cast<int>(m_iKFsMatch.size()) - 1);
 #endif
     m_Zs.resize(m_Zs.size() - 1);
@@ -343,8 +384,8 @@ class Frame {
     m_iKFsMatch.resize(m_iKFsMatch.size() - 1);
   }
   inline int SearchFrameMeasurement(const int iKF) const {
-    const std::vector<Measurement>::const_iterator iZ = std::lower_bound(m_Zs.begin(), m_Zs.end(),
-                                                                         iKF);
+    const std::vector<Measurement>::const_iterator iZ =
+        std::lower_bound(m_Zs.begin(), m_Zs.end(), iKF);
     if (iZ == m_Zs.end() || iZ->m_iKF != iKF) {
       return -1;
     } else {
@@ -357,8 +398,9 @@ class Frame {
       return -1;
     }
     const Measurement &Z = m_Zs[iZ];
-    const int iz = static_cast<int>(std::lower_bound(m_zs.begin() + Z.m_iz1,
-                                                     m_zs.begin() + Z.m_iz2, ix) - m_zs.begin());
+    const int iz = static_cast<int>(
+        std::lower_bound(m_zs.begin() + Z.m_iz1, m_zs.begin() + Z.m_iz2, ix) -
+        m_zs.begin());
     if (iz != Z.m_iz2 && m_zs[iz].m_ix == ix) {
       return iz;
     } else {
@@ -375,9 +417,9 @@ class Frame {
     }
     return -1;
   }
-  static inline void SearchFeatureMeasurementMatches(const Frame &F1, const Frame &F2,
-                                                     std::vector<FTR::Measurement::Match> &izms,
-                                                     const int iKF = -1) {
+  static inline void SearchFeatureMeasurementMatches(
+      const Frame &F1, const Frame &F2,
+      std::vector<FTR::Measurement::Match> &izms, const int iKF = -1) {
     izms.resize(0);
     const int NZ1 = static_cast<int>(F1.m_Zs.size());
     for (int iZ1 = 0; iZ1 < NZ1; ++iZ1) {
@@ -390,19 +432,26 @@ class Frame {
         continue;
       }
       const Measurement &Z2 = F2.m_Zs[iZ2];
-      const std::vector<FTR::Measurement>::const_iterator iz21 = F2.m_zs.begin() + Z2.m_iz1,
-                                                          iz22 = F2.m_zs.begin() + Z2.m_iz2;
+      const std::vector<FTR::Measurement>::const_iterator iz21 =
+                                                              F2.m_zs.begin() +
+                                                              Z2.m_iz1,
+                                                          iz22 =
+                                                              F2.m_zs.begin() +
+                                                              Z2.m_iz2;
       const int iz11 = Z1.m_iz1, iz12 = Z1.m_iz2;
       for (int iz1 = iz11; iz1 < iz12; ++iz1) {
         const int ix = F1.m_zs[iz1].m_ix;
-        const std::vector<FTR::Measurement>::const_iterator iz2 = std::lower_bound(iz21, iz22, ix);
+        const std::vector<FTR::Measurement>::const_iterator iz2 =
+            std::lower_bound(iz21, iz22, ix);
         if (iz2 != iz22 && iz2->m_ix == ix) {
-          izms.push_back(FTR::Measurement::Match(iz1, int(iz2 - F2.m_zs.begin())));
+          izms.push_back(
+              FTR::Measurement::Match(iz1, int(iz2 - F2.m_zs.begin())));
         }
       }
     }
   }
-  static inline bool HasFeatureMeasurementMatch(const Frame &F1, const Frame &F2) {
+  static inline bool HasFeatureMeasurementMatch(const Frame &F1,
+                                                const Frame &F2) {
     const int NZ1 = static_cast<int>(F1.m_Zs.size());
     for (int iZ1 = 0; iZ1 < NZ1; ++iZ1) {
       const Measurement &Z1 = F1.m_Zs[iZ1];
@@ -411,12 +460,17 @@ class Frame {
         continue;
       }
       const Measurement &Z2 = F2.m_Zs[iZ2];
-      const std::vector<FTR::Measurement>::const_iterator iz21 = F2.m_zs.begin() + Z2.m_iz1,
-                                                          iz22 = F2.m_zs.begin() + Z2.m_iz2;
+      const std::vector<FTR::Measurement>::const_iterator iz21 =
+                                                              F2.m_zs.begin() +
+                                                              Z2.m_iz1,
+                                                          iz22 =
+                                                              F2.m_zs.begin() +
+                                                              Z2.m_iz2;
       const int iz11 = Z1.m_iz1, iz12 = Z1.m_iz2;
       for (int iz1 = iz11; iz1 < iz12; ++iz1) {
         const int ix = F1.m_zs[iz1].m_ix;
-        const std::vector<FTR::Measurement>::const_iterator iz2 = std::lower_bound(iz21, iz22, ix);
+        const std::vector<FTR::Measurement>::const_iterator iz2 =
+            std::lower_bound(iz21, iz22, ix);
         if (iz2 != iz22 && iz2->m_ix == ix) {
           return true;
         }
@@ -425,9 +479,11 @@ class Frame {
     return false;
   }
   inline int SearchMatchKeyFrame(const int iKF) const {
-    const std::vector<int>::const_iterator ik = std::lower_bound(m_iKFsMatch.begin(),
-                                                                 m_iKFsMatch.end(), iKF);
-    return (ik == m_iKFsMatch.end() || *ik != iKF) ? -1 : int(ik - m_iKFsMatch.begin());
+    const std::vector<int>::const_iterator ik =
+        std::lower_bound(m_iKFsMatch.begin(), m_iKFsMatch.end(), iKF);
+    return (ik == m_iKFsMatch.end() || *ik != iKF)
+               ? -1
+               : int(ik - m_iKFsMatch.begin());
   }
   inline void SortFeatureMeasurements() {
     const int NZ = int(m_Zs.size());
@@ -490,6 +546,7 @@ class Frame {
     }
 #endif
   }
+
  public:
   Tag m_T;
   Depth::InverseGaussian m_d;
@@ -501,7 +558,7 @@ class Frame {
 
 class MeasurementMatch {
  public:
-  inline void operator = (const MeasurementMatch &Zm) {
+  inline void operator=(const MeasurementMatch &Zm) {
     m_ik2zm = Zm.m_ik2zm;
     m_izms = Zm.m_izms;
     m_Mczms.Set(Zm.m_Mczms);
@@ -523,13 +580,15 @@ class MeasurementMatch {
     m_ik2zm.erase(m_ik2zm.begin() + ik);
     m_SMczms.Erase(ik);
   }
-  inline void InsertFeatureMeasurement1(const int ik, const int iz1, const int Nz1) {
+  inline void InsertFeatureMeasurement1(const int ik, const int iz1,
+                                        const int Nz1) {
     const int i1 = m_ik2zm[ik], i2 = m_ik2zm[ik + 1];
     for (int i = i2 - 1; i >= i1 && m_izms[i].m_iz1 >= iz1; --i) {
       m_izms[i].m_iz1 += Nz1;
     }
   }
-  inline void InsertFeatureMeasurement2(const int ik, const int iz2, const int Nz2) {
+  inline void InsertFeatureMeasurement2(const int ik, const int iz2,
+                                        const int Nz2) {
     const int Nk = static_cast<int>(m_ik2zm.size()) - 1;
     for (int jk = ik + 1; jk < Nk; ++jk) {
       const int i1 = m_ik2zm[jk], i2 = m_ik2zm[jk + 1];
@@ -538,22 +597,24 @@ class MeasurementMatch {
       }
     }
   }
-  inline void InsertFeatureMeasurementMatches(const int ik,
-                                              const std::vector<FTR::Measurement::Match> &izms,
-                                              AlignedVector<float> *work) {
+  inline void InsertFeatureMeasurementMatches(
+      const int ik, const std::vector<FTR::Measurement::Match> &izms,
+      AlignedVector<float> *work) {
     const std::vector<FTR::Measurement::Match>::iterator i =
-      std::lower_bound(m_izms.begin() + m_ik2zm[ik],
-                       m_izms.begin() + m_ik2zm[ik + 1], izms.front().m_iz2);
-    const int Nk = static_cast<int>(m_ik2zm.size()) - 1, Nzm = static_cast<int>(izms.size());
+        std::lower_bound(m_izms.begin() + m_ik2zm[ik],
+                         m_izms.begin() + m_ik2zm[ik + 1], izms.front().m_iz2);
+    const int Nk = static_cast<int>(m_ik2zm.size()) - 1,
+              Nzm = static_cast<int>(izms.size());
     for (int jk = ik; jk < Nk; ++jk) {
       m_ik2zm[jk + 1] += Nzm;
     }
     m_Mczms.InsertZero(static_cast<int>(i - m_izms.begin()), Nzm, work);
     m_izms.insert(i, izms.begin(), izms.end());
   }
-  inline void PushFeatureMeasurementMatches(const std::vector<FTR::Measurement::Match> &izms,
-                                            ubyte *first = NULL) {
-    const int Nzm1 = m_ik2zm.back(), Nzm = static_cast<int>(izms.size()), Nzm2 = Nzm1 + Nzm;
+  inline void PushFeatureMeasurementMatches(
+      const std::vector<FTR::Measurement::Match> &izms, ubyte *first = NULL) {
+    const int Nzm1 = m_ik2zm.back(), Nzm = static_cast<int>(izms.size()),
+              Nzm2 = Nzm1 + Nzm;
     if (!first || *first) {
       if (first) {
         *first = 0;
@@ -572,7 +633,8 @@ class MeasurementMatch {
     }
 #endif
   }
-  inline void DeleteFeatureMeasurementMatches(const int ik, const int i1, const int i2,
+  inline void DeleteFeatureMeasurementMatches(const int ik, const int i1,
+                                              const int i2,
                                               const ubyte *ms = NULL) {
     const int Nzm = i2 - i1;
     if (Nzm == 0) {
@@ -596,7 +658,8 @@ class MeasurementMatch {
     }
     m_Mczms.Erase(i1, Nzm);
   }
-  inline void DeleteFeatureMeasurementMatches(const int ik, const int i1, const int i2,
+  inline void DeleteFeatureMeasurementMatches(const int ik, const int i1,
+                                              const int i2,
                                               const std::vector<int> &izs1,
                                               const std::vector<int> &izs2,
                                               std::vector<ubyte> *ms = NULL) {
@@ -611,7 +674,7 @@ class MeasurementMatch {
         UT_ASSERT(iz1 >= 0 && iz2 >= 0 || iz1 == iz2);
 #endif
         if (iz1 < 0) {
-          //if (iz1 == -1) {
+          // if (iz1 == -1) {
           if (ms && ms->at(i) || !ms && iz1 == -1) {
             Mczm.MakeMinus();
             SMczm += Mczm;
@@ -647,7 +710,10 @@ class MeasurementMatch {
       }
     }
   }
-  inline void MakeZero() { m_Mczms.MakeZero(); m_SMczms.MakeZero(); }
+  inline void MakeZero() {
+    m_Mczms.MakeZero();
+    m_SMczms.MakeZero();
+  }
   inline void SaveB(FILE *fp) const {
     UT::VectorSaveB(m_ik2zm, fp);
     UT::VectorSaveB(m_izms, fp);
@@ -675,8 +741,9 @@ class MeasurementMatch {
     UT_ASSERT(m_Mczms.Size() == Nzm);
     UT_ASSERT(m_SMczms.Size() == Nk);
   }
-  inline void AssertConsistency(const int ik, const Frame &F1, const Frame &F2,
-                                std::vector<FTR::Measurement::Match> &izmsTmp) const {
+  inline void AssertConsistency(
+      const int ik, const Frame &F1, const Frame &F2,
+      std::vector<FTR::Measurement::Match> &izmsTmp) const {
     Frame::SearchFeatureMeasurementMatches(F1, F2, izmsTmp);
     const int i1 = m_ik2zm[ik], i2 = m_ik2zm[ik + 1], Nzm = i2 - i1;
     UT_ASSERT(Nzm == static_cast<int>(izmsTmp.size()));
@@ -687,11 +754,11 @@ class MeasurementMatch {
       UT_ASSERT(F1.m_zs[izm.m_iz1].m_ix == F2.m_zs[izm.m_iz2].m_ix);
     }
   }
+
  public:
   std::vector<int> m_ik2zm;
   std::vector<FTR::Measurement::Match> m_izms;
   AlignedVector<Camera::Factor::Binary::CC> m_Mczms, m_SMczms;
 };
-
 }
 #endif

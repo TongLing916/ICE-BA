@@ -16,20 +16,18 @@
 #ifndef _ARCBALL_H_
 #define _ARCBALL_H_
 
-#include "Rotation.h"
-#include "Matrix4x4.h"
 #include <GL/glew.h>
 #include <GL/glut.h>
+#include "Matrix4x4.h"
+#include "Rotation.h"
 
 class Arcball {
-
  public:
-
   inline void Initialize() {
     m_C.MakeZero();
     m_OC = m_OC2 = 0.0f;
     m_nC.MakeZero();
-    //m_r = m_r2 = 0.0f;
+    // m_r = m_r2 = 0.0f;
     SetRadius(0.0f);
     m_R.MakeIdentity();
     m_R.GetTranspose(m_RT);
@@ -37,7 +35,8 @@ class Arcball {
     m_Cstart = m_C;
     m_Rstart = m_R;
   }
-  inline void Initialize(const Rotation3D &R, const float zCenter, const float radius) {
+  inline void Initialize(const Rotation3D &R, const float zCenter,
+                         const float radius) {
     m_C.Set(0, 0, zCenter);
     m_OC = fabs(zCenter);
     m_OC2 = zCenter * zCenter;
@@ -83,7 +82,7 @@ class Arcball {
     m_nC.Set(0, 0, 1);
     SetRadius(radius);
   }
-  inline const Point3D& GetCenter() const { return m_C; }
+  inline const Point3D &GetCenter() const { return m_C; }
   inline void SetCenter(const Point3D &C) {
     m_C = C;
     m_OC2 = m_C.SquaredLength();
@@ -93,8 +92,8 @@ class Arcball {
   }
   inline float GetCenterZ() const { return m_C.z(); }
   inline float GetRadius() const { return m_r; }
-  inline const Rotation3D& GetRotation() const { return m_RT; }
-  inline const Rotation3D& GetRotationTranspose() const { return m_R; }
+  inline const Rotation3D &GetRotation() const { return m_RT; }
+  inline const Rotation3D &GetRotationTranspose() const { return m_R; }
 
   inline void StartChangingRadius() { m_rStart = m_r; }
   inline void ChangeRadius(const float ratio) { SetRadius(m_rStart * ratio); }
@@ -145,7 +144,6 @@ class Arcball {
   }
 
  protected:
-
   inline void SetRadius(const float radius) {
     m_r = radius;
     m_r2 = radius * radius;
@@ -155,8 +153,8 @@ class Arcball {
     m_OTfoot = m_OC - m_r2 / m_OC;
     m_Tfoot = m_nC * m_OC;
   }
-  inline void ComputeCenterToIntersectionDirection(const Point3D &Xwin,
-                                                   LA::AlignedVector3f &nCX) const {
+  inline void ComputeCenterToIntersectionDirection(
+      const Point3D &Xwin, LA::AlignedVector3f &nCX) const {
     float a = Xwin.SquaredLength();
     float b = -Xwin.Dot(m_C);
     float c = m_OC2 - m_r2;
@@ -175,7 +173,7 @@ class Arcball {
       // T = Xext + XextTfoot * t
       // TC = XextT - CXext = XextTfoot * t - CXext
       // |TC| = |XextTfoot * t - CXext| = R
-      //Point3D CXext, XextTfoot;
+      // Point3D CXext, XextTfoot;
       const Point3D CXext = Xext - m_C, XextTfoot = m_Tfoot - Xext;
       a = b = XextTfoot.SquaredLength();
       c = CXext.SquaredLength() - m_r2;
@@ -186,13 +184,11 @@ class Arcball {
   }
 
  private:
-
   Point3D m_C, m_Cstart, m_Tfoot;
   LA::AlignedVector3f m_nC, m_nCXstart;
   Rotation3D m_R, m_RT, m_Rstart;
   LA::AlignedMatrix4x4f m_M;
   float m_OC, m_OC2, m_r, m_r2, m_rStart, m_OTfoot;
-
 };
 
 #endif

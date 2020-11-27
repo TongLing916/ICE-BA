@@ -16,25 +16,27 @@
 #ifndef _GLOBAL_MAP_H_
 #define _GLOBAL_MAP_H_
 
-#include "Frame.h"
-#include "Rigid.h"
 #include "Depth.h"
+#include "Frame.h"
 #include "MultiThread.h"
+#include "Rigid.h"
 
-#define GM_FLAG_FRAME_DEFAULT       0
+#define GM_FLAG_FRAME_DEFAULT 0
 #define GM_FLAG_FRAME_UPDATE_CAMERA 1
-#define GM_FLAG_FRAME_UPDATE_DEPTH  2
+#define GM_FLAG_FRAME_UPDATE_DEPTH 2
 
 class GlobalMap {
-
  public:
-   
   class InputCamera {
    public:
     inline InputCamera() {}
-    inline InputCamera(const Rigid3D &C, const int iFrm) : m_C(C), m_iFrm(iFrm) {}
-    inline bool operator < (const int iFrm) const { return m_iFrm < iFrm; }
-    inline bool operator < (const InputCamera &C) const { return m_iFrm < C.m_iFrm; }
+    inline InputCamera(const Rigid3D &C, const int iFrm)
+        : m_C(C), m_iFrm(iFrm) {}
+    inline bool operator<(const int iFrm) const { return m_iFrm < iFrm; }
+    inline bool operator<(const InputCamera &C) const {
+      return m_iFrm < C.m_iFrm;
+    }
+
    public:
     Rigid3D m_C;
     int m_iFrm;
@@ -46,13 +48,19 @@ class GlobalMap {
     inline Camera(const Rigid3D &C, const int iFrm,
                   const ubyte uc = GM_FLAG_FRAME_DEFAULT
 #ifdef CFG_HANDLE_SCALE_JUMP
-                , const float d = 0.0f
+                  ,
+                  const float d = 0.0f
 #endif
-                ) : InputCamera(C, iFrm), m_uc(uc)
+                  )
+        : InputCamera(C, iFrm),
+          m_uc(uc)
 #ifdef CFG_HANDLE_SCALE_JUMP
-                  , m_d(d)
+          ,
+          m_d(d)
 #endif
-    {}
+    {
+    }
+
    public:
     ubyte m_uc;
 #ifdef CFG_HANDLE_SCALE_JUMP
@@ -86,6 +94,7 @@ class GlobalMap {
         }
       }
     }
+
    public:
     int m_iKF;
     FTR::Source m_x;
@@ -96,8 +105,9 @@ class GlobalMap {
 
   class InputKeyFrame : public FRM::Frame {
    public:
-    //inline InputKeyFrame() {}
-    //inline InputKeyFrame(const FRM::Frame &F, const Camera &C, const std::vector<Point> &Xs) :
+    // inline InputKeyFrame() {}
+    // inline InputKeyFrame(const FRM::Frame &F, const Camera &C, const
+    // std::vector<Point> &Xs) :
     //                     FRM::Frame(F), m_C(C), m_Xs(Xs) {}
     inline void AssertConsistency() const {
       const int NX = static_cast<int>(m_Xs.size());
@@ -109,6 +119,7 @@ class GlobalMap {
         }
       }
     }
+
    public:
     ::Camera m_C;
     std::vector<Point> m_Xs;
@@ -118,12 +129,12 @@ class GlobalMap {
    public:
     inline KeyFrame() : FRM::Frame() {}
     inline KeyFrame(const KeyFrame &KF) { *this = KF; }
-    inline void operator = (const KeyFrame &KF) {
-      *((FRM::Frame *) this) = KF;
+    inline void operator=(const KeyFrame &KF) {
+      *((FRM::Frame *)this) = KF;
       m_xs = KF.m_xs;
     }
-    inline bool operator == (const int iFrm) const { return m_T.m_iFrm == iFrm; }
-    inline bool operator < (const int iFrm) const { return m_T.m_iFrm < iFrm; }
+    inline bool operator==(const int iFrm) const { return m_T.m_iFrm == iFrm; }
+    inline bool operator<(const int iFrm) const { return m_T.m_iFrm < iFrm; }
     inline void Initialize(const FRM::Frame &F) {
       FRM::Frame::Initialize(F);
       m_xs.resize(0);
@@ -146,6 +157,7 @@ class GlobalMap {
         UT_ASSERT(m_Zs[iZ].m_iKF < iKF);
       }
     }
+
    public:
     std::vector<FTR::Source> m_xs;
   };
@@ -154,8 +166,8 @@ class GlobalMap {
    public:
     inline KeyFrameBA() : KeyFrame() {}
     inline KeyFrameBA(const KeyFrameBA &KF) { *this = KF; }
-    inline void operator = (const KeyFrameBA &KF) {
-      *((KeyFrame *) this) = KF;
+    inline void operator=(const KeyFrameBA &KF) {
+      *((KeyFrame *)this) = KF;
       m_Apds.Set(KF.m_Apds);
 #ifdef CFG_STEREO
       m_Ards.Set(KF.m_Ards);
@@ -210,12 +222,13 @@ class GlobalMap {
     }
     inline void AssertConsistency(const int iKF) const {
       KeyFrame::AssertConsistency(iKF);
-	  const int Nx = static_cast<int>(m_xs.size());
+      const int Nx = static_cast<int>(m_xs.size());
       UT_ASSERT(m_Apds.Size() == Nx);
 #ifdef CFG_STEREO
       UT_ASSERT(m_Ards.Size() == Nx);
 #endif
     }
+
    public:
     AlignedVector<Depth::Prior::Factor> m_Apds;
 #ifdef CFG_STEREO
@@ -224,33 +237,33 @@ class GlobalMap {
   };
 
  public:
-
   void LBA_Reset();
   void LBA_PushKeyFrame(const Camera &C);
   void LBA_DeleteKeyFrame(const int iFrm, const int iKF);
-  ubyte LBA_Synchronize(const int iFrm, AlignedVector<Rigid3D> &Cs, AlignedVector<Rigid3D> &CsBkp,
-                        std::vector<ubyte> &ucs
+  ubyte LBA_Synchronize(const int iFrm, AlignedVector<Rigid3D> &Cs,
+                        AlignedVector<Rigid3D> &CsBkp, std::vector<ubyte> &ucs
 #ifdef CFG_HANDLE_SCALE_JUMP
-                      , std::vector<float> &ds, std::vector<float> &dsBkp
+                        ,
+                        std::vector<float> &ds, std::vector<float> &dsBkp
 #endif
-                      );
-  void GBA_Update(const std::vector<int> &iFrms, const AlignedVector<Rigid3D> &Cs,
+                        );
+  void GBA_Update(const std::vector<int> &iFrms,
+                  const AlignedVector<Rigid3D> &Cs,
                   const std::vector<ubyte> &ucs
 #ifdef CFG_HANDLE_SCALE_JUMP
-                , const std::vector<float> &ds
+                  ,
+                  const std::vector<float> &ds
 #endif
-                );
+                  );
 
   void SaveB(FILE *fp);
   void LoadB(FILE *fp);
   void AssertConsistency();
 
  protected:
-
   std::vector<Camera> m_Cs;
   ubyte m_Uc;
   boost::shared_mutex m_MT;
-
 };
 
 #endif

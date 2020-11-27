@@ -19,10 +19,10 @@
 #include <yaml-cpp/yaml.h>
 
 #include <Eigen/Core>
+#include <limits>
 #include <opencv2/opencv.hpp>
 #include <string>
 #include <vector>
-#include <limits>
 namespace XP {
 
 class ParamBase {
@@ -45,8 +45,7 @@ class ParamBase {
 
 class AlgorithmParam : public ParamBase {
  public:
-  AlgorithmParam() {
-  }
+  AlgorithmParam() {}
 
   bool LoadFromYaml(const std::string& filename) override;
   bool WriteToYaml(const std::string& filename) override;
@@ -99,23 +98,28 @@ class DuoCalibParam : public ParamBase {
     Eigen::Matrix3f gyro_TK;
     Eigen::Vector3f gyro_bias;
     Eigen::Vector3f accel_noise_var;  // m / sec^2
-    Eigen::Vector3f angv_noise_var;  // rad / sec
+    Eigen::Vector3f angv_noise_var;   // rad / sec
     Eigen::Matrix4f D_T_I;
     Eigen::Matrix4f undist_D_T_I;
   } Imu;
 
   struct Camera_t {
-    std::vector<Eigen::Matrix4f, Eigen::aligned_allocator<Eigen::Matrix4f>> D_T_C_lr;
-    std::vector<Eigen::Matrix3f, Eigen::aligned_allocator<Eigen::Matrix3f>> cameraK_lr;
+    std::vector<Eigen::Matrix4f, Eigen::aligned_allocator<Eigen::Matrix4f>>
+        D_T_C_lr;
+    std::vector<Eigen::Matrix3f, Eigen::aligned_allocator<Eigen::Matrix3f>>
+        cameraK_lr;
     std::vector<cv::Matx33f> cv_camK_lr;
     std::vector<cv::Mat_<float>> cv_dist_coeff_lr;
     // the boundary of images in uv coordinate
-    std::vector<Eigen::Vector4f, Eigen::aligned_allocator<Eigen::Vector4f>> lurd_lr;
+    std::vector<Eigen::Vector4f, Eigen::aligned_allocator<Eigen::Vector4f>>
+        lurd_lr;
     std::vector<cv::Mat> undistort_map_op1_lr;
     std::vector<cv::Mat> undistort_map_op2_lr;
     std::vector<cv::Matx33f> cv_undist_K_lr;
-    std::vector<Eigen::Matrix4f, Eigen::aligned_allocator<Eigen::Matrix4f>> undist_D_T_C_lr;
-    cv::Matx44f Q;  // 4x4 convert disparity to depth. See cv::reprojectImageTo3D
+    std::vector<Eigen::Matrix4f, Eigen::aligned_allocator<Eigen::Matrix4f>>
+        undist_D_T_C_lr;
+    cv::Matx44f
+        Q;  // 4x4 convert disparity to depth. See cv::reprojectImageTo3D
     cv::Size img_size;
   } Camera;
 

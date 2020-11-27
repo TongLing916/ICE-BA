@@ -15,13 +15,13 @@
  *****************************************************************************/
 #ifndef XP_INCLUDE_XP_UTILXPPYRAMID_HPP_
 #define XP_INCLUDE_XP_UTILXPPYRAMID_HPP_
-#include <opencv2/core.hpp>
-#include <opencv2/video/tracking.hpp>
 #include <glog/logging.h>
 #include <boost/pool/object_pool.hpp>
-#include <vector>
 #include <memory>
-using namespace cv;  //NOLINT
+#include <opencv2/core.hpp>
+#include <opencv2/video/tracking.hpp>
+#include <vector>
+using namespace cv;  // NOLINT
 
 namespace XP {
 namespace XP_OPTICAL_FLOW {
@@ -30,8 +30,9 @@ namespace XP_OPTICAL_FLOW {
 typedef int16_t deriv_type;
 
 typedef struct _interpolation_param {
-  _interpolation_param(int _iw00, int _iw01, int _iw10, int _iw11, int _w_bits = 14) :
-      iw00(_iw00), iw01(_iw01), iw10(_iw10), iw11(_iw11), w_bits(_w_bits) {}
+  _interpolation_param(int _iw00, int _iw01, int _iw10, int _iw11,
+                       int _w_bits = 14)
+      : iw00(_iw00), iw01(_iw01), iw10(_iw10), iw11(_iw11), w_bits(_w_bits) {}
   int iw00;
   int iw01;
   int iw10;
@@ -41,15 +42,14 @@ typedef struct _interpolation_param {
 
 // only works for win_size(7, 7)
 typedef struct _XPKeyPointRepo {
-  int16_t patch[52];  // image patch storage
+  int16_t patch[52];            // image patch storage
   float covariance_maxtrix[6];  // covariance matrix
-  int16_t xy_gradient[128];  // xy gradient
+  int16_t xy_gradient[128];     // xy gradient
 } XPKeyPointRepo;
 
 typedef struct _XPKeyPointPyramidRepo {
   XPKeyPointRepo pyramids[4];
 } XPKeyPointPyramidRepo;
-
 
 static boost::object_pool<XPKeyPointPyramidRepo> g_xp_of_tracker_pool;
 struct XPKeyPoint : public cv::KeyPoint {
@@ -102,8 +102,7 @@ struct XPKeyPoint : public cv::KeyPoint {
     }
     keypoint_repo = std::shared_ptr<XPKeyPointPyramidRepo>(
         g_xp_of_tracker_pool.malloc(),
-        [](XPKeyPointPyramidRepo* ptr) {
-          g_xp_of_tracker_pool.free(ptr);});
+        [](XPKeyPointPyramidRepo* ptr) { g_xp_of_tracker_pool.free(ptr); });
   }
   // repository of keypoint, the memory here is automaticcally handled
   std::shared_ptr<XPKeyPointPyramidRepo> keypoint_repo;
@@ -124,36 +123,25 @@ struct XPKeyPoint : public cv::KeyPoint {
  * @param[in]  flags           not used yet
  * @param[in]  minEigThreshold
  */
-void XPcalcOpticalFlowPyrLK(const std::vector<cv::Mat>& _prevPyramids,
-                            const std::vector<cv::Mat>& _nextPyramids,
-                            std::vector<XPKeyPoint>* _prevPts,
-                            std::vector<Point2f>* _nextPts,
-                            std::vector<bool>* _status,
-                            std::vector<float>* _err,
-                            const cv::Size _win_size = cv::Size(7, 7),
-                            int _max_level = 3,
-                            int _start_level = 0,
-                            TermCriteria _criteria =
-                            TermCriteria(TermCriteria::COUNT +
-                                TermCriteria::EPS, 30, 0.01),
-                            int _flags = 0, double _minEigThreshold = 1e-4);
-
-
+void XPcalcOpticalFlowPyrLK(
+    const std::vector<cv::Mat>& _prevPyramids,
+    const std::vector<cv::Mat>& _nextPyramids,
+    std::vector<XPKeyPoint>* _prevPts, std::vector<Point2f>* _nextPts,
+    std::vector<bool>* _status, std::vector<float>* _err,
+    const cv::Size _win_size = cv::Size(7, 7), int _max_level = 3,
+    int _start_level = 0,
+    TermCriteria _criteria = TermCriteria(TermCriteria::COUNT +
+                                              TermCriteria::EPS,
+                                          30, 0.01),
+    int _flags = 0, double _minEigThreshold = 1e-4);
 
 typedef struct XPTrackerInvoker {
-  XPTrackerInvoker(const Mat& _prevImg,
-                   const Mat& _prevDeriv,
-                   const Mat& _nextImg,
-                   std::vector<XPKeyPoint>* _prevPts,
-                   std::vector<Point2f>* _nextPts,
-                   std::vector<bool>* _status,
-                   std::vector<float>* _err,
-                   Size _winSize,
-                   TermCriteria _criteria,
-                   int _level,
-                   int _maxLevel,
-                   int _start_level,
-                   int _flags, float _minEigThreshold);
+  XPTrackerInvoker(const Mat& _prevImg, const Mat& _prevDeriv,
+                   const Mat& _nextImg, std::vector<XPKeyPoint>* _prevPts,
+                   std::vector<Point2f>* _nextPts, std::vector<bool>* _status,
+                   std::vector<float>* _err, Size _winSize,
+                   TermCriteria _criteria, int _level, int _maxLevel,
+                   int _start_level, int _flags, float _minEigThreshold);
 
   /*************************************************************
    * To decide whether a image point is in a given region
@@ -161,11 +149,10 @@ typedef struct XPTrackerInvoker {
    * @param[out]   region    a region descriped by cv::Rect
    * @return       bool      true if not in range
    */
-  static inline bool is_keypoint_not_in_valid_range(
-      const cv::Point2i& pt,
-      const cv::Rect& region) {
+  static inline bool is_keypoint_not_in_valid_range(const cv::Point2i& pt,
+                                                    const cv::Rect& region) {
     return (pt.x < region.x || pt.x > region.width + region.x ||
-        pt.y < region.y || pt.y > region.height + region.y);
+            pt.y < region.y || pt.y > region.height + region.y);
   }
 
   // Invoke optical flow by operator()
@@ -179,11 +166,8 @@ typedef struct XPTrackerInvoker {
    * @param[in]  A_ptr        start address of covariance matrix in patch
    */
   void compute_covariance_matrix_and_update_patch(
-      const Point2i& iprevPt,
-      const InterpolationParam& inter_param,
-      cv::Mat* IWinBuf,
-      cv::Mat* derivIWinBuf,
-      float* const A_ptr) const;
+      const Point2i& iprevPt, const InterpolationParam& inter_param,
+      cv::Mat* IWinBuf, cv::Mat* derivIWinBuf, float* const A_ptr) const;
 
   const Mat* prevImg;
   const Mat* nextImg;

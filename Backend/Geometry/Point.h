@@ -16,8 +16,8 @@
 #ifndef _POINT_H_
 #define _POINT_H_
 
-#include "Vector3.h"
 #include "Matrix2x3.h"
+#include "Vector3.h"
 
 class Point2D : public LA::Vector2f {
  public:
@@ -28,35 +28,34 @@ class Point2D : public LA::Vector2f {
 };
 
 class Point2DCovariance : public LA::SymmetricMatrix2x2f {
-
  public:
-
   inline Point2DCovariance() {}
   inline Point2DCovariance(const LA::SymmetricMatrix2x2f &S) { *this = S; }
-  inline Point2DCovariance(const float sxx, const float sxy,
-                           const float syy) : LA::SymmetricMatrix2x2f(sxx, sxy, syy) {}
+  inline Point2DCovariance(const float sxx, const float sxy, const float syy)
+      : LA::SymmetricMatrix2x2f(sxx, sxy, syy) {}
 
-  inline const float& sxx() const { return m00(); } inline float& sxx() { return m00(); }
-  inline const float& sxy() const { return m01(); } inline float& sxy() { return m01(); }
-  inline const float& syy() const { return m11(); } inline float& syy() { return m11(); }
+  inline const float &sxx() const { return m00(); }
+  inline float &sxx() { return m00(); }
+  inline const float &sxy() const { return m01(); }
+  inline float &sxy() { return m01(); }
+  inline const float &syy() const { return m11(); }
+  inline float &syy() { return m11(); }
 
-  inline void operator = (const LA::SymmetricMatrix2x2f &M) {
+  inline void operator=(const LA::SymmetricMatrix2x2f &M) {
     memcpy(m_data, &M, sizeof(Point2DCovariance));
   }
-  inline void operator += (const LA::Vector2f &x) {
+  inline void operator+=(const LA::Vector2f &x) {
     sxx() += x.x() * x.x();
     sxy() += x.x() * x.y();
     syy() += x.y() * x.y();
   }
-  inline void operator += (const Point2DCovariance &S) {
+  inline void operator+=(const Point2DCovariance &S) {
     sxx() += S.sxx();
     sxy() += S.sxy();
     syy() += S.syy();
   }
 
-  inline float Area() const {
-    return UT_PI * sqrtf(Determinant());
-  }
+  inline float Area() const { return UT_PI * sqrtf(Determinant()); }
 
   enum EigenDecomposeResult {
     EIGEN_DECOMPOSE_SUCCESS_X_SUCCESS_Y,
@@ -64,7 +63,8 @@ class Point2DCovariance : public LA::SymmetricMatrix2x2f {
     EIGEN_DECOMPOSE_FAIL_X_SUCCESS_Y,
     EIGEN_DECOMPOSE_FAIL_X_FAIL_Y
   };
-  inline EigenDecomposeResult EigenDecompose(LA::AlignedMatrix2x2f &U, LA::Vector2f &l,
+  inline EigenDecomposeResult EigenDecompose(LA::AlignedMatrix2x2f &U,
+                                             LA::Vector2f &l,
                                              const float eps) const {
     l.x() = (sxx() - syy()) * 0.5f;
     const float r = sqrtf(l.x() * l.x() + sxy() * sxy());
@@ -109,7 +109,8 @@ class Point2DCovariance : public LA::SymmetricMatrix2x2f {
       return EIGEN_DECOMPOSE_FAIL_X_FAIL_Y;
     }
   }
-  inline void EigenCompose(const LA::AlignedMatrix2x2f &U, const LA::Vector2f &l) {
+  inline void EigenCompose(const LA::AlignedMatrix2x2f &U,
+                           const LA::Vector2f &l) {
     const xp128f t = U.m_00_01_10_11() * U.m_00_01_10_11();
     sxx() = l.x() * t[0] + l.y() * t[1];
     sxy() = l.x() * U.m00() * U.m10() + l.y() * U.m01() * U.m11();
@@ -126,33 +127,56 @@ class Point3D : public LA::AlignedVector3f {
   inline Point3D(const AlignedVector3f &X) { Set(X.xyzr()); }
   inline Point3D(const xp128f &X) { Set(X); }
 
-  inline const xp128f& xyzw() const { return xyzr(); }  inline xp128f& xyzw() { return xyzr(); }
-  inline const float& w() const { return r (); }      inline float& w() { return r (); }
+  inline const xp128f &xyzw() const { return xyzr(); }
+  inline xp128f &xyzw() { return xyzr(); }
+  inline const float &w() const { return r(); }
+  inline float &w() { return r(); }
 
-  inline void operator = (const Point3D &X) { xyzw() = X.xyzw(); }
-  inline void operator = (const AlignedVector3f &X) { xyzw() = X.xyzr(); w() = 1.0f; }
-  inline void operator += (const AlignedVector3f &X) {
-    xyzw() += X.xyzr(); w() = 1.0f;
+  inline void operator=(const Point3D &X) { xyzw() = X.xyzw(); }
+  inline void operator=(const AlignedVector3f &X) {
+    xyzw() = X.xyzr();
+    w() = 1.0f;
   }
-  inline Point3D operator + (const AlignedVector3f &X) const {
+  inline void operator+=(const AlignedVector3f &X) {
+    xyzw() += X.xyzr();
+    w() = 1.0f;
+  }
+  inline Point3D operator+(const AlignedVector3f &X) const {
     return Point3D(xyzw() + X.xyzr());
   }
-  inline Point3D operator - (const AlignedVector3f &X) const {
+  inline Point3D operator-(const AlignedVector3f &X) const {
     return Point3D(xyzw() - X.xyzr());
   }
-  inline Point3D operator * (const float s) const {
+  inline Point3D operator*(const float s) const { return Point3D(xyzw() * s); }
+  inline Point3D operator*(const xp128f &s) const {
     return Point3D(xyzw() * s);
   }
-  inline Point3D operator * (const xp128f &s) const { return Point3D(xyzw() * s); }
-  inline Point3D operator / (const float d) const { return Point3D(xyzw() * (1.0f / d)); }
+  inline Point3D operator/(const float d) const {
+    return Point3D(xyzw() * (1.0f / d));
+  }
 
-  inline void Set(const float *X) { memcpy(this, X, 12); w() = 1.0f; }
-  inline void Set(const double *X) { v012r().vset_all_lane(float(X[0]), float(X[1]), float(X[2]), 1.0f); }
-  inline void Set(const float x, const float y, const float z) { xyzw().vset_all_lane(x, y, z, 1.0f); }
-  inline void Set(const LA::Vector2f &x, const float z) { xyzw().vset_all_lane(x.x() * z, x.y() * z, z, 1.0f); }
-  inline void Set(const xp128f &X) { xyzw() = X; w() = 1.0f; }
+  inline void Set(const float *X) {
+    memcpy(this, X, 12);
+    w() = 1.0f;
+  }
+  inline void Set(const double *X) {
+    v012r().vset_all_lane(float(X[0]), float(X[1]), float(X[2]), 1.0f);
+  }
+  inline void Set(const float x, const float y, const float z) {
+    xyzw().vset_all_lane(x, y, z, 1.0f);
+  }
+  inline void Set(const LA::Vector2f &x, const float z) {
+    xyzw().vset_all_lane(x.x() * z, x.y() * z, z, 1.0f);
+  }
+  inline void Set(const xp128f &X) {
+    xyzw() = X;
+    w() = 1.0f;
+  }
 
-  inline void MakeZero() { memset(this, 0, 12); w() = 1.0f; }
+  inline void MakeZero() {
+    memset(this, 0, 12);
+    w() = 1.0f;
+  }
 
   inline void Normalize() {
     xyzw() *= 1.0f / sqrtf(SquaredLength());
@@ -162,18 +186,25 @@ class Point3D : public LA::AlignedVector3f {
     return Point3D(LA::AlignedVector3f::Cross(v));
   }
 
-  inline void Load(FILE *fp) { LA::AlignedVector3f::Load(fp); w() = 1.0f; }
+  inline void Load(FILE *fp) {
+    LA::AlignedVector3f::Load(fp);
+    w() = 1.0f;
+  }
 
-  static inline void apb(const AlignedVector3f &a, const Point3D &Xb, Point3D &Xapb) {
+  static inline void apb(const AlignedVector3f &a, const Point3D &Xb,
+                         Point3D &Xapb) {
     Xapb.xyzw() = a.xyzr() + Xb.xyzw();
     Xapb.w() = 1.0f;
   }
 
   inline void Random(const float pMax) {
-    LA::AlignedVector3f::Random(pMax); w() = 1.0f;
+    LA::AlignedVector3f::Random(pMax);
+    w() = 1.0f;
   }
   static inline Point3D GetRandom(const float pMax) {
-    Point3D p; p.Random(pMax); return p;
+    Point3D p;
+    p.Random(pMax);
+    return p;
   }
 };
 
@@ -188,16 +219,22 @@ class EigenPoint3D : public EigenVector3f {
  public:
   inline EigenPoint3D() : EigenVector3f() {}
   inline EigenPoint3D(const EigenVector3f &e_X) : EigenVector3f(e_X) {}
-  inline EigenPoint3D(const EigenPoint2D &e_x) : EigenVector3f(e_x.x(), e_x.y(), 1.0f) {}
-  inline EigenPoint3D(const EigenPoint2D &e_x, const float z) : EigenVector3f(e_x.x() * z,
-                                                                                e_x.y() * z, z) {}
-  inline EigenPoint3D(const float x, const float y, const float z) : EigenVector3f(x, y, z) {}
+  inline EigenPoint3D(const EigenPoint2D &e_x)
+      : EigenVector3f(e_x.x(), e_x.y(), 1.0f) {}
+  inline EigenPoint3D(const EigenPoint2D &e_x, const float z)
+      : EigenVector3f(e_x.x() * z, e_x.y() * z, z) {}
+  inline EigenPoint3D(const float x, const float y, const float z)
+      : EigenVector3f(x, y, z) {}
   inline EigenMatrix2x3f GetJacobianProjection() const {
     EigenMatrix2x3f e_J;
     const Eigen::Vector3f &e_X = *this;
     const float zI = 1.0f / e_X.z(), z2I = zI * zI;
-    e_J(0, 0) = zI;   e_J(0, 1) = 0.0f; e_J(0, 2) = -e_X.x() * z2I;
-    e_J(1, 0) = 0.0f; e_J(1, 1) = zI;   e_J(1, 2) = -e_X.y() * z2I;
+    e_J(0, 0) = zI;
+    e_J(0, 1) = 0.0f;
+    e_J(0, 2) = -e_X.x() * z2I;
+    e_J(1, 0) = 0.0f;
+    e_J(1, 1) = zI;
+    e_J(1, 2) = -e_X.y() * z2I;
     return e_J;
   }
 };

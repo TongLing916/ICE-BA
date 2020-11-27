@@ -13,10 +13,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  *****************************************************************************/
-#include "stdafx.h"
 #include "Depth.h"
 #include "Parameter.h"
 #include "VectorN.h"
+#include "stdafx.h"
 
 //#ifdef CFG_DEBUG
 #if 1
@@ -27,8 +27,9 @@
 
 namespace Depth {
 
-bool Triangulate(const float w, const LA::AlignedVector3f &t12, const Point2D &x1,
-                 const Point2D &x2, InverseGaussian *d, const LA::SymmetricMatrix2x2f *Wx2) {
+bool Triangulate(const float w, const LA::AlignedVector3f &t12,
+                 const Point2D &x1, const Point2D &x2, InverseGaussian *d,
+                 const LA::SymmetricMatrix2x2f *Wx2) {
   float x;
   LA::Vector2f J, e, WJ;
   d->Initialize();
@@ -42,7 +43,8 @@ bool Triangulate(const float w, const LA::AlignedVector3f &t12, const Point2D &x
 #ifdef DEPTH_TRI_VERBOSE
   const float f = 500.0f;
 #if DEPTH_TRI_VERBOSE == 1
-  UT::Print("e = %f", f * sqrtf((d->GetProjected(t12, x1) - x2).SquaredLength()));
+  UT::Print("e = %f",
+            f * sqrtf((d->GetProjected(t12, x1) - x2).SquaredLength()));
 #endif
 #endif
 #ifdef DEPTH_TRI_DOG_LEG
@@ -69,8 +71,8 @@ bool Triangulate(const float w, const LA::AlignedVector3f &t12, const Point2D &x
     }
 #ifdef DEPTH_TRI_DOG_LEG
     const float xGN = x;
-    const float F = Wx2 ? LA::SymmetricMatrix2x2f::MahalanobisDistance(*Wx2, e) :
-                          e.SquaredLength();
+    const float F = Wx2 ? LA::SymmetricMatrix2x2f::MahalanobisDistance(*Wx2, e)
+                        : e.SquaredLength();
     const float dBkp = d->u();
     bool update = true, converge = false;
     for (int iIterDL = 0; iIterDL < DEPTH_TRI_DL_MAX_ITERATIONS; ++iIterDL) {
@@ -82,10 +84,12 @@ bool Triangulate(const float w, const LA::AlignedVector3f &t12, const Point2D &x
       d->u() = x + d->u();
       const LA::Vector2f ea = d->GetProjected(t12, x1) - x2;
       const LA::Vector2f ep = e + J * x;
-      const float dFa = F - (Wx2 ? LA::SymmetricMatrix2x2f::MahalanobisDistance(*Wx2, ea) :
-                             ea.SquaredLength());
-      const float dFp = F - (Wx2 ? LA::SymmetricMatrix2x2f::MahalanobisDistance(*Wx2, ep) :
-                             ea.SquaredLength());
+      const float dFa =
+          F - (Wx2 ? LA::SymmetricMatrix2x2f::MahalanobisDistance(*Wx2, ea)
+                   : ea.SquaredLength());
+      const float dFp =
+          F - (Wx2 ? LA::SymmetricMatrix2x2f::MahalanobisDistance(*Wx2, ep)
+                   : ea.SquaredLength());
       const float rho = dFa > 0.0f && dFp > 0.0f ? dFa / dFp : -1.0f;
       if (rho < DEPTH_TRI_DL_GAIN_RATIO_MIN) {
         delta *= DEPTH_TRI_DL_RADIUS_FACTOR_DECREASE;
@@ -97,7 +101,8 @@ bool Triangulate(const float w, const LA::AlignedVector3f &t12, const Point2D &x
         converge = false;
         continue;
       } else if (rho > DEPTH_TRI_DL_GAIN_RATIO_MAX) {
-        delta = std::max(delta, DEPTH_TRI_DL_RADIUS_FACTOR_INCREASE * static_cast<float>(fabs(x)));
+        delta = std::max(delta, DEPTH_TRI_DL_RADIUS_FACTOR_INCREASE *
+                                    static_cast<float>(fabs(x)));
         if (delta > DEPTH_TRI_DL_RADIUS_MAX) {
           delta = DEPTH_TRI_DL_RADIUS_MAX;
         }
@@ -120,14 +125,17 @@ bool Triangulate(const float w, const LA::AlignedVector3f &t12, const Point2D &x
     if (iIter == 0) {
       UT::PrintSeparator();
       UT::Print("%se = %f\n", std::string(str.size(), ' ').c_str(),
-                f * sqrtf((InverseGaussian(0.0f).GetProjected(t12, x1) - x2).SquaredLength()));
+                f * sqrtf((InverseGaussian(0.0f).GetProjected(t12, x1) -
+                           x2).SquaredLength()));
     }
     UT::Print("%se = %f  z = %f  x = %f\n", str.c_str(),
-              f * sqrtf((d->GetProjected(t12, x1) - x2).SquaredLength()), 1.0f / d->u(), x);
+              f * sqrtf((d->GetProjected(t12, x1) - x2).SquaredLength()),
+              1.0f / d->u(), x);
 #endif
   }
 #if defined DEPTH_TRI_VERBOSE && DEPTH_TRI_VERBOSE == 1
-  UT::Print(" --> %f  z = %f  s = %f", f * sqrtf((d->GetProjected(t12, x1) - x2).SquaredLength()),
+  UT::Print(" --> %f  z = %f  s = %f",
+            f * sqrtf((d->GetProjected(t12, x1) - x2).SquaredLength()),
             1.0f / d->u(), sqrtf(d->s2()));
   if (!d->Valid()) {
     UT::Print("  FAIL");
@@ -138,7 +146,8 @@ bool Triangulate(const float w, const LA::AlignedVector3f &t12, const Point2D &x
   return d->Valid();
 }
 
-float ComputeError(const int N, const Measurement *zs, const InverseGaussian &d) {
+float ComputeError(const int N, const Measurement *zs,
+                   const InverseGaussian &d) {
   LA::Vector2f ei;
   float Se2 = 0.0f;
   for (int i = 0; i < N; ++i) {
@@ -150,9 +159,9 @@ float ComputeError(const int N, const Measurement *zs, const InverseGaussian &d)
   return sqrtf(Se2 / N);
 }
 
-bool Triangulate(const float w, const int N, const Measurement *zs, InverseGaussian *d,
-                 AlignedVector<float> *work, const bool initialized,
-                 float *eAvg) {
+bool Triangulate(const float w, const int N, const Measurement *zs,
+                 InverseGaussian *d, AlignedVector<float> *work,
+                 const bool initialized, float *eAvg) {
   if (N == 0) {
     return false;
   }
@@ -164,7 +173,8 @@ bool Triangulate(const float w, const int N, const Measurement *zs, InverseGauss
   float F, Fa, Fp;
   const int Nx2 = N + N;
   LA::AlignedVectorXf J, e, ep, _w;
-  work->Resize((J.BindSize(Nx2) * 3 + (DEPTH_TRI_ROBUST ? _w.BindSize(N) : 0)) / sizeof(float));
+  work->Resize((J.BindSize(Nx2) * 3 + (DEPTH_TRI_ROBUST ? _w.BindSize(N) : 0)) /
+               sizeof(float));
   J.Bind(work->Data(), Nx2);
   e.Bind(J.BindNext(), Nx2);
   ep.Bind(e.BindNext(), Nx2);
@@ -201,7 +211,8 @@ bool Triangulate(const float w, const int N, const Measurement *zs, InverseGauss
       ei -= z.m_z;
       LA::SymmetricMatrix2x2f::Ab(z.m_W, Ji, WJi);
       if (DEPTH_TRI_ROBUST) {
-        const float r2 = LA::SymmetricMatrix2x2f::MahalanobisDistance(z.m_W, ei);
+        const float r2 =
+            LA::SymmetricMatrix2x2f::MahalanobisDistance(z.m_W, ei);
         const float wi = ME::Weight<ME::FUNCTION_HUBER>(r2);
         WJi *= wi;
 #ifdef DEPTH_TRI_DOG_LEG
@@ -246,10 +257,12 @@ bool Triangulate(const float w, const int N, const Measurement *zs, InverseGauss
       for (int i = 0; i < N; ++i) {
         const Measurement &z = zs[i];
         LA::Vector2f &ei = epis[i];
-        const float Fpi = LA::SymmetricMatrix2x2f::MahalanobisDistance(z.m_W, ei);
+        const float Fpi =
+            LA::SymmetricMatrix2x2f::MahalanobisDistance(z.m_W, ei);
         d->Project(*z.m_t, z.m_Rx, ei);
         ei -= z.m_z;
-        const float Fai = LA::SymmetricMatrix2x2f::MahalanobisDistance(z.m_W, ei);
+        const float Fai =
+            LA::SymmetricMatrix2x2f::MahalanobisDistance(z.m_W, ei);
         if (DEPTH_TRI_ROBUST) {
           Fp += Fpi * _w[i];
           Fa += Fai * _w[i];
@@ -270,7 +283,8 @@ bool Triangulate(const float w, const int N, const Measurement *zs, InverseGauss
         converge = false;
         continue;
       } else if (rho > DEPTH_TRI_DL_GAIN_RATIO_MAX) {
-        delta = std::max(delta, DEPTH_TRI_DL_RADIUS_FACTOR_INCREASE * static_cast<float>(fabs(x)));
+        delta = std::max(delta, DEPTH_TRI_DL_RADIUS_FACTOR_INCREASE *
+                                    static_cast<float>(fabs(x)));
         if (delta > DEPTH_TRI_DL_RADIUS_MAX) {
           delta = DEPTH_TRI_DL_RADIUS_MAX;
         }
@@ -295,12 +309,13 @@ bool Triangulate(const float w, const int N, const Measurement *zs, InverseGauss
       UT::Print("%se = %f  z = %f\n", std::string(str.size(), ' ').c_str(),
                 f * ComputeError(N, zs, d0), 1.0f / d0.u());
     }
-    UT::Print("%se = %f  z = %f  x = %f\n", str.c_str(), f * ComputeError(N, zs, *d),
-              1.0f / d->u(), x);
+    UT::Print("%se = %f  z = %f  x = %f\n", str.c_str(),
+              f * ComputeError(N, zs, *d), 1.0f / d->u(), x);
 #endif
   }
 #if defined DEPTH_TRI_VERBOSE && DEPTH_TRI_VERBOSE == 1
-  UT::Print(" --> %f  z = %f  s = %f", f * ComputeError(N, zs, *d), 1.0f / d->u(), sqrtf(d->s2()));
+  UT::Print(" --> %f  z = %f  s = %f", f * ComputeError(N, zs, *d),
+            1.0f / d->u(), sqrtf(d->s2()));
   if (!d->Valid()) {
     UT::Print("  FAIL");
   }

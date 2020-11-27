@@ -16,10 +16,10 @@
 #ifndef _IBA_H_
 #define _IBA_H_
 
-#include "IBA_datatype.h"
 #include <functional>  // for function
 #include <string>
 #include <vector>
+#include "IBA_datatype.h"
 
 class LocalBundleAdjustor;
 class GlobalBundleAdjustor;
@@ -36,9 +36,11 @@ class Solver {
 
   // The following four functions must be called by main thread
   void Create(const Calibration &K, const int serial = IBA_SERIAL_NONE,
-              const int verbose = IBA_VERBOSE_NONE, const int debug = IBA_DEBUG_NONE,
-              const int history = IBA_HISTORY_NONE, const std::string param = "",
-              const std::string dir = "", const std::vector<CameraIMUState> *XsGT = NULL,
+              const int verbose = IBA_VERBOSE_NONE,
+              const int debug = IBA_DEBUG_NONE,
+              const int history = IBA_HISTORY_NONE,
+              const std::string param = "", const std::string dir = "",
+              const std::vector<CameraIMUState> *XsGT = NULL,
               const std::vector<Depth> *dsGT = NULL);
   void Destroy();
   void Start();
@@ -62,7 +64,8 @@ class Solver {
 #ifdef CFG_GROUND_TRUTH
   void PushIMUMeasurementsGT(const CurrentFrame &CF);
   void EstimateMotionGT(std::vector<CameraIMUState> *XsGT);
-  void PushDepthMeasurementsGT(const CurrentFrame &CF, const KeyFrame *KF = NULL,
+  void PushDepthMeasurementsGT(const CurrentFrame &CF,
+                               const KeyFrame *KF = NULL,
                                const bool keyframeOnly = false);
   void TriangulateDepthsGT(std::vector<Depth> *dsGT);
 #endif
@@ -70,8 +73,8 @@ class Solver {
   /*
    * @brief Set callback function that will be triggered after LBA/GBA finishes
    */
-  void SetCallbackLBA(const IbaCallback& iba_callback);
-  void SetCallbackGBA(const IbaCallback& iba_callback);
+  void SetCallbackLBA(const IbaCallback &iba_callback);
+  void SetCallbackGBA(const IbaCallback &iba_callback);
 
   /*
    * @brief Call for each current frame to synchronize the optimization results
@@ -86,23 +89,26 @@ class Solver {
   bool DeleteKeyFrame(const int iFrm);
   void GetMapPointIndexes(std::vector<int> *idxs);
   void DeleteMapPoints(const std::vector<int> &idxs);
-  void UpdateCameras(const std::vector<int> &iFrms, const std::vector<CameraPose> &Cs,
+  void UpdateCameras(const std::vector<int> &iFrms,
+                     const std::vector<CameraPose> &Cs,
                      const bool serial = false);
 
-  bool PropagateState(const std::vector<IMUMeasurement> &us, const float t1, const float t2,
-                      const CameraIMUState &X1, CameraIMUState *X2,
-                      CameraPoseCovariance *S = NULL);
+  bool PropagateState(const std::vector<IMUMeasurement> &us, const float t1,
+                      const float t2, const CameraIMUState &X1,
+                      CameraIMUState *X2, CameraPoseCovariance *S = NULL);
 
-  bool SaveFeatures(const std::string fileName, const std::vector<MapPointMeasurement> &zs,
+  bool SaveFeatures(const std::string fileName,
+                    const std::vector<MapPointMeasurement> &zs,
                     const std::vector<MapPoint> *Xs = NULL);
   bool LoadFeatures(const std::string fileName, const int iFrm,
                     std::vector<MapPointMeasurement> *zs,
                     std::vector<MapPoint> *Xs = NULL,
                     const std::vector<int> *iFrms = NULL
 #ifdef CFG_STEREO
-                  , const ubyte right = 0
+                    ,
+                    const ubyte right = 0
 #endif
-                  );
+                    );
   void SaveB(FILE *fp);
   void LoadB(FILE *fp);
 
@@ -111,14 +117,22 @@ class Solver {
   float ComputeRMSELBA();
   float ComputeRMSEGBA();
   float GetTotalDistance();
-  bool SaveCamerasLBA(const std::string fileName, const bool append = true, const bool poseOnly = true);
-  bool SaveCamerasGBA(const std::string fileName, const bool append = true, const bool poseOnly = true);
-  bool SaveCostsLBA(const std::string fileName, const bool append = true, const int type = 0);
-  bool SaveCostsGBA(const std::string fileName, const bool append = true, const int type = 0);
-  bool SaveResidualsLBA(const std::string fileName, const bool append = true, const int type = 0);
-  bool SaveResidualsGBA(const std::string fileName, const bool append = true, const int type = 0);
-  bool SavePriors(const std::string fileName, const bool append = true, const int type = 0);
-  bool SaveMarginalizations(const std::string fileName, const bool append = true, const int type = 0);
+  bool SaveCamerasLBA(const std::string fileName, const bool append = true,
+                      const bool poseOnly = true);
+  bool SaveCamerasGBA(const std::string fileName, const bool append = true,
+                      const bool poseOnly = true);
+  bool SaveCostsLBA(const std::string fileName, const bool append = true,
+                    const int type = 0);
+  bool SaveCostsGBA(const std::string fileName, const bool append = true,
+                    const int type = 0);
+  bool SaveResidualsLBA(const std::string fileName, const bool append = true,
+                        const int type = 0);
+  bool SaveResidualsGBA(const std::string fileName, const bool append = true,
+                        const int type = 0);
+  bool SavePriors(const std::string fileName, const bool append = true,
+                  const int type = 0);
+  bool SaveMarginalizations(const std::string fileName,
+                            const bool append = true, const int type = 0);
   bool SavePointsLBA(const std::string fileName, const bool append = true);
   bool SavePointsGBA(const std::string fileName, const bool append = true);
   void GetTimeLBA(Time *t);
@@ -127,7 +141,6 @@ class Solver {
   bool SaveTimesGBA(const std::string fileName, const bool append = true);
 
  protected:
-
   friend LocalBundleAdjustor;
   friend GlobalBundleAdjustor;
   friend ViewerIBA;
@@ -137,31 +150,46 @@ class Solver {
 extern void LoadParameters(const std::string fileName);
 extern bool SaveCalibration(const std::string fileName, const Calibration &K);
 extern bool LoadCalibration(const std::string fileName, Calibration *K);
-extern bool LoadCalibration(const std::string fileName, float T[3][4], Intrinsic *K,
-                            float *ba = NULL, float *bw = NULL/*, float *sa = NULL*/);
+extern bool LoadCalibration(const std::string fileName, float T[3][4],
+                            Intrinsic *K, float *ba = NULL,
+                            float *bw = NULL /*, float *sa = NULL*/);
 extern void PrintCalibration(const Calibration &K);
-extern bool SaveGroundTruth(const std::string fileName, const std::vector<CameraIMUState> &XsGT);
-extern bool LoadGroundTruth(const std::string fileName, std::vector<CameraIMUState> *XsGT);
-extern bool SaveGroundTruth(const std::string fileName, const std::vector<Depth> &dsGT);
-extern bool LoadGroundTruth(const std::string fileName, std::vector<Depth> *dsGT);
-extern bool SaveKeyFrames(const std::string fileName, const std::vector<int> &iFrms);
+extern bool SaveGroundTruth(const std::string fileName,
+                            const std::vector<CameraIMUState> &XsGT);
+extern bool LoadGroundTruth(const std::string fileName,
+                            std::vector<CameraIMUState> *XsGT);
+extern bool SaveGroundTruth(const std::string fileName,
+                            const std::vector<Depth> &dsGT);
+extern bool LoadGroundTruth(const std::string fileName,
+                            std::vector<Depth> *dsGT);
+extern bool SaveKeyFrames(const std::string fileName,
+                          const std::vector<int> &iFrms);
 extern bool LoadKeyFrames(const std::string fileName, std::vector<int> *iFrms);
-extern bool LoadKeyFrames(const std::string fileName, const std::vector<float> &ts,
-                          std::vector<ubyte> *kfs, const float dtMax = 0.0f);
-extern bool SaveMapPoints(const std::string fileName, const std::vector<int> &idxs);
+extern bool LoadKeyFrames(const std::string fileName,
+                          const std::vector<float> &ts, std::vector<ubyte> *kfs,
+                          const float dtMax = 0.0f);
+extern bool SaveMapPoints(const std::string fileName,
+                          const std::vector<int> &idxs);
 extern bool LoadMapPoints(const std::string fileName, std::vector<int> *idxs);
-extern bool SaveFeatureTracks(const std::string fileName, const std::vector<FeatureTrack> &xs);
-extern bool LoadFeatureTracks(const std::string fileName, std::vector<FeatureTrack> *xs);
+extern bool SaveFeatureTracks(const std::string fileName,
+                              const std::vector<FeatureTrack> &xs);
+extern bool LoadFeatureTracks(const std::string fileName,
+                              std::vector<FeatureTrack> *xs);
 extern bool SaveCurrentFrame(const std::string fileName, const CurrentFrame &CF,
                              const KeyFrame &KF);
-extern bool LoadCurrentFrame(const std::string fileName, CurrentFrame *CF, KeyFrame *KF);
+extern bool LoadCurrentFrame(const std::string fileName, CurrentFrame *CF,
+                             KeyFrame *KF);
 extern bool LoadCurrentFrameTime(const std::string fileName, double *t);
-extern bool LoadRelativeConstraints(const std::string fileName, const std::vector<float> &ts,
-                                    std::vector<RelativeConstraint> *Zs, const float dtMax = 0.0);
+extern bool LoadRelativeConstraints(const std::string fileName,
+                                    const std::vector<float> &ts,
+                                    std::vector<RelativeConstraint> *Zs,
+                                    const float dtMax = 0.0);
 
-extern void PrintCameraPose(const int iFrm, const CameraPose &C, const bool n = false);
+extern void PrintCameraPose(const int iFrm, const CameraPose &C,
+                            const bool n = false);
 extern void SaveCameraPose(const int iFrm, const CameraPose &C, FILE *fp);
-extern bool SaveCameraPoses(const std::string fileName, const std::vector<int> &iFrms,
+extern bool SaveCameraPoses(const std::string fileName,
+                            const std::vector<int> &iFrms,
                             const std::vector<CameraPose> &Cs);
 extern bool LoadCameraPoses(const std::string fileName, std::vector<int> *iFrms,
                             std::vector<CameraPose> *Cs);

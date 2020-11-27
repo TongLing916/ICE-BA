@@ -17,16 +17,17 @@
 #define XP_INCLUDE_XP_HELPER_SHARED_QUEUE_H_
 
 #include <glog/logging.h>
+#include <condition_variable>
 #include <deque>
 #include <mutex>
 #include <string>
-#include <condition_variable>
 
 namespace XP {
 
 namespace internal {
 
-// Internal helper function to get the last element and then empty the container.
+// Internal helper function to get the last element and then empty the
+// container.
 // The caller should be responsible for checking non-empty before pop_to_back.
 // std::deque has back()
 template <typename T>
@@ -59,7 +60,8 @@ class shared_queue {
   ~shared_queue() {
     // make sure you always call kill before destruction
     if (!kill_ && !queue_.empty()) {
-      LOG(ERROR) << "shared_queue : " << name_ << " is destructed without getting killed";
+      LOG(ERROR) << "shared_queue : " << name_
+                 << " is destructed without getting killed";
     }
   }
 
@@ -98,7 +100,7 @@ class shared_queue {
 
   bool wait_and_pop_front(T* elem) {
     std::unique_lock<std::mutex> lock(m_);
-    cond_.wait(lock, [this](){return !queue_.empty() || kill_; });
+    cond_.wait(lock, [this]() { return !queue_.empty() || kill_; });
     if (kill_) {
       return false;
     } else {
@@ -110,7 +112,7 @@ class shared_queue {
 
   bool wait_and_pop_to_back(T* elem) {
     std::unique_lock<std::mutex> lock(m_);
-    cond_.wait(lock, [this](){ return !queue_.empty() || kill_; });
+    cond_.wait(lock, [this]() { return !queue_.empty() || kill_; });
     if (kill_) {
       return false;
     } else {
@@ -121,7 +123,7 @@ class shared_queue {
 
   bool wait_and_peek_front(T* elem) {
     std::unique_lock<std::mutex> lock(m_);
-    cond_.wait(lock, [this](){ return !queue_.empty() || kill_; });
+    cond_.wait(lock, [this]() { return !queue_.empty() || kill_; });
     if (kill_) {
       return false;
     } else {

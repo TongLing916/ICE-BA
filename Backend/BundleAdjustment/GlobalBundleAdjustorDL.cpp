@@ -40,15 +40,17 @@ void GlobalBundleAdjustor::SolveDogLeg() {
   } else {
     LA::AlignedVectorXf::AmB(m_xsGN, m_xsGD, m_xsDL);
     const float d = m_xsGD.Dot(m_xsDL), dx2 = m_xsDL.SquaredLength();
-    //m_beta = static_cast<float>((-d + sqrt(static_cast<double>(d) * d +
-    //                            (m_delta2 - m_x2GD) * static_cast<double>(dx2))) / dx2);
+    // m_beta = static_cast<float>((-d + sqrt(static_cast<double>(d) * d +
+    //                            (m_delta2 - m_x2GD) *
+    //                            static_cast<double>(dx2))) / dx2);
     m_beta = (-d + sqrtf(d * d + (m_delta2 - m_x2GD) * dx2)) / dx2;
     m_xsDL *= m_beta;
     m_xsDL += m_xsGD;
     m_x2DL = m_delta2;
   }
   const int pc = 6, pm = 9;
-  const int Nc = m_Cs.Size(), Nm = m_CsLM.Size(), Ncp = Nc * pc, Nmp = Nm * pm, Ncmp = Ncp + Nmp;
+  const int Nc = m_Cs.Size(), Nm = m_CsLM.Size(), Ncp = Nc * pc, Nmp = Nm * pm,
+            Ncmp = Ncp + Nmp;
   ConvertCameraUpdates(m_xsDL.Data(), &m_xp2s, &m_xr2s);
   ConvertMotionUpdates(m_xsDL.Data() + Ncp, &m_xv2s, &m_xba2s, &m_xbw2s);
   ConvertDepthUpdates(m_xsDL.Data() + Ncmp, &m_xds);
@@ -83,12 +85,12 @@ void GlobalBundleAdjustor::SolveGradientDescent() {
   if (m_bl != 0.0f) {
     m_xsGD /= m_bl;
   }
-  ConvertCameraUpdates((LA::Vector6f *) m_xsGD.Data(), &m_gcs);
+  ConvertCameraUpdates((LA::Vector6f *)m_xsGD.Data(), &m_gcs);
   ConvertDepthUpdates(m_xsGD.Data() + Ncmp, &m_gds);
 
   LA::AlignedMatrix6x6f A66;
   m_Ags.Resize(Ncmp);
-  LA::Vector6f *Agcs = (LA::Vector6f *) m_Ags.Data();
+  LA::Vector6f *Agcs = (LA::Vector6f *)m_Ags.Data();
   for (int ic = 0; ic < Nc; ++ic) {
     const LA::ProductVector6f &gc = m_gcs[ic];
     float *Agc = Agcs[ic];
@@ -98,14 +100,14 @@ void GlobalBundleAdjustor::SolveGradientDescent() {
     const int Np = KF.m_SAps.Size();
     for (int ip = 0; ip < Np; ++ip) {
       const int _ic = KF.m_iKFsPrior[ip];
-      LA::AlignedMatrix6x6f::AddAbTo(KF.m_SAps[ip], gc, (float *) &Agcs[_ic]);
+      LA::AlignedMatrix6x6f::AddAbTo(KF.m_SAps[ip], gc, (float *)&Agcs[_ic]);
       KF.m_SAps[ip].GetTranspose(A66);
       LA::AlignedMatrix6x6f::AddAbTo(A66, m_gcs[_ic], Agc);
     }
   }
   const int ic0 = Nc - Nm;
-  ApplyAcm(m_gcs.Data() + ic0, (LA::Vector9f *) (m_xsGD.Data() + Ncp), Agcs + ic0,
-           (LA::Vector9f *) (m_Ags.Data() + Ncp));
+  ApplyAcm(m_gcs.Data() + ic0, (LA::Vector9f *)(m_xsGD.Data() + Ncp),
+           Agcs + ic0, (LA::Vector9f *)(m_Ags.Data() + Ncp));
 
   LA::AlignedVector6f Agc;
   LA::AlignedVector7f gcd;
@@ -150,9 +152,9 @@ void GlobalBundleAdjustor::SolveGradientDescent() {
 #ifdef CFG_DEBUG
       UT_ASSERT(_iKF < ic);
 #endif
-      LA::AlignedMatrix6x6f::AddAbTo(KF.m_SAcxzs[iZ], gc, (float *) &Agcs[_iKF]);
+      LA::AlignedMatrix6x6f::AddAbTo(KF.m_SAcxzs[iZ], gc, (float *)&Agcs[_iKF]);
       KF.m_SAcxzs[iZ].GetTranspose(A66);
-      LA::AlignedMatrix6x6f::AddAbTo(A66, m_gcs[_iKF], (float *) &Agc);
+      LA::AlignedMatrix6x6f::AddAbTo(A66, m_gcs[_iKF], (float *)&Agc);
       const int _iX = m_iKF2X[_iKF];
       if (_iX == -1) {
         continue;
@@ -162,8 +164,7 @@ void GlobalBundleAdjustor::SolveGradientDescent() {
       const ubyte *_uds = m_uds.data() + m_iKF2d[_iKF];
       for (int iz = Z.m_iz1; iz < Z.m_iz2; ++iz) {
         const int ix = KF.m_zs[iz].m_ix;
-        if (!(_uds[ix] & GBA_FLAG_TRACK_UPDATE_BACK_SUBSTITUTION))
-          continue;
+        if (!(_uds[ix] & GBA_FLAG_TRACK_UPDATE_BACK_SUBSTITUTION)) continue;
         const LA::AlignedVector6f &adcz = KF.m_Azs1[iz].m_adczA;
         _Agds[ix] = adcz.Dot(gc) + _Agds[ix];
         LA::AlignedVector6f::AddsaTo(_gds[ix], adcz, Agc);
@@ -188,7 +189,7 @@ void GlobalBundleAdjustor::SolveGradientDescent() {
 void GlobalBundleAdjustor::ComputeReduction() {
   m_dFa = m_dFp = 0.0f;
   if (m_update) {
-    ConvertCameraUpdates((LA::Vector6f *) m_xsDL.Data(), &m_xcsP);
+    ConvertCameraUpdates((LA::Vector6f *)m_xsDL.Data(), &m_xcsP);
     ComputeReductionFeature();
     ComputeReductionPriorCameraPose();
     ComputeReductionPriorCameraMotion();
@@ -213,13 +214,14 @@ void GlobalBundleAdjustor::ComputeReductionFeature() {
   float dFa, dFp;
   Rigid3D Tr[2];
   FTR::Reduction Ra, Rp;
-  const ubyte ucFlag = GBA_FLAG_FRAME_UPDATE_CAMERA | GBA_FLAG_FRAME_UPDATE_DEPTH;
+  const ubyte ucFlag =
+      GBA_FLAG_FRAME_UPDATE_CAMERA | GBA_FLAG_FRAME_UPDATE_DEPTH;
   const int nKFs = int(m_KFs.size());
   for (int iKF = 0; iKF < nKFs; ++iKF) {
     const KeyFrame &KF = m_KFs[iKF];
     const Rigid3D &C = m_Cs[iKF];
-    const LA::ProductVector6f *xc = (m_ucs[iKF] & GBA_FLAG_FRAME_UPDATE_CAMERA) ?
-                                    &m_xcsP[iKF] : NULL;
+    const LA::ProductVector6f *xc =
+        (m_ucs[iKF] & GBA_FLAG_FRAME_UPDATE_CAMERA) ? &m_xcsP[iKF] : NULL;
     dFa = dFp = 0.0f;
     const int NZ = int(KF.m_Zs.size());
     for (int iZ = 0; iZ < NZ; ++iZ) {
@@ -236,19 +238,22 @@ void GlobalBundleAdjustor::ComputeReductionFeature() {
       const int id = m_iKF2d[_iKF];
       const Depth::InverseGaussian *ds = m_ds.data() + id;
       const ubyte *uds = m_uds.data() + id;
-      const LA::ProductVector6f *_xc = (m_ucs[_iKF] & GBA_FLAG_FRAME_UPDATE_CAMERA) ?
-                                       &m_xcsP[_iKF] : NULL;
+      const LA::ProductVector6f *_xc =
+          (m_ucs[_iKF] & GBA_FLAG_FRAME_UPDATE_CAMERA) ? &m_xcsP[_iKF] : NULL;
       const bool ucr = xc || _xc;
-      const float *xds = m_iKF2X[_iKF] == -1 ? NULL : m_xds.Data() + m_iKF2X[_iKF];
+      const float *xds =
+          m_iKF2X[_iKF] == -1 ? NULL : m_xds.Data() + m_iKF2X[_iKF];
       const KeyFrame &_KF = m_KFs[_iKF];
       for (int iz = Z.m_iz1; iz < Z.m_iz2; ++iz) {
         const FTR::Measurement &z = KF.m_zs[iz];
         const int ix = z.m_ix;
-        const float *xd = xds && (uds[ix] & GBA_FLAG_TRACK_UPDATE_DEPTH) ? &xds[ix] : NULL;
+        const float *xd =
+            xds && (uds[ix] & GBA_FLAG_TRACK_UPDATE_DEPTH) ? &xds[ix] : NULL;
         if (!ucr && !xd) {
           continue;
         }
-        FTR::GetReduction(KF.m_Lzs[iz], Tr, _KF.m_xs[ix], ds[ix], z, _xc, xc, xd, Ra, Rp);
+        FTR::GetReduction(KF.m_Lzs[iz], Tr, _KF.m_xs[ix], ds[ix], z, _xc, xc,
+                          xd, Ra, Rp);
         dFa = Ra.m_dF + dFa;
         dFp = Rp.m_dF + dFp;
       }
@@ -268,8 +273,10 @@ void GlobalBundleAdjustor::ComputeReductionFeature() {
 
 void GlobalBundleAdjustor::ComputeReductionPriorCameraPose() {
   const int Nc = m_xcsP.Size();
-  m_xps.Resize(Nc);   m_xpsP.resize(Nc);
-  m_xrs.Resize(Nc);   m_xrsP.resize(Nc);
+  m_xps.Resize(Nc);
+  m_xpsP.resize(Nc);
+  m_xrs.Resize(Nc);
+  m_xrsP.resize(Nc);
   for (int ic = 0; ic < Nc; ++ic) {
     if (m_ucs[ic] & GBA_FLAG_FRAME_UPDATE_CAMERA) {
       m_xcsP[ic].Get(m_xps[ic], m_xrs[ic]);
@@ -295,7 +302,8 @@ void GlobalBundleAdjustor::ComputeReductionPriorCameraPose() {
     m_work.Resize((Ra.BindSize(N) + Rp.BindSize(N)) / sizeof(float));
     Ra.Bind(m_work.Data(), N);
     Rp.Bind(Ra.BindNext(), N);
-    //Z.GetReduction(BA_WEIGHT_PRIOR_CAMERA_POSE, m_Aps[iZ], m_Cs, m_xpsP, m_xrsP, &Ra, &Rp,
+    // Z.GetReduction(BA_WEIGHT_PRIOR_CAMERA_POSE, m_Aps[iZ], m_Cs, m_xpsP,
+    // m_xrsP, &Ra, &Rp,
     //               BA_ANGLE_EPSILON);
     Z.GetReduction(m_Aps[iZ].m_w, m_Aps[iZ], m_Cs, m_xpsP, m_xrsP, &Ra, &Rp,
                    BA_ANGLE_EPSILON);
@@ -319,13 +327,19 @@ void GlobalBundleAdjustor::ComputeReductionPriorCameraMotion() {
   }
   CameraPrior::Motion::Reduction Ra, Rp;
   LA::AlignedVector3f xr, xv, xba, xbw;
-  const LA::Vector6f *xcs = ((LA::Vector6f *) m_xsDL.Data()) + Nc - Nm, &xc = xcs[im];
-  const LA::Vector9f *xms = (LA::Vector9f *) (xcs + Nm), &xm = xms[im];
-  const LA::AlignedVector3f *_xr = ur ? &(xr = LA::AlignedVector3f(&xc.v3())) : NULL;
-  const LA::AlignedVector3f *_xv = uv ? &(xv = LA::AlignedVector3f(&xm.v0())) : NULL;
-  const LA::AlignedVector3f *_xba = uba ? &(xba = LA::AlignedVector3f(&xm.v3())) : NULL;
-  const LA::AlignedVector3f *_xbw = ubw ? &(xbw = LA::AlignedVector3f(&xm.v6())) : NULL;
-  m_ZpLM.GetReduction(BA_WEIGHT_PRIOR_CAMERA_MOTION, m_ApLM, m_CsLM[im], _xr, _xv, _xba, _xbw, &Ra, &Rp);
+  const LA::Vector6f *xcs = ((LA::Vector6f *)m_xsDL.Data()) + Nc - Nm,
+                     &xc = xcs[im];
+  const LA::Vector9f *xms = (LA::Vector9f *)(xcs + Nm), &xm = xms[im];
+  const LA::AlignedVector3f *_xr =
+      ur ? &(xr = LA::AlignedVector3f(&xc.v3())) : NULL;
+  const LA::AlignedVector3f *_xv =
+      uv ? &(xv = LA::AlignedVector3f(&xm.v0())) : NULL;
+  const LA::AlignedVector3f *_xba =
+      uba ? &(xba = LA::AlignedVector3f(&xm.v3())) : NULL;
+  const LA::AlignedVector3f *_xbw =
+      ubw ? &(xbw = LA::AlignedVector3f(&xm.v6())) : NULL;
+  m_ZpLM.GetReduction(BA_WEIGHT_PRIOR_CAMERA_MOTION, m_ApLM, m_CsLM[im], _xr,
+                      _xv, _xba, _xbw, &Ra, &Rp);
   m_dFa = Ra.m_dF + m_dFa;
   m_dFp = Rp.m_dF + m_dFp;
 }
@@ -354,7 +368,8 @@ void GlobalBundleAdjustor::ComputeReductionPriorDepth() {
 #endif
     const float *xds = m_xds.Data() + m_iKF2X[iKF];
     const KeyFrame &KF = m_KFs[iKF];
-    const Depth::Prior zp(KF.m_d.u(), 1.0f / (BA_VARIANCE_PRIOR_FRAME_DEPTH + KF.m_d.s2()));
+    const Depth::Prior zp(KF.m_d.u(),
+                          1.0f / (BA_VARIANCE_PRIOR_FRAME_DEPTH + KF.m_d.s2()));
     const int Nx = static_cast<int>(KF.m_xs.size());
     for (int ix = 0; ix < Nx; ++ix) {
       if (!(uds[ix] & GBA_FLAG_TRACK_UPDATE_DEPTH)) {
@@ -362,11 +377,11 @@ void GlobalBundleAdjustor::ComputeReductionPriorDepth() {
       }
 #ifdef CFG_STEREO
       if (KF.m_xs[ix].m_xr.Valid()) {
-        FTR::GetReduction(KF.m_Ards[ix], m_K.m_br, ds[ix], KF.m_xs[ix], xds[ix], Rar, Rpr);
+        FTR::GetReduction(KF.m_Ards[ix], m_K.m_br, ds[ix], KF.m_xs[ix], xds[ix],
+                          Rar, Rpr);
         m_dFa = Rar.m_dF + m_dFa;
         m_dFp = Rpr.m_dF + m_dFp;
-      }
-      else
+      } else
 #endif
       {
         zp.GetReduction(KF.m_Apds[ix], ds[ix].u(), xds[ix], Ra, Rp);
@@ -383,12 +398,11 @@ void GlobalBundleAdjustor::ComputeReductionIMU() {
   LA::AlignedVector3f *_xp[2], *_xr[2], *_xv[2], *_xba[2], *_xbw[2];
   int r1 = 0, r2 = 1;
   const int Nc = m_Cs.Size(), Nm = m_CsLM.Size();
-  const LA::Vector6f *xcs = ((LA::Vector6f *) m_xsDL.Data()) + Nc - Nm;
-  const LA::Vector9f *xms = (LA::Vector9f *) (xcs + Nm);
+  const LA::Vector6f *xcs = ((LA::Vector6f *)m_xsDL.Data()) + Nc - Nm;
+  const LA::Vector9f *xms = (LA::Vector9f *)(xcs + Nm);
   const ubyte ucFlag = GBA_FLAG_CAMERA_MOTION_UPDATE_ROTATION |
                        GBA_FLAG_CAMERA_MOTION_UPDATE_POSITION;
-  const ubyte ucmFlag = ucFlag |
-                        GBA_FLAG_CAMERA_MOTION_UPDATE_VELOCITY |
+  const ubyte ucmFlag = ucFlag | GBA_FLAG_CAMERA_MOTION_UPDATE_VELOCITY |
                         GBA_FLAG_CAMERA_MOTION_UPDATE_BIAS_ACCELERATION |
                         GBA_FLAG_CAMERA_MOTION_UPDATE_BIAS_GYROSCOPE;
   for (int ic1 = Nc - Nm, ic2 = ic1 + 1, im1 = 0, im2 = 1; ic2 < Nc;
@@ -398,29 +412,36 @@ void GlobalBundleAdjustor::ComputeReductionIMU() {
       const ubyte ucm = m_ucmsLM[im1], uc = ucm & ucFlag;
       _xp[r1] = uc ? &(xp[r1] = LA::AlignedVector3f(&xcs[im1].v0())) : NULL;
       _xr[r1] = uc ? &(xr[r1] = LA::AlignedVector3f(&xcs[im1].v3())) : NULL;
-      _xv[r1] = (ucm & GBA_FLAG_CAMERA_MOTION_UPDATE_VELOCITY) ?
-                &(xv[r1] = LA::AlignedVector3f(&xms[im1].v0())) : NULL;
-      _xba[r1] = (ucm & GBA_FLAG_CAMERA_MOTION_UPDATE_BIAS_ACCELERATION) ?
-                 &(xba[r1] = LA::AlignedVector3f(&xms[im1].v3())) : NULL;
-      _xbw[r1] = (ucm & GBA_FLAG_CAMERA_MOTION_UPDATE_BIAS_GYROSCOPE) ?
-                 &(xbw[r1] = LA::AlignedVector3f(&xms[im1].v6())) : NULL;
+      _xv[r1] = (ucm & GBA_FLAG_CAMERA_MOTION_UPDATE_VELOCITY)
+                    ? &(xv[r1] = LA::AlignedVector3f(&xms[im1].v0()))
+                    : NULL;
+      _xba[r1] = (ucm & GBA_FLAG_CAMERA_MOTION_UPDATE_BIAS_ACCELERATION)
+                     ? &(xba[r1] = LA::AlignedVector3f(&xms[im1].v3()))
+                     : NULL;
+      _xbw[r1] = (ucm & GBA_FLAG_CAMERA_MOTION_UPDATE_BIAS_GYROSCOPE)
+                     ? &(xbw[r1] = LA::AlignedVector3f(&xms[im1].v6()))
+                     : NULL;
     }
     const ubyte ucm = m_ucmsLM[im2], uc = ucm & ucFlag;
     _xp[r2] = uc ? &(xp[r2] = LA::AlignedVector3f(&xcs[im2].v0())) : NULL;
     _xr[r2] = uc ? &(xr[r2] = LA::AlignedVector3f(&xcs[im2].v3())) : NULL;
-    _xv[r2] = (ucm & GBA_FLAG_CAMERA_MOTION_UPDATE_VELOCITY) ?
-              &(xv[r2] = LA::AlignedVector3f(&xms[im2].v0())) : NULL;
-    _xba[r2] = (ucm & GBA_FLAG_CAMERA_MOTION_UPDATE_BIAS_ACCELERATION) ?
-               &(xba[r2] = LA::AlignedVector3f(&xms[im2].v3())) : NULL;
-    _xbw[r2] = (ucm & GBA_FLAG_CAMERA_MOTION_UPDATE_BIAS_GYROSCOPE) ?
-               &(xbw[r2] = LA::AlignedVector3f(&xms[im2].v6())) : NULL;
-    if (m_KFs[ic2].m_us.Empty() || (!(ucm & ucmFlag) && !(m_ucmsLM[im1] & ucmFlag))) {
+    _xv[r2] = (ucm & GBA_FLAG_CAMERA_MOTION_UPDATE_VELOCITY)
+                  ? &(xv[r2] = LA::AlignedVector3f(&xms[im2].v0()))
+                  : NULL;
+    _xba[r2] = (ucm & GBA_FLAG_CAMERA_MOTION_UPDATE_BIAS_ACCELERATION)
+                   ? &(xba[r2] = LA::AlignedVector3f(&xms[im2].v3()))
+                   : NULL;
+    _xbw[r2] = (ucm & GBA_FLAG_CAMERA_MOTION_UPDATE_BIAS_GYROSCOPE)
+                   ? &(xbw[r2] = LA::AlignedVector3f(&xms[im2].v6()))
+                   : NULL;
+    if (m_KFs[ic2].m_us.Empty() ||
+        (!(ucm & ucmFlag) && !(m_ucmsLM[im1] & ucmFlag))) {
       continue;
     }
-    m_DsLM[im2].GetReduction(BA_WEIGHT_IMU, m_AdsLM[im2], m_CsLM[im1], m_CsLM[im2], m_K.m_pu,
-                             _xp[r1], _xr[r1], _xv[r1], _xba[r1], _xbw[r1],
-                             _xp[r2], _xr[r2], _xv[r2], _xba[r2], _xbw[r2], Ra, Rp,
-                             BA_ANGLE_EPSILON);
+    m_DsLM[im2].GetReduction(BA_WEIGHT_IMU, m_AdsLM[im2], m_CsLM[im1],
+                             m_CsLM[im2], m_K.m_pu, _xp[r1], _xr[r1], _xv[r1],
+                             _xba[r1], _xbw[r1], _xp[r2], _xr[r2], _xv[r2],
+                             _xba[r2], _xbw[r2], Ra, Rp, BA_ANGLE_EPSILON);
     m_dFa = Ra.m_dF + m_dFa;
     m_dFp = Rp.m_dF + m_dFp;
   }
@@ -428,7 +449,8 @@ void GlobalBundleAdjustor::ComputeReductionIMU() {
 
 void GlobalBundleAdjustor::ComputeReductionFixOrigin() {
   const int iKF = 0;
-  if (m_KFs[iKF].m_T.m_iFrm != 0 || !(m_ucs[iKF] & GBA_FLAG_FRAME_UPDATE_CAMERA)) {
+  if (m_KFs[iKF].m_T.m_iFrm != 0 ||
+      !(m_ucs[iKF] & GBA_FLAG_FRAME_UPDATE_CAMERA)) {
     return;
   }
   LA::AlignedVector3f xp, xr;
@@ -441,16 +463,17 @@ void GlobalBundleAdjustor::ComputeReductionFixOrigin() {
 
 void GlobalBundleAdjustor::ComputeReductionFixPositionZ() {
   Camera::Fix::PositionZ::Reduction Ra, Rp;
-  const Camera::Fix::PositionZ z(BA_WEIGHT_FIX_POSITION_Z, BA_VARIANCE_FIX_POSITION_Z);
-  const LA::Vector6f *xcs = (LA::Vector6f *) m_xsDL.Data();
+  const Camera::Fix::PositionZ z(BA_WEIGHT_FIX_POSITION_Z,
+                                 BA_VARIANCE_FIX_POSITION_Z);
+  const LA::Vector6f *xcs = (LA::Vector6f *)m_xsDL.Data();
   const int nKFs = static_cast<int>(m_KFs.size());
   for (int iKF = 0; iKF < nKFs; ++iKF) {
     if (!(m_ucs[iKF] & GBA_FLAG_FRAME_UPDATE_CAMERA)) {
       continue;
     }
     const Camera::Fix::PositionZ::Factor &A = m_Afps[iKF];
-    z.GetReduction(A, m_CsBkp[iKF].GetPositionZ(), m_Cs[iKF].GetPositionZ(), xcs[iKF].v2(),
-                   Ra, Rp);
+    z.GetReduction(A, m_CsBkp[iKF].GetPositionZ(), m_Cs[iKF].GetPositionZ(),
+                   xcs[iKF].v2(), Ra, Rp);
     m_dFa = Ra.m_dF + m_dFa;
     m_dFp = Rp.m_dF + m_dFp;
   }
@@ -459,20 +482,26 @@ void GlobalBundleAdjustor::ComputeReductionFixPositionZ() {
 void GlobalBundleAdjustor::ComputeReductionFixMotion() {
   Camera::Fix::Zero::Reduction Ra, Rp;
   const Camera::Fix::Zero zv[3] = {
-        Camera::Fix::Zero(BA_WEIGHT_FIX_MOTION, BA_VARIANCE_FIX_VELOCITY),
-        Camera::Fix::Zero(BA_WEIGHT_FIX_MOTION, BA_VARIANCE_FIX_VELOCITY_INITIAL),
-        Camera::Fix::Zero(BA_WEIGHT_FIX_MOTION, BA_VARIANCE_FIX_VELOCITY_INVALID)};
+      Camera::Fix::Zero(BA_WEIGHT_FIX_MOTION, BA_VARIANCE_FIX_VELOCITY),
+      Camera::Fix::Zero(BA_WEIGHT_FIX_MOTION, BA_VARIANCE_FIX_VELOCITY_INITIAL),
+      Camera::Fix::Zero(BA_WEIGHT_FIX_MOTION,
+                        BA_VARIANCE_FIX_VELOCITY_INVALID)};
   const Camera::Fix::Zero zba[3] = {
-        Camera::Fix::Zero(BA_WEIGHT_FIX_MOTION, BA_VARIANCE_FIX_BIAS_ACCELERATION),
-        Camera::Fix::Zero(BA_WEIGHT_FIX_MOTION, BA_VARIANCE_FIX_BIAS_ACCELERATION_INITIAL),
-        Camera::Fix::Zero(BA_WEIGHT_FIX_MOTION, BA_VARIANCE_FIX_BIAS_ACCELERATION_INVALID)};
+      Camera::Fix::Zero(BA_WEIGHT_FIX_MOTION,
+                        BA_VARIANCE_FIX_BIAS_ACCELERATION),
+      Camera::Fix::Zero(BA_WEIGHT_FIX_MOTION,
+                        BA_VARIANCE_FIX_BIAS_ACCELERATION_INITIAL),
+      Camera::Fix::Zero(BA_WEIGHT_FIX_MOTION,
+                        BA_VARIANCE_FIX_BIAS_ACCELERATION_INVALID)};
   const Camera::Fix::Zero zbw[3] = {
-        Camera::Fix::Zero(BA_WEIGHT_FIX_MOTION, BA_VARIANCE_FIX_BIAS_GYROSCOPE),
-        Camera::Fix::Zero(BA_WEIGHT_FIX_MOTION, BA_VARIANCE_FIX_BIAS_GYROSCOPE_INITIAL),
-        Camera::Fix::Zero(BA_WEIGHT_FIX_MOTION, BA_VARIANCE_FIX_BIAS_GYROSCOPE_INVALID)};
+      Camera::Fix::Zero(BA_WEIGHT_FIX_MOTION, BA_VARIANCE_FIX_BIAS_GYROSCOPE),
+      Camera::Fix::Zero(BA_WEIGHT_FIX_MOTION,
+                        BA_VARIANCE_FIX_BIAS_GYROSCOPE_INITIAL),
+      Camera::Fix::Zero(BA_WEIGHT_FIX_MOTION,
+                        BA_VARIANCE_FIX_BIAS_GYROSCOPE_INVALID)};
   const int pc = 6;
   const int Nc = m_Cs.Size(), Ncp = Nc * pc;
-  const LA::Vector9f *xms = (LA::Vector9f *) (m_xsDL.Data() + Ncp);
+  const LA::Vector9f *xms = (LA::Vector9f *)(m_xsDL.Data() + Ncp);
   for (int ic = Nc - m_CsLM.Size(), im = 0; ic < Nc; ++ic, ++im) {
     const Camera::Fix::Motion::Factor &A = m_AfmsLM[im];
     const Camera &C1 = m_CsLMBkp[im], &C2 = m_CsLM[im];
@@ -512,18 +541,19 @@ bool GlobalBundleAdjustor::UpdateStatesPropose() {
   m_update = false;
   m_converge = false;
   const int Nc = m_Cs.Size(), Nm = m_CsLM.Size();
-  const LA::Vector6f *xcsDL = (LA::Vector6f *) m_xsDL.Data();
-  const LA::Vector9f *xmsDL = (LA::Vector9f *) (xcsDL + Nc);
+  const LA::Vector6f *xcsDL = (LA::Vector6f *)m_xsDL.Data();
+  const LA::Vector9f *xmsDL = (LA::Vector9f *)(xcsDL + Nc);
 #ifdef CFG_INCREMENTAL_PCG
-  const LA::Vector6f *xcsGN = (LA::Vector6f *) m_xsGN.Data();
-  const LA::Vector9f *xmsGN = (LA::Vector9f *) (xcsGN + Nc);
+  const LA::Vector6f *xcsGN = (LA::Vector6f *)m_xsGN.Data();
+  const LA::Vector9f *xmsGN = (LA::Vector9f *)(xcsGN + Nc);
 #endif
   for (int ic = 0, im = Nm - Nc; ic < Nc; ++ic, ++im) {
     Rigid3D &C = m_Cs[ic];
-    const bool ur = m_xr2s[ic] >= BA_UPDATE_ROTATION, up = m_xp2s[ic] >= BA_UPDATE_POSITION;
+    const bool ur = m_xr2s[ic] >= BA_UPDATE_ROTATION,
+               up = m_xp2s[ic] >= BA_UPDATE_POSITION;
     if (ur || up) {
       xcsDL[ic].Get(dp, dr);
-      //dp.z() = 0.0f;
+      // dp.z() = 0.0f;
       dR.SetRodrigues(dr, BA_ANGLE_EPSILON);
       C.GetPosition(p);
       C = Rotation3D(C) * dR;
@@ -535,8 +565,7 @@ bool GlobalBundleAdjustor::UpdateStatesPropose() {
 #endif
       m_update = true;
 #ifdef CFG_VERBOSE
-      if (m_verbose >= 3)
-        ++SNc;
+      if (m_verbose >= 3) ++SNc;
 #endif
     } else {
       m_ucs[ic] &= ~GBA_FLAG_FRAME_UPDATE_CAMERA;
@@ -640,7 +669,7 @@ bool GlobalBundleAdjustor::UpdateStatesPropose() {
     if (!(m_ucs[iKF] & GBA_FLAG_FRAME_UPDATE_BACK_SUBSTITUTION)) {
       continue;
     }
-    //m_ucs[iKF] &= ~GBA_FLAG_FRAME_UPDATE_BACK_SUBSTITUTION;
+    // m_ucs[iKF] &= ~GBA_FLAG_FRAME_UPDATE_BACK_SUBSTITUTION;
     const int iX = m_iKF2X[iKF];
     Depth::InverseGaussian *ds = m_ds.data() + id, *dsBkp = m_dsBkp.data() + iX;
     memcpy(dsBkp, ds, Nx * sizeof(Depth::InverseGaussian));
@@ -649,7 +678,7 @@ bool GlobalBundleAdjustor::UpdateStatesPropose() {
       if (!(uds[ix] & GBA_FLAG_TRACK_UPDATE_BACK_SUBSTITUTION)) {
         continue;
       }
-      //uds[ix] &= ~GBA_FLAG_TRACK_UPDATE_BACK_SUBSTITUTION;
+// uds[ix] &= ~GBA_FLAG_TRACK_UPDATE_BACK_SUBSTITUTION;
 #ifdef CFG_VERBOSE
       if (m_verbose >= 3) {
         ++SNx;
@@ -664,19 +693,20 @@ bool GlobalBundleAdjustor::UpdateStatesPropose() {
       }
       Depth::InverseGaussian &d = ds[ix];
       d.u() = xds[ix] + d.u();
-      d.s2() = DEPTH_VARIANCE_EPSILON + KF.m_Mxs1[ix].m_mdx.m_add.m_a * BA_WEIGHT_FEATURE;
-      //if (!d.Valid()) {
+      d.s2() = DEPTH_VARIANCE_EPSILON +
+               KF.m_Mxs1[ix].m_mdx.m_add.m_a * BA_WEIGHT_FEATURE;
+      // if (!d.Valid()) {
       //  d = dsBkp[ix];
       //  continue;
       //}
-      //d.u() = UT_CLAMP(d.u(), DEPTH_MIN, DEPTH_MAX);
-      //d.u() = UT_CLAMP(d.u(), DEPTH_EPSILON, DEPTH_MAX);
-      //if (d.u() < DEPTH_EPSILON) {
+      // d.u() = UT_CLAMP(d.u(), DEPTH_MIN, DEPTH_MAX);
+      // d.u() = UT_CLAMP(d.u(), DEPTH_EPSILON, DEPTH_MAX);
+      // if (d.u() < DEPTH_EPSILON) {
       //  d.u() = DEPTH_EPSILON;
       //} else if (d.u() > DEPTH_MAX) {
       //  d.u() = KF.m_d.u();
       //}
-      //if (!d.Valid()) {
+      // if (!d.Valid()) {
       //  d.u() = KF.m_d.u();
       //}
       m_axds.Push(axd);
@@ -703,12 +733,14 @@ bool GlobalBundleAdjustor::UpdateStatesPropose() {
     const int Nd = int(m_ds.size());
     UT::PrintSeparator();
     UT::Print("*%2d: [GlobalBundleAdjustor::UpdateStates]\n", m_iIter);
-    UT::Print("  Camera = %d / %d = %.2f%%\n", SNc, Nc, UT::Percentage(SNc, Nc));
-    UT::Print("         + %d / %d = %.2f%%\n", SNm, Nm, UT::Percentage(SNm, Nm));
-    UT::Print("  Depth = %3d / %5d = %.2f%% (%d / %d = %.2f%%)\n", SNx, Nd, UT::Percentage(SNx, Nd),
-              SNX, Nc, UT::Percentage(SNX, Nc));
-    UT::Print("      --> %3d / %5d = %.2f%% (%d / %d = %.2f%%)\n", SNu, SNx, UT::Percentage(SNu, SNx),
-              SNU, SNX, UT::Percentage(SNU, SNX));
+    UT::Print("  Camera = %d / %d = %.2f%%\n", SNc, Nc,
+              UT::Percentage(SNc, Nc));
+    UT::Print("         + %d / %d = %.2f%%\n", SNm, Nm,
+              UT::Percentage(SNm, Nm));
+    UT::Print("  Depth = %3d / %5d = %.2f%% (%d / %d = %.2f%%)\n", SNx, Nd,
+              UT::Percentage(SNx, Nd), SNX, Nc, UT::Percentage(SNX, Nc));
+    UT::Print("      --> %3d / %5d = %.2f%% (%d / %d = %.2f%%)\n", SNu, SNx,
+              UT::Percentage(SNu, SNx), SNU, SNX, UT::Percentage(SNU, SNX));
   }
 #endif
   return m_update;
@@ -730,7 +762,7 @@ bool GlobalBundleAdjustor::UpdateStatesDecide() {
     for (int ic = 0; ic < Nc; ++ic) {
       m_ucs[ic] &= ~GBA_FLAG_FRAME_UPDATE_CAMERA;
     }
-    //m_ucmsLM.assign(Nm, GBA_FLAG_CAMERA_MOTION_DEFAULT);
+    // m_ucmsLM.assign(Nm, GBA_FLAG_CAMERA_MOTION_DEFAULT);
     const ubyte ucmFlag = GBA_FLAG_CAMERA_MOTION_UPDATE_ROTATION |
                           GBA_FLAG_CAMERA_MOTION_UPDATE_POSITION |
                           GBA_FLAG_CAMERA_MOTION_UPDATE_VELOCITY |
@@ -747,7 +779,8 @@ bool GlobalBundleAdjustor::UpdateStatesDecide() {
       const KeyFrame &KF = m_KFs[iKF];
       const int id = m_iKF2d[iKF], iX = m_iKF2X[iKF];
       const int Nx = static_cast<int>(KF.m_xs.size());
-      memcpy(m_ds.data() + id, m_dsBkp.data() + iX, Nx * sizeof(Depth::InverseGaussian));
+      memcpy(m_ds.data() + id, m_dsBkp.data() + iX,
+             Nx * sizeof(Depth::InverseGaussian));
       ubyte *uds = m_uds.data() + id;
       for (int ix = 0; ix < Nx; ++ix) {
         uds[ix] &= ~GBA_FLAG_TRACK_UPDATE_DEPTH;
@@ -757,7 +790,7 @@ bool GlobalBundleAdjustor::UpdateStatesDecide() {
     m_converge = false;
     return false;
   } else if (m_rho > BA_DL_GAIN_RATIO_MAX) {
-    //m_delta2 *= BA_DL_RADIUS_FACTOR_INCREASE;
+    // m_delta2 *= BA_DL_RADIUS_FACTOR_INCREASE;
     m_delta2 = std::max(m_delta2, BA_DL_RADIUS_FACTOR_INCREASE * m_x2DL);
     if (m_delta2 > BA_DL_RADIUS_MAX) {
       m_delta2 = BA_DL_RADIUS_MAX;
@@ -782,8 +815,8 @@ bool GlobalBundleAdjustor::UpdateStatesDecide() {
       continue;
     }
     m_Ucs[ic] |= GM_FLAG_FRAME_UPDATE_DEPTH;
-    //ubyte *Uds = m_Uds.data() + id;
-    //for (int ix = 0; ix < Nx; ++ix) {
+    // ubyte *Uds = m_Uds.data() + id;
+    // for (int ix = 0; ix < Nx; ++ix) {
     //  if (uds[ix] & GBA_FLAG_TRACK_UPDATE_DEPTH) {
     //    Uds[ix] |= GM_FLAG_TRACK_UPDATE_DEPTH;
     //  }
@@ -794,19 +827,22 @@ bool GlobalBundleAdjustor::UpdateStatesDecide() {
   for (int ic1 = Nc - Nm, ic2 = ic1 + 1, im1 = 0, im2 = 1; ic2 < Nc;
        ic1 = ic2++, im1 = im2++) {
     const KeyFrame &KF2 = m_KFs[ic2];
-    if (!KF2.m_us.Empty() && (m_ucmsLM[im1] & GBA_FLAG_CAMERA_MOTION_UPDATE_BIAS_GYROSCOPE)) {
+    if (!KF2.m_us.Empty() &&
+        (m_ucmsLM[im1] & GBA_FLAG_CAMERA_MOTION_UPDATE_BIAS_GYROSCOPE)) {
 //#ifdef CFG_DEBUG
 #if 0
       if (im1 == 83)
         UT::DebugStart();
 #endif
       IMU::Delta &D = m_DsLM[im2];
-      IMU::PreIntegrate(m_KFs[ic2].m_us, m_KFs[ic1].m_T.m_t, m_KFs[ic2].m_T.m_t, m_CsLM[im1], &D,
-                        &m_work, true, D.m_u1.Valid() ? &D.m_u1 : NULL,
+      IMU::PreIntegrate(m_KFs[ic2].m_us, m_KFs[ic1].m_T.m_t, m_KFs[ic2].m_T.m_t,
+                        m_CsLM[im1], &D, &m_work, true,
+                        D.m_u1.Valid() ? &D.m_u1 : NULL,
                         D.m_u2.Valid() ? &D.m_u2 : NULL, BA_ANGLE_EPSILON);
 #ifdef GBA_DEBUG_GROUND_TRUTH_MEASUREMENT
       if (!m_CsLMGT.Empty()) {
-        D.DebugSetMeasurement(m_CsLMGT[im1], m_CsLMGT[im2], m_K.m_pu, BA_ANGLE_EPSILON);
+        D.DebugSetMeasurement(m_CsLMGT[im1], m_CsLMGT[im2], m_K.m_pu,
+                              BA_ANGLE_EPSILON);
       }
 #endif
 //#ifdef CFG_DEBUG
@@ -816,20 +852,23 @@ bool GlobalBundleAdjustor::UpdateStatesDecide() {
 #endif
     }
   }
-  m_converge = m_xr2s.Maximal() < BA_CONVERGE_ROTATION && m_xp2s.Maximal() < BA_CONVERGE_POSITION &&
-               m_xv2s.Maximal() < BA_CONVERGE_VELOCITY && m_xba2s.Maximal() < BA_CONVERGE_BIAS_ACCELERATION &&
+  m_converge = m_xr2s.Maximal() < BA_CONVERGE_ROTATION &&
+               m_xp2s.Maximal() < BA_CONVERGE_POSITION &&
+               m_xv2s.Maximal() < BA_CONVERGE_VELOCITY &&
+               m_xba2s.Maximal() < BA_CONVERGE_BIAS_ACCELERATION &&
                m_xbw2s.Maximal() < BA_CONVERGE_BIAS_GYROSCOPE &&
                m_axds.Maximal() < BA_CONVERGE_DEPTH;
   return true;
 }
 
-void GlobalBundleAdjustor::ConvertCameraUpdates(const float *xcs, LA::AlignedVectorXf *xp2s,
+void GlobalBundleAdjustor::ConvertCameraUpdates(const float *xcs,
+                                                LA::AlignedVectorXf *xp2s,
                                                 LA::AlignedVectorXf *xr2s) {
   const int pc = 6;
   const int Nc = m_Cs.Size(), Ncp = Nc * pc;
   m_x2s.Set(xcs, Ncp);
   m_x2s.MakeSquared();
-  const LA::Vector6f *xc2s = (LA::Vector6f *) m_x2s.Data();
+  const LA::Vector6f *xc2s = (LA::Vector6f *)m_x2s.Data();
   xp2s->Resize(Nc);
   xr2s->Resize(Nc);
   float *_xp2s = xp2s->Data(), *_xr2s = xr2s->Data();
@@ -840,8 +879,8 @@ void GlobalBundleAdjustor::ConvertCameraUpdates(const float *xcs, LA::AlignedVec
   }
 }
 
-void GlobalBundleAdjustor::ConvertCameraUpdates(const LA::Vector6f *xcs,
-                                                AlignedVector<LA::ProductVector6f> *xcsP) {
+void GlobalBundleAdjustor::ConvertCameraUpdates(
+    const LA::Vector6f *xcs, AlignedVector<LA::ProductVector6f> *xcsP) {
   const int Nc = m_Cs.Size();
   xcsP->Resize(Nc);
   LA::ProductVector6f *_xcsP = xcsP->Data();
@@ -850,8 +889,8 @@ void GlobalBundleAdjustor::ConvertCameraUpdates(const LA::Vector6f *xcs,
   }
 }
 
-void GlobalBundleAdjustor::ConvertCameraUpdates(const LA::Vector6d *xcs,
-                                                AlignedVector<LA::ProductVector6f> *xcsP) {
+void GlobalBundleAdjustor::ConvertCameraUpdates(
+    const LA::Vector6d *xcs, AlignedVector<LA::ProductVector6f> *xcsP) {
   const int Nc = m_Cs.Size();
   xcsP->Resize(Nc);
   LA::ProductVector6f *_xcsP = xcsP->Data();
@@ -860,22 +899,23 @@ void GlobalBundleAdjustor::ConvertCameraUpdates(const LA::Vector6d *xcs,
   }
 }
 
-void GlobalBundleAdjustor::ConvertCameraUpdates(const AlignedVector<LA::AlignedVector6f> &xcsA,
-                                                LA::Vector6f *xcs) {
+void GlobalBundleAdjustor::ConvertCameraUpdates(
+    const AlignedVector<LA::AlignedVector6f> &xcsA, LA::Vector6f *xcs) {
   const int Nc = xcsA.Size();
   for (int ic = 0; ic < Nc; ++ic) {
     xcsA[ic].Get(xcs[ic]);
   }
 }
 
-void GlobalBundleAdjustor::ConvertMotionUpdates(const float *xms, LA::AlignedVectorXf *xv2s,
+void GlobalBundleAdjustor::ConvertMotionUpdates(const float *xms,
+                                                LA::AlignedVectorXf *xv2s,
                                                 LA::AlignedVectorXf *xba2s,
                                                 LA::AlignedVectorXf *xbw2s) {
   const int pm = 9;
   const int Nm = m_CsLM.Size(), Nmp = Nm * pm;
   m_x2s.Set(xms, Nmp);
   m_x2s.MakeSquared();
-  const LA::Vector9f *xm2s = (LA::Vector9f *) m_x2s.Data();
+  const LA::Vector9f *xm2s = (LA::Vector9f *)m_x2s.Data();
   xv2s->Resize(Nm);
   xba2s->Resize(Nm);
   xbw2s->Resize(Nm);
@@ -888,9 +928,9 @@ void GlobalBundleAdjustor::ConvertMotionUpdates(const float *xms, LA::AlignedVec
   }
 }
 
-void GlobalBundleAdjustor::ConvertCameraMotionResiduals(const LA::AlignedVectorX<PCG_TYPE> &rs,
-                                                        const LA::AlignedVectorX<PCG_TYPE> &zs,
-                                                        PCG_TYPE *Se2, PCG_TYPE *e2Max) {
+void GlobalBundleAdjustor::ConvertCameraMotionResiduals(
+    const LA::AlignedVectorX<PCG_TYPE> &rs,
+    const LA::AlignedVectorX<PCG_TYPE> &zs, PCG_TYPE *Se2, PCG_TYPE *e2Max) {
   const int N = rs.Size();
 #ifdef CFG_DEBUG
   UT_ASSERT(zs.Size() == N);
@@ -902,7 +942,7 @@ void GlobalBundleAdjustor::ConvertCameraMotionResiduals(const LA::AlignedVectorX
   if (GBA_PCG_CONDITIONER_BAND <= 1) {
 #ifdef CFG_PCG_FULL_BLOCK
     const int Nc = m_Cs.Size();
-    const LA::Vector6<PCG_TYPE> *e2cs = (LA::Vector6<PCG_TYPE> *) m_e2s.Data();
+    const LA::Vector6<PCG_TYPE> *e2cs = (LA::Vector6<PCG_TYPE> *)m_e2s.Data();
     for (int ic = 0; ic < Nc; ++ic) {
       const PCG_TYPE e2 = e2cs[ic].Sum();
 #ifdef CFG_DEBUG
@@ -911,7 +951,7 @@ void GlobalBundleAdjustor::ConvertCameraMotionResiduals(const LA::AlignedVectorX
       *Se2 = e2 + *Se2;
       *e2Max = std::max(e2, *e2Max);
     }
-    const LA::Vector9<PCG_TYPE> *e2ms = (LA::Vector9<PCG_TYPE> *) (e2cs + Nc);
+    const LA::Vector9<PCG_TYPE> *e2ms = (LA::Vector9<PCG_TYPE> *)(e2cs + Nc);
     const int Nm = m_CsLM.Size();
     for (int im = 0; im < Nm; ++im) {
       const PCG_TYPE e2 = e2ms[im].Sum();
@@ -922,7 +962,7 @@ void GlobalBundleAdjustor::ConvertCameraMotionResiduals(const LA::AlignedVectorX
       *e2Max = std::max(e2, *e2Max);
     }
 #else
-    const LA::Vector3<PCG_TYPE> *e2s = (LA::Vector3<PCG_TYPE> *) m_e2s.Data();
+    const LA::Vector3<PCG_TYPE> *e2s = (LA::Vector3<PCG_TYPE> *)m_e2s.Data();
     const int _N = m_Cs.Size() * 2 + m_CsLM.Size() * 3;
 #ifdef CFG_DEBUG
     UT_ASSERT(N == _N * 3);
@@ -930,7 +970,7 @@ void GlobalBundleAdjustor::ConvertCameraMotionResiduals(const LA::AlignedVectorX
     for (int i = 0; i < _N; ++i) {
       const PCG_TYPE e2 = e2s[i].Sum();
 #ifdef CFG_DEBUG
-//#if 0
+      //#if 0
       UT_ASSERT(e2 >= 0);
 #endif
       *Se2 = e2 + *Se2;
@@ -945,7 +985,8 @@ void GlobalBundleAdjustor::ConvertCameraMotionResiduals(const LA::AlignedVectorX
   }
 }
 
-void GlobalBundleAdjustor::ConvertDepthUpdates(const float *xs, LA::AlignedVectorXf *xds) {
+void GlobalBundleAdjustor::ConvertDepthUpdates(const float *xs,
+                                               LA::AlignedVectorXf *xds) {
   int i = 0;
   const int Nd = m_xds.Size();
   xds->Resize(Nd);
@@ -953,8 +994,7 @@ void GlobalBundleAdjustor::ConvertDepthUpdates(const float *xs, LA::AlignedVecto
 #ifdef CFG_DEBUG
   int SN = 0;
   for (int iKF = 0; iKF < nKFs; ++iKF) {
-    if (m_iKF2X[iKF] != -1)
-      SN += int(m_KFs[iKF].m_xs.size());
+    if (m_iKF2X[iKF] != -1) SN += int(m_KFs[iKF].m_xs.size());
   }
   UT_ASSERT(Nd == SN);
 #endif
@@ -993,7 +1033,8 @@ void GlobalBundleAdjustor::PushDepthUpdates(const LA::AlignedVectorXf &xds,
   }
 }
 
-float GlobalBundleAdjustor::AverageDepths(const Depth::InverseGaussian *ds, const int N) {
+float GlobalBundleAdjustor::AverageDepths(const Depth::InverseGaussian *ds,
+                                          const int N) {
   const int NC = SIMD_FLOAT_CEIL(N);
   m_work.Resize(NC + N);
   LA::AlignedVectorXf us(m_work.Data(), N, false);

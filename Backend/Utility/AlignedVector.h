@@ -20,9 +20,7 @@
 
 template <class TYPE, const int GROWTH = 0, const int GROWTH_MAX = 1024>
 class AlignedVector {
-
  public:
-
   inline AlignedVector() {
     m_own = true;
     m_data = NULL;
@@ -34,15 +32,15 @@ class AlignedVector {
     m_N = m_capacity = N;
   }
 
-  inline const TYPE& operator() (const int row, const int col = 0) const {
+  inline const TYPE &operator()(const int row, const int col = 0) const {
     return m_data[row];
   }
 
-  inline TYPE& operator() (const int row, const int col = 0) {
+  inline TYPE &operator()(const int row, const int col = 0) {
     return m_data[row];
   }
 
-  //inline AlignedVector(const AlignedVector<TYPE, GROWTH, GROWTH_MAX> &V)
+  // inline AlignedVector(const AlignedVector<TYPE, GROWTH, GROWTH_MAX> &V)
   //{
   //  m_own = true;
   //  m_data = NULL;
@@ -60,7 +58,7 @@ class AlignedVector {
     m_data = NULL;
     m_N = m_capacity = 0;
     if (own) {
-      Set((TYPE *) V, N);
+      Set((TYPE *)V, N);
     } else {
       Bind(V, N);
     }
@@ -70,8 +68,8 @@ class AlignedVector {
       SIMD::Free<TYPE>(m_data);
     }
   }
-  inline void operator = (const AlignedVector<TYPE, GROWTH, GROWTH_MAX> &V) {
-    //Bind(V.Data(), V.Size());
+  inline void operator=(const AlignedVector<TYPE, GROWTH, GROWTH_MAX> &V) {
+    // Bind(V.Data(), V.Size());
     m_own = false;
     m_data = V.m_data;
     m_N = V.m_N;
@@ -109,9 +107,10 @@ class AlignedVector {
     m_N = m_capacity = 0;
   }
   inline bool Empty() const { return m_N == 0; }
-  inline TYPE& Push() {
+  inline TYPE &Push() {
     if (m_N == m_capacity) {
-      const int growth = GROWTH == 0 ? std::max(std::min(m_capacity, GROWTH_MAX), 1) : GROWTH;
+      const int growth =
+          GROWTH == 0 ? std::max(std::min(m_capacity, GROWTH_MAX), 1) : GROWTH;
       m_capacity += growth;
       TYPE *dataBkp = m_data;
       m_data = SIMD::Malloc<TYPE>(m_capacity);
@@ -146,8 +145,8 @@ class AlignedVector {
   inline void Push(const AlignedVector<TYPE> &V) { Push(V.Data(), V.Size()); }
   inline void Pop(const int N, AlignedVector<float> *work) {
     const int N1 = Size(), N2 = N1 - N;
-    work->Set((float *) (Data() + N), N2 * sizeof(TYPE) / sizeof(float));
-    Set((TYPE *) work->Data(), N2);
+    work->Set((float *)(Data() + N), N2 * sizeof(TYPE) / sizeof(float));
+    Set((TYPE *)work->Data(), N2);
   }
   inline void Insert(const int i) {
     const int N = Size();
@@ -159,20 +158,21 @@ class AlignedVector {
   inline void Insert(const int i, const int N, AlignedVector<float> *work) {
     const int _N = Size() - i;
     if (_N > 0) {
-      work->Set((float *) (Data() + i), _N * sizeof(TYPE) / sizeof(float));
+      work->Set((float *)(Data() + i), _N * sizeof(TYPE) / sizeof(float));
       Resize(i + N, true);
-      Push((TYPE *) work->Data(), _N);
+      Push((TYPE *)work->Data(), _N);
     } else {
       Resize(i + N, true);
     }
   }
-  inline void Insert(const int i, const AlignedVector<TYPE> &V, AlignedVector<float> *work) {
+  inline void Insert(const int i, const AlignedVector<TYPE> &V,
+                     AlignedVector<float> *work) {
     const int _N = Size() - i;
     if (_N > 0) {
-      work->Set((float *) (Data() + i), _N * sizeof(TYPE) / sizeof(float));
+      work->Set((float *)(Data() + i), _N * sizeof(TYPE) / sizeof(float));
       Resize(i);
       Push(V);
-      Push((TYPE *) work->Data(), _N);
+      Push((TYPE *)work->Data(), _N);
     } else {
       Push(V);
     }
@@ -214,11 +214,11 @@ class AlignedVector {
     Resize(N);
     memcpy(m_data, V.Data(), sizeof(TYPE) * N);
   }
-  inline void Set(const AlignedVector<TYPE, GROWTH, GROWTH_MAX> &V, const std::vector<int> &iVs) {
+  inline void Set(const AlignedVector<TYPE, GROWTH, GROWTH_MAX> &V,
+                  const std::vector<int> &iVs) {
     const int N = int(iVs.size());
     Resize(N);
-    for (int i = 0; i < N; ++i)
-      m_data[i] = V[iVs[i]];
+    for (int i = 0; i < N; ++i) m_data[i] = V[iVs[i]];
   }
   inline void Set(const TYPE *V) { memcpy(m_data, V, sizeof(TYPE) * m_N); }
   inline void Set(const TYPE *V, const int N) {
@@ -235,7 +235,8 @@ class AlignedVector {
     V.m_N = V.m_capacity = N;
     return V;
   }
-  inline AlignedVector<TYPE, GROWTH, GROWTH_MAX> GetBlock(const int i, const int N) {
+  inline AlignedVector<TYPE, GROWTH, GROWTH_MAX> GetBlock(const int i,
+                                                          const int N) {
 #ifdef CFG_DEBUG
     UT_ASSERT(i >= 0 && N >= 0 && i + N <= m_N);
 #endif
@@ -256,14 +257,14 @@ class AlignedVector {
     if (m_data && m_own) {
       SIMD::Free<TYPE>(m_data);
     }
-    m_data = (TYPE *) V;
+    m_data = (TYPE *)V;
     m_N = m_capacity = N;
     m_own = false;
   }
-  inline void* BindNext() { return m_data + m_capacity; }
+  inline void *BindNext() { return m_data + m_capacity; }
   inline int BindSize(const int N) const { return sizeof(TYPE) * N; }
   inline void Get(TYPE *V) const { memcpy(V, m_data, sizeof(TYPE) * m_N); }
-  inline void Swap(AlignedVector<TYPE, GROWTH, GROWTH_MAX>& V) {
+  inline void Swap(AlignedVector<TYPE, GROWTH, GROWTH_MAX> &V) {
     UT_SWAP(m_own, V.m_own);
     UT_SWAP(m_data, V.m_data);
     UT_SWAP(m_N, V.m_N);
@@ -276,44 +277,45 @@ class AlignedVector {
     memcpy(m_data + V1.Size(), V2.Data(), sizeof(TYPE) * V2.Size());
   }
 
-  inline bool operator == (const AlignedVector<TYPE, GROWTH, GROWTH_MAX> &V) const {
+  inline bool operator==(
+      const AlignedVector<TYPE, GROWTH, GROWTH_MAX> &V) const {
     return Size() == V.Size() && UT::VectorEqual(Data(), V.Data(), Size());
   }
-  inline const TYPE& operator[] (const int i) const {
+  inline const TYPE &operator[](const int i) const {
 #ifdef CFG_DEBUG
     UT_ASSERT(i >= 0 && i < m_N);
 #endif
     return m_data[i];
   }
-  inline TYPE& operator[] (const int i) {
+  inline TYPE &operator[](const int i) {
 #ifdef CFG_DEBUG
     UT_ASSERT(i >= 0 && i < m_N);
 #endif
     return m_data[i];
   }
-  inline const TYPE* Data() const { return m_data; }
-  inline       TYPE* Data()       { return m_data; }
-  inline const TYPE* End() const { return m_data + m_N; }
-  inline       TYPE* End()       { return m_data + m_N; }
-  inline const TYPE& Front() const {
+  inline const TYPE *Data() const { return m_data; }
+  inline TYPE *Data() { return m_data; }
+  inline const TYPE *End() const { return m_data + m_N; }
+  inline TYPE *End() { return m_data + m_N; }
+  inline const TYPE &Front() const {
 #ifdef CFG_DEBUG
     UT_ASSERT(m_N != 0);
 #endif
     return m_data[0];
   }
-  inline TYPE& Front() {
+  inline TYPE &Front() {
 #ifdef CFG_DEBUG
     UT_ASSERT(m_N != 0);
 #endif
     return m_data[0];
   }
-  inline const TYPE& Back() const {
+  inline const TYPE &Back() const {
 #ifdef CFG_DEBUG
     UT_ASSERT(m_N != 0);
 #endif
     return m_data[m_N - 1];
   }
-  inline TYPE& Back() {
+  inline TYPE &Back() {
 #ifdef CFG_DEBUG
     UT_ASSERT(m_N != 0);
 #endif
@@ -352,14 +354,14 @@ class AlignedVector {
     return true;
   }
 
-  inline float MemoryMB() const { return m_own ? 0 : UT::MemoryMB<TYPE>(m_capacity); }
+  inline float MemoryMB() const {
+    return m_own ? 0 : UT::MemoryMB<TYPE>(m_capacity);
+  }
 
  protected:
-
   bool m_own;
-  TYPE* m_data;
+  TYPE *m_data;
   int m_N, m_capacity;
-
 };
 
 #endif

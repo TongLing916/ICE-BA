@@ -18,28 +18,29 @@
 using std::vector;
 using Eigen::Matrix4f;
 namespace XP {
-PoseViewer::PoseViewer() :
-  clear_canvas_before_draw_(false),
-  _scale(1.0),
-  _min_x(-0.5),
-  _min_y(-0.5),
-  _min_z(-0.5),
-  _max_x(0.5),
-  _max_y(0.5),
-  _max_z(0.5),
-  pose_changed_after_last_display_(true) {
+PoseViewer::PoseViewer()
+    : clear_canvas_before_draw_(false),
+      _scale(1.0),
+      _min_x(-0.5),
+      _min_y(-0.5),
+      _min_z(-0.5),
+      _max_x(0.5),
+      _max_y(0.5),
+      _max_z(0.5),
+      pose_changed_after_last_display_(true) {
   constexpr int kMaxNumPaths = 10;  // in case there are a lot of paths
   paths_.resize(kMaxNumPaths);
   data_io_mutices_.resize(kMaxNumPaths);
   latest_T_WS_.resize(kMaxNumPaths, Matrix4f::Identity());
-  // we will always see a cross in the center of the canvas which are unused  latest_T_WS_
+  // we will always see a cross in the center of the canvas which are unused
+  // latest_T_WS_
   _image.create(imageSize, imageSize, CV_8UC3);
 }
 void PoseViewer::set_clear_canvas_before_draw(bool clear_canvas_before_draw) {
   clear_canvas_before_draw_ = clear_canvas_before_draw;
 }
-void PoseViewer::addPose(const Matrix4f & T_WS,
-                         const SpeedAndBias & speedAndBiases,
+void PoseViewer::addPose(const Matrix4f& T_WS,
+                         const SpeedAndBias& speedAndBiases,
                          const float travel_dist) {
   {
     std::lock_guard<std::mutex> lock(data_io_mutices_[0]);
@@ -48,12 +49,12 @@ void PoseViewer::addPose(const Matrix4f & T_WS,
   }
   this->addPose(T_WS);
 }
-void PoseViewer::addPose(const Matrix4f & T_WS) {
+void PoseViewer::addPose(const Matrix4f& T_WS) {
   // 0 is default path_id
   this->addPose(T_WS, 0);
 }
 
-void PoseViewer::addPose(const Eigen::Matrix4f & T_WS, int path_id) {
+void PoseViewer::addPose(const Eigen::Matrix4f& T_WS, int path_id) {
   // just append the path
   Eigen::Vector3f r = T_WS.topRightCorner<3, 1>();
   {
@@ -71,15 +72,14 @@ void PoseViewer::addPose(const Eigen::Matrix4f & T_WS, int path_id) {
     _min_x = r[0] - _frameScale - screen_margin;
   if (r[1] - _frameScale - screen_margin < _min_y)
     _min_y = r[1] - _frameScale - screen_margin;
-  if (r[2] < _min_z)
-    _min_z = r[2];
+  if (r[2] < _min_z) _min_z = r[2];
   if (r[0] + _frameScale + screen_margin > _max_x)
     _max_x = r[0] + _frameScale + screen_margin;
-  if (r[1] + _frameScale + screen_margin> _max_y)
+  if (r[1] + _frameScale + screen_margin > _max_y)
     _max_y = r[1] + _frameScale + screen_margin;
-  if (r[2] > _max_z)
-    _max_z = r[2];
-  _scale = std::min(imageSize / (_max_x - _min_x), imageSize / (_max_y - _min_y));
+  if (r[2] > _max_z) _max_z = r[2];
+  _scale =
+      std::min(imageSize / (_max_x - _min_x), imageSize / (_max_y - _min_y));
   pose_changed_after_last_display_ = true;
 }
 
@@ -110,56 +110,56 @@ bool PoseViewer::drawTo(cv::Mat* img_ptr) {
     Eigen::Vector3f e_z = R.col(2);
     cv::Point2f cam_xy(latest_T_WS_[it_cam](0, 3), latest_T_WS_[it_cam](1, 3));
     // scale_mutex_ is locked in convertToImageCoordinates
-    cv::line(img,
-             convertToImageCoordinates(cam_xy),
-             convertToImageCoordinates(cam_xy + cv::Point2f(e_x[0], e_x[1]) * _frameScale),
+    cv::line(img, convertToImageCoordinates(cam_xy),
+             convertToImageCoordinates(
+                 cam_xy + cv::Point2f(e_x[0], e_x[1]) * _frameScale),
              cv::Scalar(0, 0, 255), 1, CV_AA);
-    cv::line(img,
-             convertToImageCoordinates(cam_xy),
-             convertToImageCoordinates(cam_xy + cv::Point2f(e_y[0], e_y[1]) * _frameScale),
+    cv::line(img, convertToImageCoordinates(cam_xy),
+             convertToImageCoordinates(
+                 cam_xy + cv::Point2f(e_y[0], e_y[1]) * _frameScale),
              cv::Scalar(0, 255, 0), 1, CV_AA);
-    cv::line(img,
-             convertToImageCoordinates(cam_xy),
-             convertToImageCoordinates(cam_xy + cv::Point2f(e_z[0], e_z[1]) * _frameScale),
+    cv::line(img, convertToImageCoordinates(cam_xy),
+             convertToImageCoordinates(
+                 cam_xy + cv::Point2f(e_z[0], e_z[1]) * _frameScale),
              cv::Scalar(255, 0, 0), 1, CV_AA);
   }
 
   // Display text for trajectory 0
   {
-    SpeedAndBias speedAndBiases = last_speedAndBiases_;  // cache it in case of change
+    SpeedAndBias speedAndBiases =
+        last_speedAndBiases_;  // cache it in case of change
     // some text:
     std::stringstream postext;
     postext.setf(std::ios::fixed, std::ios::floatfield);
     postext.precision(3);
     {
       std::lock_guard<std::mutex> lock(data_io_mutices_[0]);
-      postext << "position = [" << latest_T_WS_[0](0, 3)
-              << ", " << latest_T_WS_[0](1, 3)
-              << ", " << latest_T_WS_[0](2, 3) << "]";
+      postext << "position = [" << latest_T_WS_[0](0, 3) << ", "
+              << latest_T_WS_[0](1, 3) << ", " << latest_T_WS_[0](2, 3) << "]";
     }
-    cv::putText(img, postext.str(), cv::Point(15, 15),
-                cv::FONT_HERSHEY_COMPLEX, 0.5, cv::Scalar(255, 255, 255), 1);
+    cv::putText(img, postext.str(), cv::Point(15, 15), cv::FONT_HERSHEY_COMPLEX,
+                0.5, cv::Scalar(255, 255, 255), 1);
     std::stringstream veltext;
     veltext.setf(std::ios::fixed, std::ios::floatfield);
     veltext.precision(3);
-    veltext << "velocity = [" << speedAndBiases[0] << ", "
-            << speedAndBiases[1] << ", " << speedAndBiases[2] << "]";
-    cv::putText(img, veltext.str(), cv::Point(15, 35),
-                cv::FONT_HERSHEY_COMPLEX, 0.5, cv::Scalar(255, 255, 255), 1);
+    veltext << "velocity = [" << speedAndBiases[0] << ", " << speedAndBiases[1]
+            << ", " << speedAndBiases[2] << "]";
+    cv::putText(img, veltext.str(), cv::Point(15, 35), cv::FONT_HERSHEY_COMPLEX,
+                0.5, cv::Scalar(255, 255, 255), 1);
     std::stringstream bgtext;
     bgtext.setf(std::ios::fixed, std::ios::floatfield);
     bgtext.precision(4);
     bgtext << "Bg = [" << speedAndBiases[3] << ", " << speedAndBiases[4] << ", "
            << speedAndBiases[5] << "]";
-    cv::putText(img, bgtext.str(), cv::Point(15, 55),
-                cv::FONT_HERSHEY_COMPLEX, 0.5, cv::Scalar(255, 255, 255), 1);
+    cv::putText(img, bgtext.str(), cv::Point(15, 55), cv::FONT_HERSHEY_COMPLEX,
+                0.5, cv::Scalar(255, 255, 255), 1);
     std::stringstream batext;
     batext.setf(std::ios::fixed, std::ios::floatfield);
     batext.precision(4);
-    batext << "Ba = [" << speedAndBiases[6] << ", "
-           << speedAndBiases[7] << ", " << speedAndBiases[8] << "]";
-    cv::putText(img, batext.str(), cv::Point(15, 75),
-                cv::FONT_HERSHEY_COMPLEX, 0.5, cv::Scalar(255, 255, 255), 1);
+    batext << "Ba = [" << speedAndBiases[6] << ", " << speedAndBiases[7] << ", "
+           << speedAndBiases[8] << "]";
+    cv::putText(img, batext.str(), cv::Point(15, 75), cv::FONT_HERSHEY_COMPLEX,
+                0.5, cv::Scalar(255, 255, 255), 1);
     std::stringstream disttext;
     disttext.setf(std::ios::fixed, std::ios::floatfield);
     disttext.precision(2);
@@ -176,19 +176,20 @@ bool PoseViewer::drawTo(cv::Mat* img_ptr) {
       std::stringstream postext;
       postext.setf(std::ios::fixed, std::ios::floatfield);
       postext.precision(3);
-      postext << "iba pos  = [" << latest_T_WS_[k](0, 3)
-              << ", " << latest_T_WS_[k](1, 3)
-              << ", " << latest_T_WS_[k](2, 3) << "]";
+      postext << "iba pos  = [" << latest_T_WS_[k](0, 3) << ", "
+              << latest_T_WS_[k](1, 3) << ", " << latest_T_WS_[k](2, 3) << "]";
       cv::putText(img, postext.str(), cv::Point(15, 115),
                   cv::FONT_HERSHEY_COMPLEX, 0.5, cv::Scalar(255, 255, 255), 1);
     }
   }
   return true;
 }
-cv::Point2f PoseViewer::convertToImageCoordinates(const cv::Point2f & pointInMeters) {
+cv::Point2f PoseViewer::convertToImageCoordinates(
+    const cv::Point2f& pointInMeters) {
   std::lock_guard<std::mutex> lock(scale_mutex_);
   cv::Point2f pt = (pointInMeters - cv::Point2f(_min_x, _min_y)) * _scale;
-  return cv::Point2f(pt.x, imageSize - pt.y);  // reverse y for more intuitive top-down plot
+  return cv::Point2f(
+      pt.x, imageSize - pt.y);  // reverse y for more intuitive top-down plot
 }
 void PoseViewer::drawPath(cv::Mat* img_ptr) {
   // this is an internal call.
@@ -210,7 +211,7 @@ void PoseViewer::drawPath(cv::Mat* img_ptr) {
     for (; it_path_next != paths_[path_id].end();) {
       cv::Point2f p0 = convertToImageCoordinates(it_path->xy);
       cv::Point2f p1 = convertToImageCoordinates(it_path_next->xy);
-      cv::Point2f diff = p1-p0;
+      cv::Point2f diff = p1 - p0;
       if (diff.dot(diff) < 2.0) {
         auto it_path_bk = it_path_next;
         ++it_path_next;
@@ -218,9 +219,10 @@ void PoseViewer::drawPath(cv::Mat* img_ptr) {
       } else {
         cv::Scalar color;
         if (show_h_in_color) {
-          float rel_height = (it_path->h - _min_z + it_path_next->h - _min_z)
-          * 0.5 / (_max_z - _min_z);
-          color = rel_height * cv::Scalar(0, 255, 0) + (1.0 - rel_height) * cv::Scalar(0, 0, 255);
+          float rel_height = (it_path->h - _min_z + it_path_next->h - _min_z) *
+                             0.5 / (_max_z - _min_z);
+          color = rel_height * cv::Scalar(0, 255, 0) +
+                  (1.0 - rel_height) * cv::Scalar(0, 0, 255);
         } else {
           uchar B = path_id * 50;
           uchar G = (1 - path_id) * 200;

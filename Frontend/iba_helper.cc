@@ -21,7 +21,8 @@
 #include "../Geometry/Rotation.h"
 
 namespace XP {
-IBA::Intrinsic to_iba_intrinsic(const DuoCalibParam::Camera_t& cam, const int lr) {
+IBA::Intrinsic to_iba_intrinsic(const DuoCalibParam::Camera_t& cam,
+                                const int lr) {
   IBA::Intrinsic K;
   K.fx = cam.cameraK_lr[lr](0, 0);
   K.fy = cam.cameraK_lr[lr](1, 1);
@@ -55,7 +56,8 @@ IBA::Calibration to_iba_calibration(const DuoCalibParam& calib) {
   iba_calib.K = to_iba_intrinsic(calib.Camera, 0);
 
 #ifdef CFG_STEREO
-  Eigen::Matrix4f Cl_T_Cr = calib.Camera.D_T_C_lr[0].inverse() * calib.Camera.D_T_C_lr[1];
+  Eigen::Matrix4f Cl_T_Cr =
+      calib.Camera.D_T_C_lr[0].inverse() * calib.Camera.D_T_C_lr[1];
   for (int i = 0; i < 3; ++i) {
     for (int j = 0; j < 4; ++j) {
       iba_calib.Tr[i][j] = Cl_T_Cr(i, j);
@@ -83,7 +85,6 @@ IBA::IMUMeasurement to_iba_imu(const ImuData& imu_in) {
   }
   return imu_out;
 }
-
 
 /*
 

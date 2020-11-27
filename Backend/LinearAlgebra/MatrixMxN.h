@@ -16,56 +16,57 @@
 #ifndef _MATRIX_NxN_H_
 #define _MATRIX_NxN_H_
 
-#include "VectorN.h"
-#include "Matrix4x4.h"
+#include "AlignedMatrix.h"
 #include "Matrix2x8.h"
 #include "Matrix3x6.h"
+#include "Matrix4x4.h"
 #include "Matrix6x6.h"
 #include "Matrix8x8.h"
 #include "Matrix9x9.h"
-#include "AlignedMatrix.h"
+#include "VectorN.h"
 
 namespace LA {
-template<int M, int N>
+template <int M, int N>
 class SIMD_ALIGN_DECLSPEC AlignedMatrixMxNf {
  public:
-  class Row : public AlignedVectorNf<N> {
-  };
+  class Row : public AlignedVectorNf<N> {};
 
  public:
-  inline const Row& operator() (const int i) const { return m_rows[i]; }
-  inline       Row& operator() (const int i)       { return m_rows[i]; }
-  inline const float* operator[] (const int i) const { return m_rows[i].m_data; }
-  inline       float* operator[] (const int i)       { return m_rows[i].m_data; }
-  inline const float& operator() (const int i, const int j) const { return m_rows[i].m_data[j]; }
-  inline       float& operator() (const int i, const int j)       { return m_rows[i].m_data[j]; }
-
-  //inline AlignedMatrixMxNf() {}
-  //inline AlignedMatrixMxNf(const AlignedMatrixMxNf<M, N> &B) { *this = B; }
-
-  inline void operator += (const AlignedMatrixMxNf<M, N> &B) {
-    for (int i = 0; i < M; ++i)
-      m_rows[i] += B.m_rows[i];
+  inline const Row &operator()(const int i) const { return m_rows[i]; }
+  inline Row &operator()(const int i) { return m_rows[i]; }
+  inline const float *operator[](const int i) const { return m_rows[i].m_data; }
+  inline float *operator[](const int i) { return m_rows[i].m_data; }
+  inline const float &operator()(const int i, const int j) const {
+    return m_rows[i].m_data[j];
   }
-  inline void operator -= (const AlignedMatrixMxNf<M, N> &B) {
-    for (int i = 0; i < M; ++i)
-      m_rows[i] -= B.m_rows[i];
+  inline float &operator()(const int i, const int j) {
+    return m_rows[i].m_data[j];
   }
-  inline void operator *= (const float s) {
+
+  // inline AlignedMatrixMxNf() {}
+  // inline AlignedMatrixMxNf(const AlignedMatrixMxNf<M, N> &B) { *this = B; }
+
+  inline void operator+=(const AlignedMatrixMxNf<M, N> &B) {
+    for (int i = 0; i < M; ++i) m_rows[i] += B.m_rows[i];
+  }
+  inline void operator-=(const AlignedMatrixMxNf<M, N> &B) {
+    for (int i = 0; i < M; ++i) m_rows[i] -= B.m_rows[i];
+  }
+  inline void operator*=(const float s) {
     const xp128f _s = xp128f::get(s);
-    for (int i = 0; i < M; ++i)
-      m_rows[i] *= _s;
+    for (int i = 0; i < M; ++i) m_rows[i] *= _s;
   }
-  inline void operator *= (const xp128f &s) {
-    for (int i = 0; i < M; ++i)
-      m_rows[i] *= s;
+  inline void operator*=(const xp128f &s) {
+    for (int i = 0; i < M; ++i) m_rows[i] *= s;
   }
-  inline AlignedMatrixMxNf<M, N> operator + (const AlignedMatrixMxNf<M, N> &B) const {
+  inline AlignedMatrixMxNf<M, N> operator+(
+      const AlignedMatrixMxNf<M, N> &B) const {
     AlignedMatrixMxNf<M, N> _ApB;
     ApB(*this, B, _ApB);
     return _ApB;
   }
-  inline AlignedMatrixMxNf<M, N> operator - (const AlignedMatrixMxNf<M, N> &B) const {
+  inline AlignedMatrixMxNf<M, N> operator-(
+      const AlignedMatrixMxNf<M, N> &B) const {
     AlignedMatrixMxNf<M, N> _AmB;
     AmB(*this, B, _AmB);
     return _AmB;
@@ -73,15 +74,13 @@ class SIMD_ALIGN_DECLSPEC AlignedMatrixMxNf {
 
   inline void MakeZero() { memset(this, 0, sizeof(AlignedMatrixMxNf<M, N>)); }
   inline void MakeMinus() {
-    for (int i = 0; i < M; ++i)
-      m_rows[i].MakeMinus();
+    for (int i = 0; i < M; ++i) m_rows[i].MakeMinus();
   }
 
   inline void MakeIdentity() {
     MakeZero();
     const int min_MN = std::min(M, N);
-    for (int i = 0; i < min_MN; ++i)
-      m_rows[i].m_data[i] = 1.0f;
+    for (int i = 0; i < min_MN; ++i) m_rows[i].m_data[i] = 1.0f;
   }
 
   inline void SetBlock(const int i, const int j, const AlignedMatrix2x3f &B) {
@@ -144,8 +143,10 @@ class SIMD_ALIGN_DECLSPEC AlignedMatrixMxNf {
     UT_ASSERT(i >= 0 && i + 3 <= M && i + 3 <= N);
 #endif
     int k = i;
-    memcpy(m_rows[k] + k, &B.m00(), 12);  ++k;
-    memcpy(m_rows[k] + k, &B.m11(), 8);   ++k;
+    memcpy(m_rows[k] + k, &B.m00(), 12);
+    ++k;
+    memcpy(m_rows[k] + k, &B.m11(), 8);
+    ++k;
     m_rows[k][k] = B.m22();
   }
   inline void SetBlockDiagonal(const int i, const SymmetricMatrix6x6f &B) {
@@ -153,11 +154,16 @@ class SIMD_ALIGN_DECLSPEC AlignedMatrixMxNf {
     UT_ASSERT(i >= 0 && i + 6 <= M && i + 6 <= N);
 #endif
     int k = i;
-    memcpy(m_rows[k] + k, &B.m00(), 24);  ++k;
-    memcpy(m_rows[k] + k, &B.m11(), 20);  ++k;
-    memcpy(m_rows[k] + k, &B.m22(), 16);  ++k;
-    memcpy(m_rows[k] + k, &B.m33(), 12);  ++k;
-    memcpy(m_rows[k] + k, &B.m44(), 8);   ++k;
+    memcpy(m_rows[k] + k, &B.m00(), 24);
+    ++k;
+    memcpy(m_rows[k] + k, &B.m11(), 20);
+    ++k;
+    memcpy(m_rows[k] + k, &B.m22(), 16);
+    ++k;
+    memcpy(m_rows[k] + k, &B.m33(), 12);
+    ++k;
+    memcpy(m_rows[k] + k, &B.m44(), 8);
+    ++k;
     m_rows[k][k] = B.m55();
   }
 
@@ -216,8 +222,10 @@ class SIMD_ALIGN_DECLSPEC AlignedMatrixMxNf {
     UT_ASSERT(i >= 0 && i + 3 <= M && i + 3 <= N);
 #endif
     int k = i;
-    memcpy(&B.m00(), m_rows[k] + k, 12);  ++k;
-    memcpy(&B.m11(), m_rows[k] + k, 8);   ++k;
+    memcpy(&B.m00(), m_rows[k] + k, 12);
+    ++k;
+    memcpy(&B.m11(), m_rows[k] + k, 8);
+    ++k;
     B.m22() = m_rows[k][k];
   }
   inline void GetBlockDiagonal(const int i, SymmetricMatrix3x3d &B) const {
@@ -244,11 +252,16 @@ class SIMD_ALIGN_DECLSPEC AlignedMatrixMxNf {
     UT_ASSERT(i >= 0 && i + 6 <= M && i + 6 <= N);
 #endif
     int k = i;
-    memcpy(&B.m00(), m_rows[k] + k, 24);  ++k;
-    memcpy(&B.m11(), m_rows[k] + k, 20);  ++k;
-    memcpy(&B.m22(), m_rows[k] + k, 16);  ++k;
-    memcpy(&B.m33(), m_rows[k] + k, 12);  ++k;
-    memcpy(&B.m44(), m_rows[k] + k, 8);   ++k;
+    memcpy(&B.m00(), m_rows[k] + k, 24);
+    ++k;
+    memcpy(&B.m11(), m_rows[k] + k, 20);
+    ++k;
+    memcpy(&B.m22(), m_rows[k] + k, 16);
+    ++k;
+    memcpy(&B.m33(), m_rows[k] + k, 12);
+    ++k;
+    memcpy(&B.m44(), m_rows[k] + k, 8);
+    ++k;
     B.m55() = m_rows[k][k];
   }
 
@@ -258,18 +271,33 @@ class SIMD_ALIGN_DECLSPEC AlignedMatrixMxNf {
     UT_ASSERT(j >= 0 && j + 3 <= N);
 #endif
     float *A;
-    A = m_rows[i].m_data + j;     A[0] += B.m00();  A[1] += B.m01();  A[2] += B.m02();
-    A = m_rows[i + 1].m_data + j; A[0] += B.m10();  A[1] += B.m11();  A[2] += B.m12();
-    A = m_rows[i + 2].m_data + j; A[0] += B.m20();  A[1] += B.m21();  A[2] += B.m22();
+    A = m_rows[i].m_data + j;
+    A[0] += B.m00();
+    A[1] += B.m01();
+    A[2] += B.m02();
+    A = m_rows[i + 1].m_data + j;
+    A[0] += B.m10();
+    A[1] += B.m11();
+    A[2] += B.m12();
+    A = m_rows[i + 2].m_data + j;
+    A[0] += B.m20();
+    A[1] += B.m21();
+    A[2] += B.m22();
   }
   inline void IncreaseDiagonal(const int i, const SymmetricMatrix3x3f &B) {
 #ifdef CFG_DEBUG
     UT_ASSERT(i >= 0 && i + 3 <= M);
 #endif
     float *A;
-    A = m_rows[i].m_data + i;     A[0] += B.m00();  A[1] += B.m01();  A[2] += B.m02();
-    A = m_rows[i + 1].m_data + i;                   A[1] += B.m11();  A[2] += B.m12();
-    A = m_rows[i + 2].m_data + i;                                     A[2] += B.m22();
+    A = m_rows[i].m_data + i;
+    A[0] += B.m00();
+    A[1] += B.m01();
+    A[2] += B.m02();
+    A = m_rows[i + 1].m_data + i;
+    A[1] += B.m11();
+    A[2] += B.m12();
+    A = m_rows[i + 2].m_data + i;
+    A[2] += B.m22();
   }
 
   inline void Transpose() {
@@ -300,7 +328,7 @@ class SIMD_ALIGN_DECLSPEC AlignedMatrixMxNf {
       }
     }
   }
-  
+
   inline bool Valid() const { return m_rows[0][0] != FLT_MAX; }
   inline bool Invalid() const { return m_rows[0][0] == FLT_MAX; }
   inline void Invalidate() { m_rows[0][0] = FLT_MAX; }
@@ -357,11 +385,12 @@ class SIMD_ALIGN_DECLSPEC AlignedMatrixMxNf {
 
   inline bool AssertEqual(const AlignedMatrixMxNf<M, N> &_M,
                           const int verbose = 1, const std::string str = "",
-                          const float epsAbs = 0.0f, const float epsRel = 0.0f) const {
+                          const float epsAbs = 0.0f,
+                          const float epsRel = 0.0f) const {
     bool equal = true;
     for (int i = 0; i < M && equal; ++i) {
-      equal = m_rows[i].AssertEqual(_M(i), verbose, UT::String("%s[%d]", str.c_str(), i),
-                                    epsAbs, epsRel);
+      equal = m_rows[i].AssertEqual(
+          _M(i), verbose, UT::String("%s[%d]", str.c_str(), i), epsAbs, epsRel);
     }
     if (equal) {
       return true;
@@ -376,9 +405,10 @@ class SIMD_ALIGN_DECLSPEC AlignedMatrixMxNf {
     }
     return false;
   }
-  
+
   inline bool AssertZero(const int verbose = 1, const std::string str = "",
-                         const float epsAbs = 0.0f, const float epsRel = 0.0f) const {
+                         const float epsAbs = 0.0f,
+                         const float epsRel = 0.0f) const {
     bool zero = true;
     for (int i = 0; i < M && zero; ++i) {
       zero = m_rows[i].AssertZero(verbose, UT::String("%s[%d]", str.c_str(), i),
@@ -407,12 +437,14 @@ class SIMD_ALIGN_DECLSPEC AlignedMatrixMxNf {
     }
   }
 
-  static inline void ApB(const AlignedMatrixMxNf<M, N> &A, const AlignedMatrixMxNf<M, N> &B,
+  static inline void ApB(const AlignedMatrixMxNf<M, N> &A,
+                         const AlignedMatrixMxNf<M, N> &B,
                          AlignedMatrixMxNf<M, N> &ApB) {
     for (int i = 0; i < M; ++i)
       Row::apb(A.m_rows[i], B.m_rows[i], ApB.m_rows[i]);
   }
-  static inline void AmB(const AlignedMatrixMxNf<M, N> &A, const AlignedMatrixMxNf<M, N> &B,
+  static inline void AmB(const AlignedMatrixMxNf<M, N> &A,
+                         const AlignedMatrixMxNf<M, N> &B,
                          AlignedMatrixMxNf<M, N> &AmB) {
     for (int i = 0; i < M; ++i)
       Row::amb(A.m_rows[i], B.m_rows[i], AmB.m_rows[i]);
@@ -430,24 +462,27 @@ class SIMD_ALIGN_DECLSPEC AlignedMatrix2x9f : public AlignedMatrixMxNf<2, 9> {
     SetBlock(0, 3, M1);
     SetBlock(0, 6, M2);
   }
-  static inline void AddABTTo(const AlignedMatrix2x9f &A, const AlignedMatrix2x9f &B,
+  static inline void AddABTTo(const AlignedMatrix2x9f &A,
+                              const AlignedMatrix2x9f &B,
                               SymmetricMatrix2x2f &ABT) {
     ABT.m00() += A(0).Dot(B(0));
     ABT.m01() += A(0).Dot(B(1));
     ABT.m11() += A(1).Dot(B(1));
   }
-  static inline void Ab(const AlignedMatrix2x9f &A, const AlignedVector9f &b, float *Ab) {
+  static inline void Ab(const AlignedMatrix2x9f &A, const AlignedVector9f &b,
+                        float *Ab) {
     for (int i = 0; i < 2; ++i) {
       Ab[i] = A(i).Dot(b);
     }
   }
-  static inline void AddAbTo(const AlignedMatrix2x9f &A, const AlignedVector9f &b, float *Ab) {
+  static inline void AddAbTo(const AlignedMatrix2x9f &A,
+                             const AlignedVector9f &b, float *Ab) {
     for (int i = 0; i < 2; ++i) {
       Ab[i] += A(i).Dot(b);
     }
   }
-  static inline void ATB(const SymmetricMatrix2x2f &A, const AlignedMatrix2x9f &B,
-                         AlignedMatrix2x9f &ATB) {
+  static inline void ATB(const SymmetricMatrix2x2f &A,
+                         const AlignedMatrix2x9f &B, AlignedMatrix2x9f &ATB) {
     const float *B0 = B[0], *B1 = B[1];
     float *ATB0 = ATB[0], *ATB1 = ATB[1];
     for (int i = 0; i < 9; ++i) {
@@ -455,7 +490,8 @@ class SIMD_ALIGN_DECLSPEC AlignedMatrix2x9f : public AlignedMatrixMxNf<2, 9> {
       ATB1[i] = A.m01() * B0[i] + A.m11() * B1[i];
     }
   }
-  static inline void AddATbTo(const AlignedMatrix2x9f &A, const Vector2f &b, AlignedVector9f &ATb) {
+  static inline void AddATbTo(const AlignedMatrix2x9f &A, const Vector2f &b,
+                              AlignedVector9f &ATb) {
     const AlignedVectorNf<9> &A0 = A(0), &A1 = A(1);
     const xp128f b0 = xp128f::get(b.v0()), b1 = xp128f::get(b.v1());
     ATb.v0123() += A0.m_data4[0] * b0 + A1.m_data4[0] * b1;
@@ -468,13 +504,20 @@ class SIMD_ALIGN_DECLSPEC AlignedMatrix2x12f : public AlignedMatrixMxNf<2, 12> {
 class SIMD_ALIGN_DECLSPEC AlignedMatrix2x13f : public AlignedMatrixMxNf<2, 13> {
  public:
   inline AlignedMatrix2x13f() {}
-  inline void Set(const Vector2f &M0, const AlignedMatrix2x6f &M1, const AlignedMatrix2x6f &M2) {
+  inline void Set(const Vector2f &M0, const AlignedMatrix2x6f &M1,
+                  const AlignedMatrix2x6f &M2) {
     float *r;
-    r = m_rows[0];  r[0] = M0.v0();   memcpy(r + 1, M1[0], 24); memcpy(r + 7, M2[0], 24);
-    r = m_rows[1];  r[0] = M0.v1();   memcpy(r + 1, M1[1], 24); memcpy(r + 7, M2[1], 24);
+    r = m_rows[0];
+    r[0] = M0.v0();
+    memcpy(r + 1, M1[0], 24);
+    memcpy(r + 7, M2[0], 24);
+    r = m_rows[1];
+    r[0] = M0.v1();
+    memcpy(r + 1, M1[1], 24);
+    memcpy(r + 7, M2[1], 24);
   }
-  static inline void AB(const SymmetricMatrix2x2f &A, const AlignedMatrix2x13f &B,
-                        AlignedMatrix2x13f &AB) {
+  static inline void AB(const SymmetricMatrix2x2f &A,
+                        const AlignedMatrix2x13f &B, AlignedMatrix2x13f &AB) {
     const AlignedMatrix2x13f::Row &B0 = B(0), &B1 = B(1);
     const float a00 = A.m00();
     const float a01 = A.m01();
@@ -494,18 +537,24 @@ class SIMD_ALIGN_DECLSPEC AlignedMatrix2x14f : public AlignedMatrixMxNf<2, 14> {
   inline AlignedMatrix2x14f() {}
   inline void Set(const AlignedMatrix2x13f &M0, const Vector2f &M1) {
     float *r;
-    r = m_rows[0];  memcpy(r, M0[0], 52); r[13] = M1.v0();
-    r = m_rows[1];  memcpy(r, M0[1], 52); r[13] = M1.v1();
+    r = m_rows[0];
+    memcpy(r, M0[0], 52);
+    r[13] = M1.v0();
+    r = m_rows[1];
+    memcpy(r, M0[1], 52);
+    r[13] = M1.v1();
   }
 };
 class SIMD_ALIGN_DECLSPEC AlignedMatrix3x9f : public AlignedMatrixMxNf<3, 9> {
  public:
-  static inline void Ab(const AlignedMatrix3x9f &A, const AlignedVector9f &b, float *Ab) {
+  static inline void Ab(const AlignedMatrix3x9f &A, const AlignedVector9f &b,
+                        float *Ab) {
     for (int i = 0; i < 3; ++i) {
       Ab[i] = A(i).Dot(b);
     }
   }
-  static inline void AddAbTo(const AlignedMatrix3x9f &A, const AlignedVector9f &b, float *Ab) {
+  static inline void AddAbTo(const AlignedMatrix3x9f &A,
+                             const AlignedVector9f &b, float *Ab) {
     for (int i = 0; i < 3; ++i) {
       Ab[i] += A(i).Dot(b);
     }
@@ -518,12 +567,21 @@ class SIMD_ALIGN_DECLSPEC AlignedMatrix3x13f : public AlignedMatrixMxNf<3, 13> {
   inline void Set(const AlignedVector3f &M0, const AlignedMatrix3x6f &M1,
                   const AlignedMatrix3x6f &M2) {
     float *r;
-    r = m_rows[0];  r[0] = M0.v0();   memcpy(r + 1, &M1.m00(), 24); memcpy(r + 7, &M2.m00(), 24);
-    r = m_rows[1];  r[0] = M0.v1();   memcpy(r + 1, &M1.m10(), 24); memcpy(r + 7, &M2.m10(), 24);
-    r = m_rows[2];  r[0] = M0.v2();   memcpy(r + 1, &M1.m20(), 24); memcpy(r + 7, &M2.m20(), 24);
+    r = m_rows[0];
+    r[0] = M0.v0();
+    memcpy(r + 1, &M1.m00(), 24);
+    memcpy(r + 7, &M2.m00(), 24);
+    r = m_rows[1];
+    r[0] = M0.v1();
+    memcpy(r + 1, &M1.m10(), 24);
+    memcpy(r + 7, &M2.m10(), 24);
+    r = m_rows[2];
+    r[0] = M0.v2();
+    memcpy(r + 1, &M1.m20(), 24);
+    memcpy(r + 7, &M2.m20(), 24);
   }
-  static inline void AB(const SymmetricMatrix2x2f &A0, const float A1, const AlignedMatrix3x13f &B,
-                        AlignedMatrix3x13f &AB) {
+  static inline void AB(const SymmetricMatrix2x2f &A0, const float A1,
+                        const AlignedMatrix3x13f &B, AlignedMatrix3x13f &AB) {
     const float a00 = A0.m00(), a01 = A0.m01();
     const float a11 = A0.m11(), a22 = A1;
     const AlignedMatrix3x13f::Row &B0 = B(0), &B1 = B(1), &B2 = B(2);
@@ -544,11 +602,18 @@ class SIMD_ALIGN_DECLSPEC AlignedMatrix3x13f : public AlignedMatrixMxNf<3, 13> {
 class SIMD_ALIGN_DECLSPEC AlignedMatrix3x14f : public AlignedMatrixMxNf<3, 14> {
  public:
   inline AlignedMatrix3x14f() {}
-  inline void Set(const AlignedMatrix3x13f &M0, const Vector2f &M10, const float M11) {
+  inline void Set(const AlignedMatrix3x13f &M0, const Vector2f &M10,
+                  const float M11) {
     float *r;
-    r = m_rows[0];  memcpy(r, M0[0], 52); r[13] = M10.v0();
-    r = m_rows[1];  memcpy(r, M0[1], 52); r[13] = M10.v1();
-    r = m_rows[2];  memcpy(r, M0[2], 52); r[13] = M11;
+    r = m_rows[0];
+    memcpy(r, M0[0], 52);
+    r[13] = M10.v0();
+    r = m_rows[1];
+    memcpy(r, M0[1], 52);
+    r[13] = M10.v1();
+    r = m_rows[2];
+    memcpy(r, M0[2], 52);
+    r[13] = M11;
   }
 };
 class SIMD_ALIGN_DECLSPEC AlignedMatrix6x9f : public AlignedMatrixMxNf<6, 9> {
@@ -556,13 +621,18 @@ class SIMD_ALIGN_DECLSPEC AlignedMatrix6x9f : public AlignedMatrixMxNf<6, 9> {
   inline void Set(const AlignedMatrix3x3f &M00, const AlignedMatrix3x3f &M01,
                   const AlignedMatrix3x3f &M02, const AlignedMatrix3x3f &M10,
                   const AlignedMatrix3x3f &M11, const AlignedMatrix3x3f &M12) {
-    SetBlock(0, 0, M00);  SetBlock(0, 3, M01);  SetBlock(0, 6, M02);
-    SetBlock(3, 0, M10);  SetBlock(3, 3, M11);  SetBlock(3, 6, M12);
+    SetBlock(0, 0, M00);
+    SetBlock(0, 3, M01);
+    SetBlock(0, 6, M02);
+    SetBlock(3, 0, M10);
+    SetBlock(3, 3, M11);
+    SetBlock(3, 6, M12);
   }
   inline void Set(const AlignedMatrix3x3f *M0, const AlignedMatrix3x3f *M1) {
     Set(M0[0], M0[1], M0[2], M1[0], M1[1], M1[2]);
   }
-  inline void GetScaledColumn(const AlignedVector9f &s, AlignedMatrix6x9f &M) const {
+  inline void GetScaledColumn(const AlignedVector9f &s,
+                              AlignedMatrix6x9f &M) const {
     for (int i = 0; i < 6; ++i) {
       m_rows[i].GetScaled(s, M(i));
     }
@@ -577,19 +647,22 @@ class SIMD_ALIGN_DECLSPEC AlignedMatrix6x9f : public AlignedMatrixMxNf<6, 9> {
     m_rows[4] += A(1);
     m_rows[5] += A(2);
   }
-  template<typename TYPE>
-  static inline void Ab(const AlignedMatrix6x9f &A, const AlignedVector9f &b, TYPE *Ab) {
+  template <typename TYPE>
+  static inline void Ab(const AlignedMatrix6x9f &A, const AlignedVector9f &b,
+                        TYPE *Ab) {
     for (int i = 0; i < 6; ++i) {
       Ab[i] = A(i).Dot(b);
     }
   }
-  template<typename TYPE>
-  static inline void AddAbTo(const AlignedMatrix6x9f &A, const AlignedVector9f &b, TYPE *Ab) {
+  template <typename TYPE>
+  static inline void AddAbTo(const AlignedMatrix6x9f &A,
+                             const AlignedVector9f &b, TYPE *Ab) {
     for (int i = 0; i < 6; ++i) {
       Ab[i] += A(i).Dot(b);
     }
   }
-  static inline void AddATBTo(const AlignedMatrix2x6f &A, const AlignedMatrix2x9f &B,
+  static inline void AddATBTo(const AlignedMatrix2x6f &A,
+                              const AlignedMatrix2x9f &B,
                               AlignedMatrix6x9f &ATB) {
     const float *A0 = A[0], *A1 = A[1], *B0 = B[0], *B1 = B[1];
     for (int i = 0; i < 6; ++i) {
@@ -601,8 +674,10 @@ class SIMD_ALIGN_DECLSPEC AlignedMatrix6x9f : public AlignedMatrixMxNf<6, 9> {
   }
   static inline void ATB(const AlignedMatrix6x6f &A, const AlignedMatrix6x9f &B,
                          AlignedMatrix6x9f &ATB) {
-    const float *A0 = A[0], *A1 = A[1], *A2 = A[2], *A3 = A[3], *A4 = A[4], *A5 = A[5];
-    const float *B0 = B[0], *B1 = B[1], *B2 = B[2], *B3 = B[3], *B4 = B[4], *B5 = B[5];
+    const float *A0 = A[0], *A1 = A[1], *A2 = A[2], *A3 = A[3], *A4 = A[4],
+                *A5 = A[5];
+    const float *B0 = B[0], *B1 = B[1], *B2 = B[2], *B3 = B[3], *B4 = B[4],
+                *B5 = B[5];
     for (int i = 0; i < 6; ++i) {
       float *ATBi = ATB[i];
       for (int j = 0; j < 9; ++j) {
@@ -611,10 +686,13 @@ class SIMD_ALIGN_DECLSPEC AlignedMatrix6x9f : public AlignedMatrixMxNf<6, 9> {
       }
     }
   }
-  static inline void AddATBTo(const AlignedMatrix6x6f &A, const AlignedMatrix6x9f &B,
+  static inline void AddATBTo(const AlignedMatrix6x6f &A,
+                              const AlignedMatrix6x9f &B,
                               AlignedMatrix6x9f &ATB) {
-    const float *A0 = A[0], *A1 = A[1], *A2 = A[2], *A3 = A[3], *A4 = A[4], *A5 = A[5];
-    const float *B0 = B[0], *B1 = B[1], *B2 = B[2], *B3 = B[3], *B4 = B[4], *B5 = B[5];
+    const float *A0 = A[0], *A1 = A[1], *A2 = A[2], *A3 = A[3], *A4 = A[4],
+                *A5 = A[5];
+    const float *B0 = B[0], *B1 = B[1], *B2 = B[2], *B3 = B[3], *B4 = B[4],
+                *B5 = B[5];
     for (int i = 0; i < 6; ++i) {
       float *ATBi = ATB[i];
       for (int j = 0; j < 9; ++j) {
@@ -623,7 +701,8 @@ class SIMD_ALIGN_DECLSPEC AlignedMatrix6x9f : public AlignedMatrixMxNf<6, 9> {
       }
     }
   }
-  static inline void AddABTToUpper(const AlignedMatrix6x9f &A, const AlignedMatrix6x9f &B,
+  static inline void AddABTToUpper(const AlignedMatrix6x9f &A,
+                                   const AlignedMatrix6x9f &B,
                                    AlignedMatrix6x6f &ABT) {
     for (int i = 0; i < 6; ++i) {
       const AlignedMatrix6x9f::Row &Ai = A(i);
@@ -633,7 +712,8 @@ class SIMD_ALIGN_DECLSPEC AlignedMatrix6x9f : public AlignedMatrixMxNf<6, 9> {
       }
     }
   }
-  static inline void AddABTTo(const AlignedMatrix6x9f &A, const AlignedMatrix6x9f &B,
+  static inline void AddABTTo(const AlignedMatrix6x9f &A,
+                              const AlignedMatrix6x9f &B,
                               AlignedMatrix6x6f &ABT) {
     for (int i = 0; i < 6; ++i) {
       const AlignedMatrix6x9f::Row &Ai = A(i);
@@ -646,51 +726,77 @@ class SIMD_ALIGN_DECLSPEC AlignedMatrix6x9f : public AlignedMatrixMxNf<6, 9> {
 };
 class SIMD_ALIGN_DECLSPEC AlignedMatrix7x8f : public AlignedMatrixMxNf<7, 8> {
  public:
-  inline void Get(float &M00, Vector6f &M01, float &M02, SymmetricMatrix6x6f &M11,
-                  Vector6f &M12) const {
+  inline void Get(float &M00, Vector6f &M01, float &M02,
+                  SymmetricMatrix6x6f &M11, Vector6f &M12) const {
     M00 = m_rows[0][0];
     memcpy(M01, m_rows[0] + 1, 24);
     M02 = m_rows[0][7];
     GetBlockDiagonal(1, M11);
     GetBlock(1, 7, M12);
   }
-  static inline void ATBToUpper(const AlignedMatrix2x7f &A, const AlignedMatrix2x8f &B,
+  static inline void ATBToUpper(const AlignedMatrix2x7f &A,
+                                const AlignedMatrix2x8f &B,
                                 AlignedMatrix7x8f &ATB) {
-    ATB(0).m_data4[0] = B.m_00_01_02_03() * A.m00() + B.m_10_11_12_13() * A.m10();
-    ATB(0).m_data4[1] = B.m_04_05_06_07() * A.m00() + B.m_14_15_16_17() * A.m10();
+    ATB(0)
+        .m_data4[0] = B.m_00_01_02_03() * A.m00() + B.m_10_11_12_13() * A.m10();
+    ATB(0)
+        .m_data4[1] = B.m_04_05_06_07() * A.m00() + B.m_14_15_16_17() * A.m10();
 
-    ATB(1).m_data4[0] = B.m_00_01_02_03() * A.m01() + B.m_10_11_12_13() * A.m11();
-    ATB(1).m_data4[1] = B.m_04_05_06_07() * A.m01() + B.m_14_15_16_17() * A.m11();
+    ATB(1)
+        .m_data4[0] = B.m_00_01_02_03() * A.m01() + B.m_10_11_12_13() * A.m11();
+    ATB(1)
+        .m_data4[1] = B.m_04_05_06_07() * A.m01() + B.m_14_15_16_17() * A.m11();
 
     ATB(2).m_data[2] = A.m02() * B.m02() + A.m12() * B.m12();
     ATB(2).m_data[3] = A.m02() * B.m03() + A.m12() * B.m13();
-    ATB(2).m_data4[1] = B.m_04_05_06_07() * A.m02() + B.m_14_15_16_17() * A.m12();
+    ATB(2)
+        .m_data4[1] = B.m_04_05_06_07() * A.m02() + B.m_14_15_16_17() * A.m12();
 
     ATB(3).m_data[3] = A.m03() * B.m03() + A.m13() * B.m13();
-    ATB(3).m_data4[1] = B.m_04_05_06_07() * A.m03() + B.m_14_15_16_17() * A.m13();
-    ATB(4).m_data4[1] = B.m_04_05_06_07() * A.m04() + B.m_14_15_16_17() * A.m14();
+    ATB(3)
+        .m_data4[1] = B.m_04_05_06_07() * A.m03() + B.m_14_15_16_17() * A.m13();
+    ATB(4)
+        .m_data4[1] = B.m_04_05_06_07() * A.m04() + B.m_14_15_16_17() * A.m14();
 
-    ATB(5).m_data4[1] = B.m_04_05_06_07() * A.m05() + B.m_14_15_16_17() * A.m15();
+    ATB(5)
+        .m_data4[1] = B.m_04_05_06_07() * A.m05() + B.m_14_15_16_17() * A.m15();
     ATB(6).m_data[6] = A.m06() * B.m06() + A.m16() * B.m16();
     ATB(6).m_data[7] = A.m06() * B.m07() + A.m16() * B.m17();
   }
-  static inline void AddATBToUpper(const AlignedMatrix2x7f &A, const AlignedMatrix2x8f &B,
+  static inline void AddATBToUpper(const AlignedMatrix2x7f &A,
+                                   const AlignedMatrix2x8f &B,
                                    AlignedMatrix7x8f &ATB) {
-    ATB(0).m_data4[0] += B.m_00_01_02_03() * A.m00() + B.m_10_11_12_13() * A.m10();
-    ATB(0).m_data4[1] += B.m_04_05_06_07() * A.m00() + B.m_14_15_16_17() * A.m10();
+    ATB(0)
+        .m_data4[0] +=
+        B.m_00_01_02_03() * A.m00() + B.m_10_11_12_13() * A.m10();
+    ATB(0)
+        .m_data4[1] +=
+        B.m_04_05_06_07() * A.m00() + B.m_14_15_16_17() * A.m10();
 
-    ATB(1).m_data4[0] += B.m_00_01_02_03() * A.m01() + B.m_10_11_12_13() * A.m11();
-    ATB(1).m_data4[1] += B.m_04_05_06_07() * A.m01() + B.m_14_15_16_17() * A.m11();
+    ATB(1)
+        .m_data4[0] +=
+        B.m_00_01_02_03() * A.m01() + B.m_10_11_12_13() * A.m11();
+    ATB(1)
+        .m_data4[1] +=
+        B.m_04_05_06_07() * A.m01() + B.m_14_15_16_17() * A.m11();
 
     ATB(2).m_data[2] += A.m02() * B.m02() + A.m12() * B.m12();
     ATB(2).m_data[3] += A.m02() * B.m03() + A.m12() * B.m13();
-    ATB(2).m_data4[1] += B.m_04_05_06_07() * A.m02() + B.m_14_15_16_17() * A.m12();
+    ATB(2)
+        .m_data4[1] +=
+        B.m_04_05_06_07() * A.m02() + B.m_14_15_16_17() * A.m12();
 
     ATB(3).m_data[3] += A.m03() * B.m03() + A.m13() * B.m13();
-    ATB(3).m_data4[1] += B.m_04_05_06_07() * A.m03() + B.m_14_15_16_17() * A.m13();
-    ATB(4).m_data4[1] += B.m_04_05_06_07() * A.m04() + B.m_14_15_16_17() * A.m14();
+    ATB(3)
+        .m_data4[1] +=
+        B.m_04_05_06_07() * A.m03() + B.m_14_15_16_17() * A.m13();
+    ATB(4)
+        .m_data4[1] +=
+        B.m_04_05_06_07() * A.m04() + B.m_14_15_16_17() * A.m14();
 
-    ATB(5).m_data4[1] += B.m_04_05_06_07() * A.m05() + B.m_14_15_16_17() * A.m15();
+    ATB(5)
+        .m_data4[1] +=
+        B.m_04_05_06_07() * A.m05() + B.m_14_15_16_17() * A.m15();
     ATB(6).m_data[6] += A.m06() * B.m06() + A.m16() * B.m16();
     ATB(6).m_data[7] += A.m06() * B.m07() + A.m16() * B.m17();
   }
@@ -700,9 +806,12 @@ class SIMD_ALIGN_DECLSPEC AlignedMatrix9x6f : public AlignedMatrixMxNf<9, 6> {
   inline void Set(const AlignedMatrix3x3f &M00, const AlignedMatrix3x3f &M01,
                   const AlignedMatrix3x3f &M10, const AlignedMatrix3x3f &M11,
                   const AlignedMatrix3x3f &M20, const AlignedMatrix3x3f &M21) {
-    SetBlock(0, 0, M00);  SetBlock(0, 3, M01);
-    SetBlock(3, 0, M10);  SetBlock(3, 3, M11);
-    SetBlock(6, 0, M20);  SetBlock(6, 3, M21);
+    SetBlock(0, 0, M00);
+    SetBlock(0, 3, M01);
+    SetBlock(3, 0, M10);
+    SetBlock(3, 3, M11);
+    SetBlock(6, 0, M20);
+    SetBlock(6, 3, M21);
   }
   inline void Set(const AlignedMatrix3x3f *M0, const AlignedMatrix3x3f *M1,
                   const AlignedMatrix3x3f *M2) {
@@ -713,7 +822,8 @@ class SIMD_ALIGN_DECLSPEC AlignedMatrix9x6f : public AlignedMatrixMxNf<9, 6> {
     _s.Set(s);
     GetScaledColumn(_s, M);
   }
-  inline void GetScaledColumn(const AlignedVector6f &s, AlignedMatrix9x6f &M) const {
+  inline void GetScaledColumn(const AlignedVector6f &s,
+                              AlignedMatrix9x6f &M) const {
     for (int i = 0; i < 9; ++i) {
       m_rows[i].GetScaled(s, M(i));
     }
@@ -732,7 +842,8 @@ class SIMD_ALIGN_DECLSPEC AlignedMatrix9x6f : public AlignedMatrixMxNf<9, 6> {
       ABT[1][i] = Bi.Dot(a1, A[1][4], A[1][5]);
     }
   }
-  static inline void AddABTTo(const AlignedMatrix2x6f &A, const AlignedMatrix9x6f &B,
+  static inline void AddABTTo(const AlignedMatrix2x6f &A,
+                              const AlignedMatrix9x6f &B,
                               AlignedMatrix2x9f &ABT) {
     const xp128f a1 = xp128f::get(A[1]);
     for (int i = 0; i < 9; ++i) {
@@ -743,8 +854,9 @@ class SIMD_ALIGN_DECLSPEC AlignedMatrix9x6f : public AlignedMatrixMxNf<9, 6> {
   }
   static inline void ABT(const AlignedMatrix6x6f &A, const AlignedMatrix9x6f &B,
                          AlignedMatrix6x9f &ABT) {
-    const xp128f a1 = xp128f::get(A[1]), a3 = xp128f::get(A[3]), a5 = xp128f::get(A[5]);
-    for (int i = 0; i < 9; ++i) { 
+    const xp128f a1 = xp128f::get(A[1]), a3 = xp128f::get(A[3]),
+                 a5 = xp128f::get(A[5]);
+    for (int i = 0; i < 9; ++i) {
       const AlignedVectorNf<6> &Bi = B(i);
       ABT[0][i] = Bi.Dot(A.m_00_01_02_03(), A[0][4], A[0][5]);
       ABT[1][i] = Bi.Dot(a1, A[1][4], A[1][5]);
@@ -754,10 +866,12 @@ class SIMD_ALIGN_DECLSPEC AlignedMatrix9x6f : public AlignedMatrixMxNf<9, 6> {
       ABT[5][i] = Bi.Dot(a5, A[5][4], A[5][5]);
     }
   }
-  static inline void AddABTTo(const AlignedMatrix6x6f &A, const AlignedMatrix9x6f &B,
+  static inline void AddABTTo(const AlignedMatrix6x6f &A,
+                              const AlignedMatrix9x6f &B,
                               AlignedMatrix6x9f &ABT) {
-    const xp128f a1 = xp128f::get(A[1]), a3 = xp128f::get(A[3]), a5 = xp128f::get(A[5]);
-    for (int i = 0; i < 9; ++i) { 
+    const xp128f a1 = xp128f::get(A[1]), a3 = xp128f::get(A[3]),
+                 a5 = xp128f::get(A[5]);
+    for (int i = 0; i < 9; ++i) {
       const AlignedVectorNf<6> &Bi = B(i);
       ABT[0][i] += Bi.Dot(A.m_00_01_02_03(), A[0][4], A[0][5]);
       ABT[1][i] += Bi.Dot(a1, A[1][4], A[1][5]);
@@ -769,7 +883,8 @@ class SIMD_ALIGN_DECLSPEC AlignedMatrix9x6f : public AlignedMatrixMxNf<9, 6> {
   }
   static inline void ABT(const AlignedMatrix9x6f &A, const AlignedMatrix6x6f &B,
                          AlignedMatrix9x6f &ABT) {
-    const xp128f b1 = xp128f::get(B[1]), b3 = xp128f::get(B[3]), b5 = xp128f::get(B[5]);
+    const xp128f b1 = xp128f::get(B[1]), b3 = xp128f::get(B[3]),
+                 b5 = xp128f::get(B[5]);
     for (int i = 0; i < 9; ++i) {
       const AlignedVectorNf<6> &Ai = A(i);
       ABT[i][0] = Ai.Dot(B.m_00_01_02_03(), B[0][4], B[0][5]);
@@ -780,9 +895,11 @@ class SIMD_ALIGN_DECLSPEC AlignedMatrix9x6f : public AlignedMatrixMxNf<9, 6> {
       ABT[i][5] = Ai.Dot(b5, B[5][4], B[5][5]);
     }
   }
-  static inline void AddABTTo(const AlignedMatrix9x6f &A, const AlignedMatrix6x6f &B,
+  static inline void AddABTTo(const AlignedMatrix9x6f &A,
+                              const AlignedMatrix6x6f &B,
                               AlignedMatrix9x6f &ABT) {
-    const xp128f b1 = xp128f::get(B[1]), b3 = xp128f::get(B[3]), b5 = xp128f::get(B[5]);
+    const xp128f b1 = xp128f::get(B[1]), b3 = xp128f::get(B[3]),
+                 b5 = xp128f::get(B[5]);
     for (int i = 0; i < 9; ++i) {
       const AlignedVectorNf<6> &Ai = A(i);
       ABT[i][0] += Ai.Dot(B.m_00_01_02_03(), B[0][4], B[0][5]);
@@ -793,14 +910,16 @@ class SIMD_ALIGN_DECLSPEC AlignedMatrix9x6f : public AlignedMatrixMxNf<9, 6> {
       ABT[i][5] += Ai.Dot(b5, B[5][4], B[5][5]);
     }
   }
-  template<typename TYPE>
-  static inline void Ab(const AlignedMatrix9x6f &A, const AlignedVector6f &b, TYPE *Ab) {
+  template <typename TYPE>
+  static inline void Ab(const AlignedMatrix9x6f &A, const AlignedVector6f &b,
+                        TYPE *Ab) {
     for (int i = 0; i < 9; ++i) {
       Ab[i] = A(i).Dot(b);
     }
   }
-  template<typename TYPE>
-  static inline void AddAbTo(const AlignedMatrix9x6f &A, const AlignedVector6f &b, TYPE *Ab) {
+  template <typename TYPE>
+  static inline void AddAbTo(const AlignedMatrix9x6f &A,
+                             const AlignedVector6f &b, TYPE *Ab) {
     for (int i = 0; i < 9; ++i) {
       Ab[i] += A(i).Dot(b);
     }
@@ -825,9 +944,15 @@ class SIMD_ALIGN_DECLSPEC AlignedMatrix9x9f : public AlignedMatrixMxNf<9, 9> {
                   const AlignedMatrix3x3f &M11, const AlignedMatrix3x3f &M12,
                   const AlignedMatrix3x3f &M20, const AlignedMatrix3x3f &M21,
                   const AlignedMatrix3x3f &M22) {
-    SetBlock(0, 0, M00);  SetBlock(0, 3, M01);  SetBlock(0, 6, M02);
-    SetBlock(3, 0, M10);  SetBlock(3, 3, M11);  SetBlock(3, 6, M12);
-    SetBlock(6, 0, M20);  SetBlock(6, 3, M21);  SetBlock(6, 6, M22);
+    SetBlock(0, 0, M00);
+    SetBlock(0, 3, M01);
+    SetBlock(0, 6, M02);
+    SetBlock(3, 0, M10);
+    SetBlock(3, 3, M11);
+    SetBlock(3, 6, M12);
+    SetBlock(6, 0, M20);
+    SetBlock(6, 3, M21);
+    SetBlock(6, 6, M22);
   }
   inline void Set(const AlignedMatrix3x3f *M0, const AlignedMatrix3x3f *M1,
                   const AlignedMatrix3x3f *M2) {
@@ -851,24 +976,43 @@ class SIMD_ALIGN_DECLSPEC AlignedMatrix9x9f : public AlignedMatrixMxNf<9, 9> {
   }
   inline void GetDiagonal(Vector9f &d) const {
     const AlignedMatrix9x9f &M = *this;
-    d.v0() = M[0][0];   d.v1() = M[1][1];   d.v2() = M[2][2];
-    d.v3() = M[3][3];   d.v4() = M[4][4];   d.v5() = M[5][5];
-    d.v6() = M[6][6];   d.v7() = M[7][7];   d.v8() = M[8][8];
+    d.v0() = M[0][0];
+    d.v1() = M[1][1];
+    d.v2() = M[2][2];
+    d.v3() = M[3][3];
+    d.v4() = M[4][4];
+    d.v5() = M[5][5];
+    d.v6() = M[6][6];
+    d.v7() = M[7][7];
+    d.v8() = M[8][8];
   }
   inline void GetDiagonal(Vector3f &d0, Vector3f &d1, Vector3f &d2) const {
     const AlignedMatrix9x9f &M = *this;
-    d0.v0() = M[0][0];  d0.v1() = M[1][1];  d0.v2() = M[2][2];
-    d1.v0() = M[3][3];  d1.v1() = M[4][4];  d1.v2() = M[5][5];
-    d2.v0() = M[6][6];  d2.v1() = M[7][7];  d2.v2() = M[8][8];
+    d0.v0() = M[0][0];
+    d0.v1() = M[1][1];
+    d0.v2() = M[2][2];
+    d1.v0() = M[3][3];
+    d1.v1() = M[4][4];
+    d1.v2() = M[5][5];
+    d2.v0() = M[6][6];
+    d2.v1() = M[7][7];
+    d2.v2() = M[8][8];
   }
   inline void IncreaseDiagonal(const int i, const SymmetricMatrix3x3f &D) {
     AlignedMatrixMxNf<9, 9>::IncreaseDiagonal(i, D);
   }
-  inline void IncreaseDiagonal(const float d012, const float d345, const float d678) {
+  inline void IncreaseDiagonal(const float d012, const float d345,
+                               const float d678) {
     AlignedMatrix9x9f &M = *this;
-    M[0][0] += d012;  M[1][1] += d012;  M[2][2] += d012;
-    M[3][3] += d345;  M[4][4] += d345;  M[5][5] += d345;
-    M[6][6] += d678;  M[7][7] += d678;  M[8][8] += d678;
+    M[0][0] += d012;
+    M[1][1] += d012;
+    M[2][2] += d012;
+    M[3][3] += d345;
+    M[4][4] += d345;
+    M[5][5] += d345;
+    M[6][6] += d678;
+    M[7][7] += d678;
+    M[8][8] += d678;
   }
   inline void Set(const SymmetricMatrix9x9f &M) {
     AlignedMatrix9x9f &_M = *this;
@@ -914,7 +1058,8 @@ class SIMD_ALIGN_DECLSPEC AlignedMatrix9x9f : public AlignedMatrixMxNf<9, 9> {
     M.m88() = _M[8][8];
     return M;
   }
-  inline void GetScaledColumn(const AlignedVector9f &s, AlignedMatrix9x9f &M) const {
+  inline void GetScaledColumn(const AlignedVector9f &s,
+                              AlignedMatrix9x9f &M) const {
     for (int i = 0; i < 9; ++i) {
       m_rows[i].GetScaled(s, M(i));
     }
@@ -927,20 +1072,21 @@ class SIMD_ALIGN_DECLSPEC AlignedMatrix9x9f : public AlignedMatrixMxNf<9, 9> {
   inline bool SolveLDL(AlignedVector9f &b, const float *eps = NULL,
                        const bool decomposed = false) {
     AlignedMatrix9x9f &A = *this;
-    float* _A[9] = {A[0], A[1], A[2], A[3], A[4], A[5], A[6], A[7], A[8]};
+    float *_A[9] = {A[0], A[1], A[2], A[3], A[4], A[5], A[6], A[7], A[8]};
     return LS::SolveLDL(9, _A, &b.v0(), eps, decomposed);
   }
   inline int RankLDL(const float *eps = NULL) {
     AlignedMatrix9x9f &A = *this;
-    float* _A[9] = {A[0], A[1], A[2], A[3], A[4], A[5], A[6], A[7], A[8]};
+    float *_A[9] = {A[0], A[1], A[2], A[3], A[4], A[5], A[6], A[7], A[8]};
     return LS::RankLDL(9, _A, _A[8], eps);
   }
-  inline bool InverseLDL(const float *eps = NULL, const bool decomposed = false) {
+  inline bool InverseLDL(const float *eps = NULL,
+                         const bool decomposed = false) {
     return InverseLDL(*this, eps, decomposed);
   }
   static inline bool InverseLDL(AlignedMatrix9x9f &A, const float *eps = NULL,
                                 const bool decomposed = false) {
-    float* _A[9] = {A[0], A[1], A[2], A[3], A[4], A[5], A[6], A[7], A[8]};
+    float *_A[9] = {A[0], A[1], A[2], A[3], A[4], A[5], A[6], A[7], A[8]};
     if (LS::InverseLDL<float>(9, _A, eps, decomposed)) {
       A.SetLowerFromUpper();
       return true;
@@ -949,7 +1095,8 @@ class SIMD_ALIGN_DECLSPEC AlignedMatrix9x9f : public AlignedMatrixMxNf<9, 9> {
       return false;
     }
   }
-  inline bool GetInverseLDL(AlignedMatrix9x9f &A, const float *eps = NULL) const {
+  inline bool GetInverseLDL(AlignedMatrix9x9f &A,
+                            const float *eps = NULL) const {
     A = *this;
     return A.InverseLDL(eps);
   }
@@ -958,20 +1105,24 @@ class SIMD_ALIGN_DECLSPEC AlignedMatrix9x9f : public AlignedMatrixMxNf<9, 9> {
     A.InverseLDL(eps);
     return A;
   }
-  template<typename TYPE>
-  static inline void Ab(const AlignedMatrix9x9f &A, const AlignedVector9f &b, TYPE *Ab, const int i0 = 0) {
+  template <typename TYPE>
+  static inline void Ab(const AlignedMatrix9x9f &A, const AlignedVector9f &b,
+                        TYPE *Ab, const int i0 = 0) {
     for (int i = i0; i < 9; ++i) {
       Ab[i] = A(i).Dot(b);
     }
   }
-  template<typename TYPE>
-  static inline void AddAbTo(const AlignedMatrix9x9f &A, const AlignedVector9f &b, TYPE *Ab, const int i0 = 0) {
+  template <typename TYPE>
+  static inline void AddAbTo(const AlignedMatrix9x9f &A,
+                             const AlignedVector9f &b, TYPE *Ab,
+                             const int i0 = 0) {
     for (int i = i0; i < 9; ++i) {
       Ab[i] += A(i).Dot(b);
     }
   }
-  template<typename TYPE>
-  static inline void SubtractAbFrom(const AlignedMatrix9x9f &A, const AlignedVector9f &b, TYPE *Ab) {
+  template <typename TYPE>
+  static inline void SubtractAbFrom(const AlignedMatrix9x9f &A,
+                                    const AlignedVector9f &b, TYPE *Ab) {
     for (int i = 0; i < 9; ++i) {
       Ab[i] -= A(i).Dot(b);
     }
@@ -986,7 +1137,8 @@ class SIMD_ALIGN_DECLSPEC AlignedMatrix9x9f : public AlignedMatrixMxNf<9, 9> {
       }
     }
   }
-  static inline void AddABTTo(const AlignedMatrix6x9f &A, const AlignedMatrix9x9f &B,
+  static inline void AddABTTo(const AlignedMatrix6x9f &A,
+                              const AlignedMatrix9x9f &B,
                               AlignedMatrix6x9f &ABT) {
     for (int i = 0; i < 6; ++i) {
       const AlignedMatrix6x9f::Row &Ai = A(i);
@@ -1006,7 +1158,8 @@ class SIMD_ALIGN_DECLSPEC AlignedMatrix9x9f : public AlignedMatrixMxNf<9, 9> {
       }
     }
   }
-  static inline void AddABTTo(const AlignedMatrix9x6f &A, const AlignedMatrix9x6f &B,
+  static inline void AddABTTo(const AlignedMatrix9x6f &A,
+                              const AlignedMatrix9x6f &B,
                               AlignedMatrix9x9f &ABT) {
     for (int i = 0; i < 9; ++i) {
       const AlignedMatrix9x6f::Row &Ai = A(i);
@@ -1016,7 +1169,8 @@ class SIMD_ALIGN_DECLSPEC AlignedMatrix9x9f : public AlignedMatrixMxNf<9, 9> {
       }
     }
   }
-  static inline void AddABTToUpper(const AlignedMatrix9x6f &A, const AlignedMatrix9x6f &B,
+  static inline void AddABTToUpper(const AlignedMatrix9x6f &A,
+                                   const AlignedMatrix9x6f &B,
                                    AlignedMatrix9x9f &ABT) {
     for (int i = 0; i < 9; ++i) {
       const AlignedMatrix9x6f::Row &Ai = A(i);
@@ -1046,7 +1200,8 @@ class SIMD_ALIGN_DECLSPEC AlignedMatrix9x9f : public AlignedMatrixMxNf<9, 9> {
       }
     }
   }
-  static inline void AddABTTo(const AlignedMatrix9x9f &A, const AlignedMatrix9x9f &B,
+  static inline void AddABTTo(const AlignedMatrix9x9f &A,
+                              const AlignedMatrix9x9f &B,
                               AlignedMatrix9x9f &ABT) {
     for (int i = 0; i < 9; ++i) {
       const AlignedMatrix9x9f::Row &Ai = A(i);
@@ -1056,7 +1211,8 @@ class SIMD_ALIGN_DECLSPEC AlignedMatrix9x9f : public AlignedMatrixMxNf<9, 9> {
       }
     }
   }
-  static inline void AddABTToUpper(const AlignedMatrix9x9f &A, const AlignedMatrix9x9f &B,
+  static inline void AddABTToUpper(const AlignedMatrix9x9f &A,
+                                   const AlignedMatrix9x9f &B,
                                    AlignedMatrix9x9f &ABT) {
     for (int i = 0; i < 9; ++i) {
       const AlignedMatrix9x9f::Row &Ai = A(i);
@@ -1066,7 +1222,8 @@ class SIMD_ALIGN_DECLSPEC AlignedMatrix9x9f : public AlignedMatrixMxNf<9, 9> {
       }
     }
   }
-  static inline void SubtractABTFromUpper(const AlignedMatrix9x9f &A, const AlignedMatrix9x9f &B,
+  static inline void SubtractABTFromUpper(const AlignedMatrix9x9f &A,
+                                          const AlignedMatrix9x9f &B,
                                           AlignedMatrix9x9f &ABT) {
     for (int i = 0; i < 9; ++i) {
       const AlignedMatrix9x9f::Row &Ai = A(i);
@@ -1076,7 +1233,8 @@ class SIMD_ALIGN_DECLSPEC AlignedMatrix9x9f : public AlignedMatrixMxNf<9, 9> {
       }
     }
   }
-  static inline void AddABTTo(const AlignedMatrix9x9f &A, const AlignedMatrix6x9f &B,
+  static inline void AddABTTo(const AlignedMatrix9x9f &A,
+                              const AlignedMatrix6x9f &B,
                               AlignedMatrix9x6f &ABT) {
     for (int i = 0; i < 9; ++i) {
       const AlignedMatrix9x9f::Row &Ai = A(i);
@@ -1086,7 +1244,8 @@ class SIMD_ALIGN_DECLSPEC AlignedMatrix9x9f : public AlignedMatrixMxNf<9, 9> {
       }
     }
   }
-  static inline void AddATBToUpper(const AlignedMatrix2x9f &A, const AlignedMatrix2x9f &B,
+  static inline void AddATBToUpper(const AlignedMatrix2x9f &A,
+                                   const AlignedMatrix2x9f &B,
                                    AlignedMatrix9x9f &ATB) {
     const float *A0 = A[0], *A1 = A[1], *B0 = B[0], *B1 = B[1];
     for (int i = 0; i < 9; ++i) {
@@ -1096,10 +1255,13 @@ class SIMD_ALIGN_DECLSPEC AlignedMatrix9x9f : public AlignedMatrixMxNf<9, 9> {
       }
     }
   }
-  static inline void AddATBToUpper(const AlignedMatrix6x9f &A, const AlignedMatrix6x9f &B,
+  static inline void AddATBToUpper(const AlignedMatrix6x9f &A,
+                                   const AlignedMatrix6x9f &B,
                                    AlignedMatrix9x9f &ATB) {
-    const float *A0 = A[0], *A1 = A[1], *A2 = A[2], *A3 = A[3], *A4 = A[4], *A5 = A[5];
-    const float *B0 = B[0], *B1 = B[1], *B2 = B[2], *B3 = B[3], *B4 = B[4], *B5 = B[5];
+    const float *A0 = A[0], *A1 = A[1], *A2 = A[2], *A3 = A[3], *A4 = A[4],
+                *A5 = A[5];
+    const float *B0 = B[0], *B1 = B[1], *B2 = B[2], *B3 = B[3], *B4 = B[4],
+                *B5 = B[5];
     for (int i = 0; i < 9; ++i) {
       float *ATBi = ATB[i];
       for (int j = i; j < 9; ++j) {
@@ -1108,15 +1270,18 @@ class SIMD_ALIGN_DECLSPEC AlignedMatrix9x9f : public AlignedMatrixMxNf<9, 9> {
       }
     }
   }
-  static inline void AddATbTo(const AlignedMatrix6x9f &A, const float *b, float *ATb) {
-    const float *A0 = A[0], *A1 = A[1], *A2 = A[2], *A3 = A[3], *A4 = A[4], *A5 = A[5];
+  static inline void AddATbTo(const AlignedMatrix6x9f &A, const float *b,
+                              float *ATb) {
+    const float *A0 = A[0], *A1 = A[1], *A2 = A[2], *A3 = A[3], *A4 = A[4],
+                *A5 = A[5];
     for (int i = 0; i < 9; ++i) {
-      ATb[i] += A0[i] * b[0] + A1[i] * b[1] + A2[i] * b[2] +
-                A3[i] * b[3] + A4[i] * b[4] + A5[i] * b[5];
+      ATb[i] += A0[i] * b[0] + A1[i] * b[1] + A2[i] * b[2] + A3[i] * b[3] +
+                A4[i] * b[4] + A5[i] * b[5];
     }
   }
 };
-class SIMD_ALIGN_DECLSPEC AlignedMatrix12x12f : public AlignedMatrixMxNf<12, 12> {
+class SIMD_ALIGN_DECLSPEC AlignedMatrix12x12f
+    : public AlignedMatrixMxNf<12, 12> {
  public:
   inline void Set(const SymmetricMatrix6x6f &M00, const AlignedMatrix6x6f &M01,
                   const SymmetricMatrix6x6f &M11) {
@@ -1127,36 +1292,39 @@ class SIMD_ALIGN_DECLSPEC AlignedMatrix12x12f : public AlignedMatrixMxNf<12, 12>
   }
   inline bool DecomposeLDL(const float *eps = NULL) {
     AlignedMatrix12x12f &A = *this;
-    float *_A[12] = {A[0], A[1], A[2], A[3], A[4], A[5],
+    float *_A[12] = {A[0], A[1], A[2], A[3], A[4],  A[5],
                      A[6], A[7], A[8], A[9], A[10], A[11]};
     return LS::DecomposeLDL(12, _A, eps);
   }
   inline bool SolveLDL(AlignedVector12f &b, const float *eps = NULL,
                        const bool decomposed = false) {
     AlignedMatrix12x12f &A = *this;
-    float *_A[12] = {A[0], A[1], A[2], A[3], A[4], A[5],
+    float *_A[12] = {A[0], A[1], A[2], A[3], A[4],  A[5],
                      A[6], A[7], A[8], A[9], A[10], A[11]};
     return LS::SolveLDL(12, _A, &b.v0(), eps, decomposed);
   }
   inline int RankLDL(const float *eps = NULL) {
     AlignedMatrix12x12f &A = *this;
-    float *_A[12] = {A[0], A[1], A[2], A[3], A[4], A[5],
+    float *_A[12] = {A[0], A[1], A[2], A[3], A[4],  A[5],
                      A[6], A[7], A[8], A[9], A[10], A[11]};
     return LS::RankLDL(12, _A, _A[11], eps);
   }
-  static inline void Ab(const AlignedMatrix12x12f &A, AlignedVector12f &b, AlignedVector12f &Ab) {
+  static inline void Ab(const AlignedMatrix12x12f &A, AlignedVector12f &b,
+                        AlignedVector12f &Ab) {
     float *_Ab = Ab;
     for (int i = 0; i < 12; ++i) {
       _Ab[i] = A(i).Dot(b);
     }
   }
 };
-class SIMD_ALIGN_DECLSPEC AlignedMatrix13x14f : public AlignedMatrixMxNf<13, 14> {
+class SIMD_ALIGN_DECLSPEC AlignedMatrix13x14f
+    : public AlignedMatrixMxNf<13, 14> {
  public:
   inline AlignedMatrix13x14f() {}
-  inline void Get(float &M00, Vector6f &M01, Vector6f &M02, float &M03, SymmetricMatrix6x6f &M11,
-                  AlignedMatrix6x6f &M12, Vector6f &M13,
-                  SymmetricMatrix6x6f &M22, Vector6f &M23) const {
+  inline void Get(float &M00, Vector6f &M01, Vector6f &M02, float &M03,
+                  SymmetricMatrix6x6f &M11, AlignedMatrix6x6f &M12,
+                  Vector6f &M13, SymmetricMatrix6x6f &M22,
+                  Vector6f &M23) const {
     M00 = m_rows[0][0];
     memcpy(M01, m_rows[0] + 1, 24);
     memcpy(M02, m_rows[0] + 7, 24);
@@ -1168,7 +1336,8 @@ class SIMD_ALIGN_DECLSPEC AlignedMatrix13x14f : public AlignedMatrixMxNf<13, 14>
     GetBlock(7, 13, M23);
   }
 
-  static inline void AddATBToUpper(const AlignedMatrix2x13f &A, const AlignedMatrix2x14f &B,
+  static inline void AddATBToUpper(const AlignedMatrix2x13f &A,
+                                   const AlignedMatrix2x14f &B,
                                    AlignedMatrix13x14f &ATB) {
     float a0, a1;
     const float *A0 = A[0], *A1 = A[1];
@@ -1191,8 +1360,8 @@ class SIMD_ALIGN_DECLSPEC AlignedMatrix13x14f : public AlignedMatrixMxNf<13, 14>
 
     a0 = A0[2];
     a1 = A1[2];
-    ATB(2).m_data[2]  += B0.m_data[2]  * a0 + B1.m_data[2]  * a1;
-    ATB(2).m_data[3]  += B0.m_data[3]  * a0 + B1.m_data[3]  * a1;
+    ATB(2).m_data[2] += B0.m_data[2] * a0 + B1.m_data[2] * a1;
+    ATB(2).m_data[3] += B0.m_data[3] * a0 + B1.m_data[3] * a1;
     ATB(2).m_data4[1] += B0.m_data4[1] * a0 + B1.m_data4[1] * a1;
     ATB(2).m_data4[2] += B0.m_data4[2] * a0 + B1.m_data4[2] * a1;
     ATB(2).m_data[12] += B0.m_data[12] * a0 + B1.m_data[12] * a1;
@@ -1200,12 +1369,11 @@ class SIMD_ALIGN_DECLSPEC AlignedMatrix13x14f : public AlignedMatrixMxNf<13, 14>
 
     a0 = A0[3];
     a1 = A1[3];
-    ATB(3).m_data[3]  += B0.m_data[3]  * a0 + B1.m_data[3]  * a1;
+    ATB(3).m_data[3] += B0.m_data[3] * a0 + B1.m_data[3] * a1;
     ATB(3).m_data4[1] += B0.m_data4[1] * a0 + B1.m_data4[1] * a1;
     ATB(3).m_data4[2] += B0.m_data4[2] * a0 + B1.m_data4[2] * a1;
     ATB(3).m_data[12] += B0.m_data[12] * a0 + B1.m_data[12] * a1;
     ATB(3).m_data[13] += B0.m_data[13] * a0 + B1.m_data[13] * a1;
-
 
     a0 = A0[4];
     a1 = A1[4];
@@ -1223,15 +1391,15 @@ class SIMD_ALIGN_DECLSPEC AlignedMatrix13x14f : public AlignedMatrixMxNf<13, 14>
 
     a0 = A0[6];
     a1 = A1[6];
-    ATB(6).m_data[6]  += B0.m_data[6]  * a0 + B1.m_data[6]  * a1;
-    ATB(6).m_data[7]  += B0.m_data[7]  * a0 + B1.m_data[7]  * a1;
+    ATB(6).m_data[6] += B0.m_data[6] * a0 + B1.m_data[6] * a1;
+    ATB(6).m_data[7] += B0.m_data[7] * a0 + B1.m_data[7] * a1;
     ATB(6).m_data4[2] += B0.m_data4[2] * a0 + B1.m_data4[2] * a1;
     ATB(6).m_data[12] += B0.m_data[12] * a0 + B1.m_data[12] * a1;
     ATB(6).m_data[13] += B0.m_data[13] * a0 + B1.m_data[13] * a1;
 
     a0 = A0[7];
     a1 = A1[7];
-    ATB(7).m_data[7]  += B0.m_data[7]  * a0 + B1.m_data[7]  * a1;
+    ATB(7).m_data[7] += B0.m_data[7] * a0 + B1.m_data[7] * a1;
     ATB(7).m_data4[2] += B0.m_data4[2] * a0 + B1.m_data4[2] * a1;
     ATB(7).m_data[12] += B0.m_data[12] * a0 + B1.m_data[12] * a1;
     ATB(7).m_data[13] += B0.m_data[13] * a0 + B1.m_data[13] * a1;
@@ -1266,7 +1434,8 @@ class SIMD_ALIGN_DECLSPEC AlignedMatrix13x14f : public AlignedMatrixMxNf<13, 14>
     ATB(12).m_data[12] += B0.m_data[12] * a0 + B1.m_data[12] * a1;
     ATB(12).m_data[13] += B0.m_data[13] * a0 + B1.m_data[13] * a1;
   }
-  static inline void ATBToUpper(const AlignedMatrix2x13f &A, const AlignedMatrix2x14f &B,
+  static inline void ATBToUpper(const AlignedMatrix2x13f &A,
+                                const AlignedMatrix2x14f &B,
                                 AlignedMatrix13x14f &ATB) {
     float a0, a1;
     const float *A0 = A[0], *A1 = A[1];
@@ -1289,8 +1458,8 @@ class SIMD_ALIGN_DECLSPEC AlignedMatrix13x14f : public AlignedMatrixMxNf<13, 14>
 
     a0 = A0[2];
     a1 = A1[2];
-    ATB(2).m_data[2]  = B0.m_data[2]  * a0 + B1.m_data[2]  * a1;
-    ATB(2).m_data[3]  = B0.m_data[3]  * a0 + B1.m_data[3]  * a1;
+    ATB(2).m_data[2] = B0.m_data[2] * a0 + B1.m_data[2] * a1;
+    ATB(2).m_data[3] = B0.m_data[3] * a0 + B1.m_data[3] * a1;
     ATB(2).m_data4[1] = B0.m_data4[1] * a0 + B1.m_data4[1] * a1;
     ATB(2).m_data4[2] = B0.m_data4[2] * a0 + B1.m_data4[2] * a1;
     ATB(2).m_data[12] = B0.m_data[12] * a0 + B1.m_data[12] * a1;
@@ -1298,12 +1467,11 @@ class SIMD_ALIGN_DECLSPEC AlignedMatrix13x14f : public AlignedMatrixMxNf<13, 14>
 
     a0 = A0[3];
     a1 = A1[3];
-    ATB(3).m_data[3]  = B0.m_data[3]  * a0 + B1.m_data[3]  * a1;
+    ATB(3).m_data[3] = B0.m_data[3] * a0 + B1.m_data[3] * a1;
     ATB(3).m_data4[1] = B0.m_data4[1] * a0 + B1.m_data4[1] * a1;
     ATB(3).m_data4[2] = B0.m_data4[2] * a0 + B1.m_data4[2] * a1;
     ATB(3).m_data[12] = B0.m_data[12] * a0 + B1.m_data[12] * a1;
     ATB(3).m_data[13] = B0.m_data[13] * a0 + B1.m_data[13] * a1;
-
 
     a0 = A0[4];
     a1 = A1[4];
@@ -1321,15 +1489,15 @@ class SIMD_ALIGN_DECLSPEC AlignedMatrix13x14f : public AlignedMatrixMxNf<13, 14>
 
     a0 = A0[6];
     a1 = A1[6];
-    ATB(6).m_data[6]  = B0.m_data[6]  * a0 + B1.m_data[6]  * a1;
-    ATB(6).m_data[7]  = B0.m_data[7]  * a0 + B1.m_data[7]  * a1;
+    ATB(6).m_data[6] = B0.m_data[6] * a0 + B1.m_data[6] * a1;
+    ATB(6).m_data[7] = B0.m_data[7] * a0 + B1.m_data[7] * a1;
     ATB(6).m_data4[2] = B0.m_data4[2] * a0 + B1.m_data4[2] * a1;
     ATB(6).m_data[12] = B0.m_data[12] * a0 + B1.m_data[12] * a1;
     ATB(6).m_data[13] = B0.m_data[13] * a0 + B1.m_data[13] * a1;
 
     a0 = A0[7];
     a1 = A1[7];
-    ATB(7).m_data[7]  = B0.m_data[7]  * a0 + B1.m_data[7]  * a1;
+    ATB(7).m_data[7] = B0.m_data[7] * a0 + B1.m_data[7] * a1;
     ATB(7).m_data4[2] = B0.m_data4[2] * a0 + B1.m_data4[2] * a1;
     ATB(7).m_data[12] = B0.m_data[12] * a0 + B1.m_data[12] * a1;
     ATB(7).m_data[13] = B0.m_data[13] * a0 + B1.m_data[13] * a1;
@@ -1364,7 +1532,8 @@ class SIMD_ALIGN_DECLSPEC AlignedMatrix13x14f : public AlignedMatrixMxNf<13, 14>
     ATB(12).m_data[12] = B0.m_data[12] * a0 + B1.m_data[12] * a1;
     ATB(12).m_data[13] = B0.m_data[13] * a0 + B1.m_data[13] * a1;
   }
-  static inline void ATBToUpper(const AlignedMatrix3x13f &A, const AlignedMatrix3x14f &B,
+  static inline void ATBToUpper(const AlignedMatrix3x13f &A,
+                                const AlignedMatrix3x14f &B,
                                 AlignedMatrix13x14f &ATB) {
     float a0, a1, a2;
     const float *A0 = A[0], *A1 = A[1], *A2 = A[2];
@@ -1372,110 +1541,211 @@ class SIMD_ALIGN_DECLSPEC AlignedMatrix13x14f : public AlignedMatrixMxNf<13, 14>
     a0 = A0[0];
     a1 = A1[0];
     a2 = A2[0];
-    ATB(0).m_data4[0] = B0.m_data4[0] * a0 + B1.m_data4[0] * a1 + B2.m_data4[0] * a2;
-    ATB(0).m_data4[1] = B0.m_data4[1] * a0 + B1.m_data4[1] * a1 + B2.m_data4[1] * a2;
-    ATB(0).m_data4[2] = B0.m_data4[2] * a0 + B1.m_data4[2] * a1 + B2.m_data4[2] * a2;
-    ATB(0).m_data[12] = B0.m_data[12] * a0 + B1.m_data[12] * a1 + B2.m_data[12] * a2;
-    ATB(0).m_data[13] = B0.m_data[13] * a0 + B1.m_data[13] * a1 + B2.m_data[13] * a2;
+    ATB(0)
+        .m_data4[0] =
+        B0.m_data4[0] * a0 + B1.m_data4[0] * a1 + B2.m_data4[0] * a2;
+    ATB(0)
+        .m_data4[1] =
+        B0.m_data4[1] * a0 + B1.m_data4[1] * a1 + B2.m_data4[1] * a2;
+    ATB(0)
+        .m_data4[2] =
+        B0.m_data4[2] * a0 + B1.m_data4[2] * a1 + B2.m_data4[2] * a2;
+    ATB(0)
+        .m_data[12] =
+        B0.m_data[12] * a0 + B1.m_data[12] * a1 + B2.m_data[12] * a2;
+    ATB(0)
+        .m_data[13] =
+        B0.m_data[13] * a0 + B1.m_data[13] * a1 + B2.m_data[13] * a2;
 
     a0 = A0[1];
     a1 = A1[1];
     a2 = A2[1];
-    ATB(1).m_data4[0] = B0.m_data4[0] * a0 + B1.m_data4[0] * a1 + B2.m_data4[0] * a2;
-    ATB(1).m_data4[1] = B0.m_data4[1] * a0 + B1.m_data4[1] * a1 + B2.m_data4[1] * a2;
-    ATB(1).m_data4[2] = B0.m_data4[2] * a0 + B1.m_data4[2] * a1 + B2.m_data4[2] * a2;
-    ATB(1).m_data[12] = B0.m_data[12] * a0 + B1.m_data[12] * a1 + B2.m_data[12] * a2;
-    ATB(1).m_data[13] = B0.m_data[13] * a0 + B1.m_data[13] * a1 + B2.m_data[13] * a2;
+    ATB(1)
+        .m_data4[0] =
+        B0.m_data4[0] * a0 + B1.m_data4[0] * a1 + B2.m_data4[0] * a2;
+    ATB(1)
+        .m_data4[1] =
+        B0.m_data4[1] * a0 + B1.m_data4[1] * a1 + B2.m_data4[1] * a2;
+    ATB(1)
+        .m_data4[2] =
+        B0.m_data4[2] * a0 + B1.m_data4[2] * a1 + B2.m_data4[2] * a2;
+    ATB(1)
+        .m_data[12] =
+        B0.m_data[12] * a0 + B1.m_data[12] * a1 + B2.m_data[12] * a2;
+    ATB(1)
+        .m_data[13] =
+        B0.m_data[13] * a0 + B1.m_data[13] * a1 + B2.m_data[13] * a2;
 
     a0 = A0[2];
     a1 = A1[2];
     a2 = A2[2];
-    ATB(2).m_data[2] = B0.m_data[2] * a0 + B1.m_data[2] * a1 + B2.m_data[2] * a2;
-    ATB(2).m_data[3] = B0.m_data[3] * a0 + B1.m_data[3] * a1 + B2.m_data[3] * a2;
-    ATB(2).m_data4[1] = B0.m_data4[1] * a0 + B1.m_data4[1] * a1 + B2.m_data4[1] * a2;
-    ATB(2).m_data4[2] = B0.m_data4[2] * a0 + B1.m_data4[2] * a1 + B2.m_data4[2] * a2;
-    ATB(2).m_data[12] = B0.m_data[12] * a0 + B1.m_data[12] * a1 + B2.m_data[12] * a2;
-    ATB(2).m_data[13] = B0.m_data[13] * a0 + B1.m_data[13] * a1 + B2.m_data[13] * a2;
+    ATB(2)
+        .m_data[2] = B0.m_data[2] * a0 + B1.m_data[2] * a1 + B2.m_data[2] * a2;
+    ATB(2)
+        .m_data[3] = B0.m_data[3] * a0 + B1.m_data[3] * a1 + B2.m_data[3] * a2;
+    ATB(2)
+        .m_data4[1] =
+        B0.m_data4[1] * a0 + B1.m_data4[1] * a1 + B2.m_data4[1] * a2;
+    ATB(2)
+        .m_data4[2] =
+        B0.m_data4[2] * a0 + B1.m_data4[2] * a1 + B2.m_data4[2] * a2;
+    ATB(2)
+        .m_data[12] =
+        B0.m_data[12] * a0 + B1.m_data[12] * a1 + B2.m_data[12] * a2;
+    ATB(2)
+        .m_data[13] =
+        B0.m_data[13] * a0 + B1.m_data[13] * a1 + B2.m_data[13] * a2;
 
     a0 = A0[3];
     a1 = A1[3];
     a2 = A2[3];
-    ATB(3).m_data[3] = B0.m_data[3] * a0 + B1.m_data[3] * a1 + B2.m_data[3] * a2;
-    ATB(3).m_data4[1] = B0.m_data4[1] * a0 + B1.m_data4[1] * a1 + B2.m_data4[1] * a2;
-    ATB(3).m_data4[2] = B0.m_data4[2] * a0 + B1.m_data4[2] * a1 + B2.m_data4[2] * a2;
-    ATB(3).m_data[12] = B0.m_data[12] * a0 + B1.m_data[12] * a1 + B2.m_data[12] * a2;
-    ATB(3).m_data[13] = B0.m_data[13] * a0 + B1.m_data[13] * a1 + B2.m_data[13] * a2;
+    ATB(3)
+        .m_data[3] = B0.m_data[3] * a0 + B1.m_data[3] * a1 + B2.m_data[3] * a2;
+    ATB(3)
+        .m_data4[1] =
+        B0.m_data4[1] * a0 + B1.m_data4[1] * a1 + B2.m_data4[1] * a2;
+    ATB(3)
+        .m_data4[2] =
+        B0.m_data4[2] * a0 + B1.m_data4[2] * a1 + B2.m_data4[2] * a2;
+    ATB(3)
+        .m_data[12] =
+        B0.m_data[12] * a0 + B1.m_data[12] * a1 + B2.m_data[12] * a2;
+    ATB(3)
+        .m_data[13] =
+        B0.m_data[13] * a0 + B1.m_data[13] * a1 + B2.m_data[13] * a2;
 
     a0 = A0[4];
     a1 = A1[4];
     a2 = A2[4];
-    ATB(4).m_data4[1] = B0.m_data4[1] * a0 + B1.m_data4[1] * a1 + B2.m_data4[1] * a2;
-    ATB(4).m_data4[2] = B0.m_data4[2] * a0 + B1.m_data4[2] * a1 + B2.m_data4[2] * a2;
-    ATB(4).m_data[12] = B0.m_data[12] * a0 + B1.m_data[12] * a1 + B2.m_data[12] * a2;
-    ATB(4).m_data[13] = B0.m_data[13] * a0 + B1.m_data[13] * a1 + B2.m_data[13] * a2;
+    ATB(4)
+        .m_data4[1] =
+        B0.m_data4[1] * a0 + B1.m_data4[1] * a1 + B2.m_data4[1] * a2;
+    ATB(4)
+        .m_data4[2] =
+        B0.m_data4[2] * a0 + B1.m_data4[2] * a1 + B2.m_data4[2] * a2;
+    ATB(4)
+        .m_data[12] =
+        B0.m_data[12] * a0 + B1.m_data[12] * a1 + B2.m_data[12] * a2;
+    ATB(4)
+        .m_data[13] =
+        B0.m_data[13] * a0 + B1.m_data[13] * a1 + B2.m_data[13] * a2;
 
     a0 = A0[5];
     a1 = A1[5];
     a2 = A2[5];
-    ATB(5).m_data4[1] = B0.m_data4[1] * a0 + B1.m_data4[1] * a1 + B2.m_data4[1] * a2;
-    ATB(5).m_data4[2] = B0.m_data4[2] * a0 + B1.m_data4[2] * a1 + B2.m_data4[2] * a2;
-    ATB(5).m_data[12] = B0.m_data[12] * a0 + B1.m_data[12] * a1 + B2.m_data[12] * a2;
-    ATB(5).m_data[13] = B0.m_data[13] * a0 + B1.m_data[13] * a1 + B2.m_data[13] * a2;
+    ATB(5)
+        .m_data4[1] =
+        B0.m_data4[1] * a0 + B1.m_data4[1] * a1 + B2.m_data4[1] * a2;
+    ATB(5)
+        .m_data4[2] =
+        B0.m_data4[2] * a0 + B1.m_data4[2] * a1 + B2.m_data4[2] * a2;
+    ATB(5)
+        .m_data[12] =
+        B0.m_data[12] * a0 + B1.m_data[12] * a1 + B2.m_data[12] * a2;
+    ATB(5)
+        .m_data[13] =
+        B0.m_data[13] * a0 + B1.m_data[13] * a1 + B2.m_data[13] * a2;
 
     a0 = A0[6];
     a1 = A1[6];
     a2 = A2[6];
-    ATB(6).m_data[6] = B0.m_data[6] * a0 + B1.m_data[6] * a1 + B2.m_data[6] * a2;
-    ATB(6).m_data[7] = B0.m_data[7] * a0 + B1.m_data[7] * a1 + B2.m_data[7] * a2;
-    ATB(6).m_data4[2] = B0.m_data4[2] * a0 + B1.m_data4[2] * a1 + B2.m_data4[2] * a2;
-    ATB(6).m_data[12] = B0.m_data[12] * a0 + B1.m_data[12] * a1 + B2.m_data[12] * a2;
-    ATB(6).m_data[13] = B0.m_data[13] * a0 + B1.m_data[13] * a1 + B2.m_data[13] * a2;
+    ATB(6)
+        .m_data[6] = B0.m_data[6] * a0 + B1.m_data[6] * a1 + B2.m_data[6] * a2;
+    ATB(6)
+        .m_data[7] = B0.m_data[7] * a0 + B1.m_data[7] * a1 + B2.m_data[7] * a2;
+    ATB(6)
+        .m_data4[2] =
+        B0.m_data4[2] * a0 + B1.m_data4[2] * a1 + B2.m_data4[2] * a2;
+    ATB(6)
+        .m_data[12] =
+        B0.m_data[12] * a0 + B1.m_data[12] * a1 + B2.m_data[12] * a2;
+    ATB(6)
+        .m_data[13] =
+        B0.m_data[13] * a0 + B1.m_data[13] * a1 + B2.m_data[13] * a2;
 
     a0 = A0[7];
     a1 = A1[7];
     a2 = A2[7];
-    ATB(7).m_data[7] = B0.m_data[7] * a0 + B1.m_data[7] * a1 + B2.m_data[7] * a2;
-    ATB(7).m_data4[2] = B0.m_data4[2] * a0 + B1.m_data4[2] * a1 + B2.m_data4[2] * a2;
-    ATB(7).m_data[12] = B0.m_data[12] * a0 + B1.m_data[12] * a1 + B2.m_data[12] * a2;
-    ATB(7).m_data[13] = B0.m_data[13] * a0 + B1.m_data[13] * a1 + B2.m_data[13] * a2;
+    ATB(7)
+        .m_data[7] = B0.m_data[7] * a0 + B1.m_data[7] * a1 + B2.m_data[7] * a2;
+    ATB(7)
+        .m_data4[2] =
+        B0.m_data4[2] * a0 + B1.m_data4[2] * a1 + B2.m_data4[2] * a2;
+    ATB(7)
+        .m_data[12] =
+        B0.m_data[12] * a0 + B1.m_data[12] * a1 + B2.m_data[12] * a2;
+    ATB(7)
+        .m_data[13] =
+        B0.m_data[13] * a0 + B1.m_data[13] * a1 + B2.m_data[13] * a2;
 
     a0 = A0[8];
     a1 = A1[8];
     a2 = A2[8];
-    ATB(8).m_data4[2] = B0.m_data4[2] * a0 + B1.m_data4[2] * a1 + B2.m_data4[2] * a2;
-    ATB(8).m_data[12] = B0.m_data[12] * a0 + B1.m_data[12] * a1 + B2.m_data[12] * a2;
-    ATB(8).m_data[13] = B0.m_data[13] * a0 + B1.m_data[13] * a1 + B2.m_data[13] * a2;
+    ATB(8)
+        .m_data4[2] =
+        B0.m_data4[2] * a0 + B1.m_data4[2] * a1 + B2.m_data4[2] * a2;
+    ATB(8)
+        .m_data[12] =
+        B0.m_data[12] * a0 + B1.m_data[12] * a1 + B2.m_data[12] * a2;
+    ATB(8)
+        .m_data[13] =
+        B0.m_data[13] * a0 + B1.m_data[13] * a1 + B2.m_data[13] * a2;
 
     a0 = A0[9];
     a1 = A1[9];
     a2 = A2[9];
-    ATB(9).m_data4[2] = B0.m_data4[2] * a0 + B1.m_data4[2] * a1 + B2.m_data4[2] * a2;
-    ATB(9).m_data[12] = B0.m_data[12] * a0 + B1.m_data[12] * a1 + B2.m_data[12] * a2;
-    ATB(9).m_data[13] = B0.m_data[13] * a0 + B1.m_data[13] * a1 + B2.m_data[13] * a2;
+    ATB(9)
+        .m_data4[2] =
+        B0.m_data4[2] * a0 + B1.m_data4[2] * a1 + B2.m_data4[2] * a2;
+    ATB(9)
+        .m_data[12] =
+        B0.m_data[12] * a0 + B1.m_data[12] * a1 + B2.m_data[12] * a2;
+    ATB(9)
+        .m_data[13] =
+        B0.m_data[13] * a0 + B1.m_data[13] * a1 + B2.m_data[13] * a2;
 
     a0 = A0[10];
     a1 = A1[10];
     a2 = A2[10];
-    ATB(10).m_data[10] = B0.m_data[10] * a0 + B1.m_data[10] * a1 + B2.m_data[10] * a2;
-    ATB(10).m_data[11] = B0.m_data[11] * a0 + B1.m_data[11] * a1 + B2.m_data[11] * a2;
-    ATB(10).m_data[12] = B0.m_data[12] * a0 + B1.m_data[12] * a1 + B2.m_data[12] * a2;
-    ATB(10).m_data[13] = B0.m_data[13] * a0 + B1.m_data[13] * a1 + B2.m_data[13] * a2;
+    ATB(10)
+        .m_data[10] =
+        B0.m_data[10] * a0 + B1.m_data[10] * a1 + B2.m_data[10] * a2;
+    ATB(10)
+        .m_data[11] =
+        B0.m_data[11] * a0 + B1.m_data[11] * a1 + B2.m_data[11] * a2;
+    ATB(10)
+        .m_data[12] =
+        B0.m_data[12] * a0 + B1.m_data[12] * a1 + B2.m_data[12] * a2;
+    ATB(10)
+        .m_data[13] =
+        B0.m_data[13] * a0 + B1.m_data[13] * a1 + B2.m_data[13] * a2;
 
     a0 = A0[11];
     a1 = A1[11];
     a2 = A2[11];
-    ATB(11).m_data[11] = B0.m_data[11] * a0 + B1.m_data[11] * a1 + B2.m_data[11] * a2;
-    ATB(11).m_data[12] = B0.m_data[12] * a0 + B1.m_data[12] * a1 + B2.m_data[12] * a2;
-    ATB(11).m_data[13] = B0.m_data[13] * a0 + B1.m_data[13] * a1 + B2.m_data[13] * a2;
+    ATB(11)
+        .m_data[11] =
+        B0.m_data[11] * a0 + B1.m_data[11] * a1 + B2.m_data[11] * a2;
+    ATB(11)
+        .m_data[12] =
+        B0.m_data[12] * a0 + B1.m_data[12] * a1 + B2.m_data[12] * a2;
+    ATB(11)
+        .m_data[13] =
+        B0.m_data[13] * a0 + B1.m_data[13] * a1 + B2.m_data[13] * a2;
 
     a0 = A0[12];
     a1 = A1[12];
     a2 = A2[12];
-    ATB(12).m_data[12] = B0.m_data[12] * a0 + B1.m_data[12] * a1 + B2.m_data[12] * a2;
-    ATB(12).m_data[13] = B0.m_data[13] * a0 + B1.m_data[13] * a1 + B2.m_data[13] * a2;
+    ATB(12)
+        .m_data[12] =
+        B0.m_data[12] * a0 + B1.m_data[12] * a1 + B2.m_data[12] * a2;
+    ATB(12)
+        .m_data[13] =
+        B0.m_data[13] * a0 + B1.m_data[13] * a1 + B2.m_data[13] * a2;
   }
 
-  static inline void AddabTToUpper(const AlignedVector13f &a, const AlignedVector14f &b,
+  static inline void AddabTToUpper(const AlignedVector13f &a,
+                                   const AlignedVector14f &b,
                                    AlignedMatrix13x14f &abT) {
     AlignedVector14f::AddsATo(a[0], b, abT(0));
     AlignedVector14f::AddsATo(a[1], b, abT(1));
@@ -1493,15 +1763,13 @@ class SIMD_ALIGN_DECLSPEC AlignedMatrix13x14f : public AlignedMatrixMxNf<13, 14>
   }
 };
 
-template<int M, int N>
+template <int M, int N>
 class MatrixMxNf {
-
  public:
+  inline const float *operator[](const int i) const { return m_data[i]; }
+  inline float *operator[](const int i) { return m_data[i]; }
 
-  inline const float* operator[] (const int i) const { return m_data[i]; }
-  inline       float* operator[] (const int i)       { return m_data[i]; }
-
-  inline MatrixMxNf<M, N> operator - (const MatrixMxNf<M, N> &B) const {
+  inline MatrixMxNf<M, N> operator-(const MatrixMxNf<M, N> &B) const {
     MatrixMxNf<M, N> AmB;
     const MatrixMxNf<M, N> &A = *this;
     for (int i = 0; i < M; ++i) {
@@ -1517,8 +1785,10 @@ class MatrixMxNf {
     UT_ASSERT(i >= 0 && i + 3 <= M && i + 3 <= N);
 #endif
     int k = i;
-    memcpy(m_data[k] + k, &B.m00(), 12);  ++k;
-    memcpy(m_data[k] + k, &B.m11(), 8); ++k;
+    memcpy(m_data[k] + k, &B.m00(), 12);
+    ++k;
+    memcpy(m_data[k] + k, &B.m11(), 8);
+    ++k;
     m_data[k][k] = B.m22();
   }
   inline void SetBlockDiagonal(const int i, const SymmetricMatrix8x8f &B) {
@@ -1526,13 +1796,20 @@ class MatrixMxNf {
     UT_ASSERT(i >= 0 && i + 8 <= M && i + 8 <= N);
 #endif
     int k = i;
-    memcpy(m_data[k] + k, &B.m00(), 32);  ++k;
-    memcpy(m_data[k] + k, &B.m11(), 28);  ++k;
-    memcpy(m_data[k] + k, &B.m22(), 24);  ++k;
-    memcpy(m_data[k] + k, &B.m33(), 20);  ++k;
-    memcpy(m_data[k] + k, &B.m44(), 16);  ++k;
-    memcpy(m_data[k] + k, &B.m55(), 12);  ++k;
-    memcpy(m_data[k] + k, &B.m66(), 8);   ++k;
+    memcpy(m_data[k] + k, &B.m00(), 32);
+    ++k;
+    memcpy(m_data[k] + k, &B.m11(), 28);
+    ++k;
+    memcpy(m_data[k] + k, &B.m22(), 24);
+    ++k;
+    memcpy(m_data[k] + k, &B.m33(), 20);
+    ++k;
+    memcpy(m_data[k] + k, &B.m44(), 16);
+    ++k;
+    memcpy(m_data[k] + k, &B.m55(), 12);
+    ++k;
+    memcpy(m_data[k] + k, &B.m66(), 8);
+    ++k;
     m_data[k][k] = B.m77();
   }
 
@@ -1541,11 +1818,16 @@ class MatrixMxNf {
     UT_ASSERT(i >= 0 && i + 8 <= M && i + 8 <= N);
 #endif
     int k = i;
-    memcpy(&B.m00(), m_data[k] + k, 24);  ++k;
-    memcpy(&B.m11(), m_data[k] + k, 20);  ++k;
-    memcpy(&B.m22(), m_data[k] + k, 16);  ++k;
-    memcpy(&B.m33(), m_data[k] + k, 12);  ++k;
-    memcpy(&B.m44(), m_data[k] + k, 8);   ++k;
+    memcpy(&B.m00(), m_data[k] + k, 24);
+    ++k;
+    memcpy(&B.m11(), m_data[k] + k, 20);
+    ++k;
+    memcpy(&B.m22(), m_data[k] + k, 16);
+    ++k;
+    memcpy(&B.m33(), m_data[k] + k, 12);
+    ++k;
+    memcpy(&B.m44(), m_data[k] + k, 8);
+    ++k;
     B.m55() = m_data[k][k];
   }
   inline void GetBlockDiagonal(const int i, SymmetricMatrix9x9f &B) const {
@@ -1553,14 +1835,22 @@ class MatrixMxNf {
     UT_ASSERT(i >= 0 && i + 9 <= M && i + 9 <= N);
 #endif
     int k = i;
-    memcpy(&B.m00(), m_data[k] + k, 36);  ++k;
-    memcpy(&B.m11(), m_data[k] + k, 32);  ++k;
-    memcpy(&B.m22(), m_data[k] + k, 28);  ++k;
-    memcpy(&B.m33(), m_data[k] + k, 24);  ++k;
-    memcpy(&B.m44(), m_data[k] + k, 20);  ++k;
-    memcpy(&B.m55(), m_data[k] + k, 16);  ++k;
-    memcpy(&B.m66(), m_data[k] + k, 12);  ++k;
-    memcpy(&B.m77(), m_data[k] + k, 8);   ++k;
+    memcpy(&B.m00(), m_data[k] + k, 36);
+    ++k;
+    memcpy(&B.m11(), m_data[k] + k, 32);
+    ++k;
+    memcpy(&B.m22(), m_data[k] + k, 28);
+    ++k;
+    memcpy(&B.m33(), m_data[k] + k, 24);
+    ++k;
+    memcpy(&B.m44(), m_data[k] + k, 20);
+    ++k;
+    memcpy(&B.m55(), m_data[k] + k, 16);
+    ++k;
+    memcpy(&B.m66(), m_data[k] + k, 12);
+    ++k;
+    memcpy(&B.m77(), m_data[k] + k, 8);
+    ++k;
     B.m88() = m_data[k][k];
   }
 
@@ -1680,10 +1970,11 @@ class MatrixMxNf {
     }
   }
 
-  inline bool AssertEqual(const MatrixMxNf<M, N> &_M, const int verbose = 1, const std::string str = "",
-                          const float epsAbs = 0.0f, const float epsRel = 0.0f) const {
-    if (UT::VectorAssertEqual(&m_data[0][0], &_M.m_data[0][0], M * N, verbose, str,
-                              epsAbs, epsRel)) {
+  inline bool AssertEqual(const MatrixMxNf<M, N> &_M, const int verbose = 1,
+                          const std::string str = "", const float epsAbs = 0.0f,
+                          const float epsRel = 0.0f) const {
+    if (UT::VectorAssertEqual(&m_data[0][0], &_M.m_data[0][0], M * N, verbose,
+                              str, epsAbs, epsRel)) {
       return true;
     } else if (verbose) {
       UT::PrintSeparator();
@@ -1701,14 +1992,11 @@ class MatrixMxNf {
   float m_data[M][N];
 };
 
-class Matrix9x10f : public MatrixMxNf<9, 10> {
-};
-class Matrix12x13f : public MatrixMxNf<12, 13> {
-};
-class Matrix18x19f : public MatrixMxNf<18, 19> {
-};
+class Matrix9x10f : public MatrixMxNf<9, 10> {};
+class Matrix12x13f : public MatrixMxNf<12, 13> {};
+class Matrix18x19f : public MatrixMxNf<18, 19> {};
 
-template<int N>
+template <int N>
 class SIMD_ALIGN_DECLSPEC AlignedMatrixNx3f : public AlignedMatrixMxNf<N, 3> {
  public:
   inline void SetBlock(const int i, const AlignedMatrix3x3f &M) {
@@ -1720,7 +2008,8 @@ class SIMD_ALIGN_DECLSPEC AlignedMatrixNx3f : public AlignedMatrixMxNf<N, 3> {
     memcpy(this->m_rows[i + 2].m_data, &M.m20(), 12);
   }
 
-  static inline void ABT(const AlignedMatrixNx3f<N> &A, const AlignedMatrix3x3f &B,
+  static inline void ABT(const AlignedMatrixNx3f<N> &A,
+                         const AlignedMatrix3x3f &B,
                          AlignedMatrixNx3f<N> &ABT) {
     for (int i = 0; i < N; ++i) {
       const xp128f &a = A(i).m_data4[0];
@@ -1729,16 +2018,16 @@ class SIMD_ALIGN_DECLSPEC AlignedMatrixNx3f : public AlignedMatrixMxNf<N, 3> {
       ABT[i][2] = (B.m_20_21_22_r2() * a).vsum_012();
     }
   }
-  static inline void ABTToUpper(const AlignedMatrixNx3f<N> &A, const AlignedMatrixNx3f<N> &B0,
-                                const AlignedVector3f &B1, MatrixMxNf < N, N + 1 > &ABT) {
+  static inline void ABTToUpper(const AlignedMatrixNx3f<N> &A,
+                                const AlignedMatrixNx3f<N> &B0,
+                                const AlignedVector3f &B1,
+                                MatrixMxNf<N, N + 1> &ABT) {
     for (int i = 0; i < N; ++i) {
       const xp128f &a = A(i).m_data4[0];
-      for (int j = i; j < N; ++j)
-        ABT[i][j] = (B0(j).m_data4[0] * a).vsum_012();
+      for (int j = i; j < N; ++j) ABT[i][j] = (B0(j).m_data4[0] * a).vsum_012();
       ABT[i][N] = (B1.v012r() * a).vsum_012();
     }
   }
-
 };
 
 class SIMD_ALIGN_DECLSPEC AlignedMatrix9x3f : public AlignedMatrixNx3f<9> {
@@ -1749,12 +2038,14 @@ class SIMD_ALIGN_DECLSPEC AlignedMatrix9x3f : public AlignedMatrixNx3f<9> {
     SetBlock(3, M1);
     SetBlock(6, M2);
   }
-  static inline void Ab(const AlignedMatrix9x3f &A, const AlignedVector3f &b, float *Ab) {
+  static inline void Ab(const AlignedMatrix9x3f &A, const AlignedVector3f &b,
+                        float *Ab) {
     for (int i = 0; i < 9; ++i) {
       Ab[i] = A(i).Dot(b);
     }
   }
-  static inline void AddAbTo(const AlignedMatrix9x3f &A, const AlignedVector3f &b, float *Ab) {
+  static inline void AddAbTo(const AlignedMatrix9x3f &A,
+                             const AlignedVector3f &b, float *Ab) {
     for (int i = 0; i < 9; ++i) {
       Ab[i] += A(i).Dot(b);
     }
@@ -1773,8 +2064,8 @@ class SIMD_ALIGN_DECLSPEC AlignedMatrix12x3f : public AlignedMatrixNx3f<12> {
 class SIMD_ALIGN_DECLSPEC AlignedMatrix18x3f : public AlignedMatrixNx3f<18> {
  public:
   inline void Set(const AlignedMatrix3x3f &M0, const AlignedMatrix3x3f &M1,
-                  const AlignedMatrix3x3f &M2,
-                  const AlignedMatrix3x3f &M3, const AlignedMatrix3x3f &M4, const AlignedMatrix3x3f &M5) {
+                  const AlignedMatrix3x3f &M2, const AlignedMatrix3x3f &M3,
+                  const AlignedMatrix3x3f &M4, const AlignedMatrix3x3f &M5) {
     SetBlock(0, M0);
     SetBlock(3, M1);
     SetBlock(6, M2);
@@ -1785,19 +2076,17 @@ class SIMD_ALIGN_DECLSPEC AlignedMatrix18x3f : public AlignedMatrixNx3f<18> {
 };
 
 class AlignedMatrixXf : public AlignedMatrixX<float> {
-
  public:
-
   inline AlignedMatrixXf() {}
   inline AlignedMatrixXf(const AlignedMatrixXf &M) { *this = M; }
-  inline void operator = (const AlignedMatrixXf &M) { Set(M); }
+  inline void operator=(const AlignedMatrixXf &M) { Set(M); }
 
-  inline void operator *= (const float s) {
+  inline void operator*=(const float s) {
     const xp128f _s = xp128f::get(s);
     Scale(_s);
   }
-  inline void operator *= (const xp128f &s) { Scale(s); }
-  inline AlignedMatrixXf operator - (const AlignedMatrixXf &B) const {
+  inline void operator*=(const xp128f &s) { Scale(s); }
+  inline AlignedMatrixXf operator-(const AlignedMatrixXf &B) const {
     const AlignedMatrixXf &A = *this;
 #ifdef CFG_DEBUG
     UT_ASSERT(A.GetRows() == B.GetRows() && A.GetColumns() == B.GetColumns());
@@ -1845,7 +2134,8 @@ class AlignedMatrixXf : public AlignedMatrixX<float> {
     UT_ASSERT(i >= 0 && i + 2 <= m_Nr && i + 2 <= m_Nc);
 #endif
     int k = i;
-    memcpy(m_rows[k] + k, &M.m00(), 8);   ++k;
+    memcpy(m_rows[k] + k, &M.m00(), 8);
+    ++k;
     m_rows[k][k] = M.m11();
   }
   inline void SetBlockDiagonal(const int i, const SymmetricMatrix6x6f &M) {
@@ -1853,11 +2143,16 @@ class AlignedMatrixXf : public AlignedMatrixX<float> {
     UT_ASSERT(i >= 0 && i + 6 <= m_Nr && i + 6 <= m_Nc);
 #endif
     int k = i;
-    memcpy(m_rows[k] + k, &M.m00(), 24);  ++k;
-    memcpy(m_rows[k] + k, &M.m11(), 20);  ++k;
-    memcpy(m_rows[k] + k, &M.m22(), 16);  ++k;
-    memcpy(m_rows[k] + k, &M.m33(), 12);  ++k;
-    memcpy(m_rows[k] + k, &M.m44(), 8);   ++k;
+    memcpy(m_rows[k] + k, &M.m00(), 24);
+    ++k;
+    memcpy(m_rows[k] + k, &M.m11(), 20);
+    ++k;
+    memcpy(m_rows[k] + k, &M.m22(), 16);
+    ++k;
+    memcpy(m_rows[k] + k, &M.m33(), 12);
+    ++k;
+    memcpy(m_rows[k] + k, &M.m44(), 8);
+    ++k;
     m_rows[k][k] = M.m55();
   }
 
@@ -2121,13 +2416,14 @@ class AlignedMatrixXf : public AlignedMatrixX<float> {
       m_rows[i + k][j] = V[k];
     }
   }
-  
+
   inline void GetBlockDiagonal(const int i, SymmetricMatrix2x2f &M) const {
 #ifdef CFG_DEBUG
     UT_ASSERT(i >= 0 && i + 2 <= m_Nr && i + 2 <= m_Nc);
 #endif
     int k = i;
-    memcpy(&M.m00(), m_rows[k] + k, 8);   ++k;
+    memcpy(&M.m00(), m_rows[k] + k, 8);
+    ++k;
     M.m11() = m_rows[k][k];
   }
   inline void GetBlockDiagonal(const int i, SymmetricMatrix3x3f &M) const {
@@ -2135,8 +2431,10 @@ class AlignedMatrixXf : public AlignedMatrixX<float> {
     UT_ASSERT(i >= 0 && i + 3 <= m_Nr && i + 3 <= m_Nc);
 #endif
     int k = i;
-    memcpy(&M.m00(), m_rows[k] + k, 12);  ++k;
-    memcpy(&M.m11(), m_rows[k] + k, 8);   ++k;
+    memcpy(&M.m00(), m_rows[k] + k, 12);
+    ++k;
+    memcpy(&M.m11(), m_rows[k] + k, 8);
+    ++k;
     M.m22() = m_rows[k][k];
   }
   inline void GetBlockDiagonal(const int i, SymmetricMatrix6x6f &M) const {
@@ -2144,11 +2442,16 @@ class AlignedMatrixXf : public AlignedMatrixX<float> {
     UT_ASSERT(i >= 0 && i + 6 <= m_Nr && i + 6 <= m_Nc);
 #endif
     int k = i;
-    memcpy(&M.m00(), m_rows[k] + k, 24);  ++k;
-    memcpy(&M.m11(), m_rows[k] + k, 20);  ++k;
-    memcpy(&M.m22(), m_rows[k] + k, 16);  ++k;
-    memcpy(&M.m33(), m_rows[k] + k, 12);  ++k;
-    memcpy(&M.m44(), m_rows[k] + k, 8);   ++k;
+    memcpy(&M.m00(), m_rows[k] + k, 24);
+    ++k;
+    memcpy(&M.m11(), m_rows[k] + k, 20);
+    ++k;
+    memcpy(&M.m22(), m_rows[k] + k, 16);
+    ++k;
+    memcpy(&M.m33(), m_rows[k] + k, 12);
+    ++k;
+    memcpy(&M.m44(), m_rows[k] + k, 8);
+    ++k;
     M.m55() = m_rows[k][k];
   }
   inline void GetBlock(const int i, const int j, Matrix2x3f &M) const {
@@ -2344,7 +2647,7 @@ class AlignedMatrixXf : public AlignedMatrixX<float> {
       V[k] = m_rows[i + k][j];
     }
   }
-  
+
   inline void GetDiagonal(const int i, Vector2f &v) const {
     v.v0() = m_rows[i][i];
     v.v1() = m_rows[i + 1][i + 1];
@@ -2382,7 +2685,8 @@ class AlignedMatrixXf : public AlignedMatrixX<float> {
     }
   }
 
-  inline void IncreaseBlock(const int i, const int j, const AlignedMatrix2x3f &M) {
+  inline void IncreaseBlock(const int i, const int j,
+                            const AlignedMatrix2x3f &M) {
 #ifdef CFG_DEBUG
     UT_ASSERT(i >= 0 && i + 2 <= m_Nr);
     UT_ASSERT(j >= 0 && j + 3 <= m_Nc);
@@ -2412,7 +2716,8 @@ class AlignedMatrixXf : public AlignedMatrixX<float> {
       }
     }
   }
-  inline void IncreaseBlock(const int i, const int j, const AlignedMatrix3x3f &M) {
+  inline void IncreaseBlock(const int i, const int j,
+                            const AlignedMatrix3x3f &M) {
 #ifdef CFG_DEBUG
     UT_ASSERT(i >= 0 && i + 3 <= m_Nr);
     UT_ASSERT(j >= 0 && j + 3 <= m_Nc);
@@ -2428,7 +2733,8 @@ class AlignedMatrixXf : public AlignedMatrixX<float> {
       }
     }
   }
-  inline void IncreaseBlock(const int i, const int j, const AlignedMatrix6x6f &M) {
+  inline void IncreaseBlock(const int i, const int j,
+                            const AlignedMatrix6x6f &M) {
 #ifdef CFG_DEBUG
     UT_ASSERT(i >= 0 && i + 6 <= m_Nr);
     UT_ASSERT(j >= 0 && j + 6 <= m_Nc);
@@ -2469,7 +2775,8 @@ class AlignedMatrixXf : public AlignedMatrixX<float> {
     work->Resize(m_Nc);
     return LS::RankLDL(m_Nr, m_rows.data(), work->Data(), eps);
   }
-  inline bool InverseLDL(const float *eps = NULL, const bool decomposed = false) {
+  inline bool InverseLDL(const float *eps = NULL,
+                         const bool decomposed = false) {
 #ifdef CFG_DEBUG
     UT_ASSERT(m_Nr == m_Nc && !m_symmetric);
 #endif
@@ -2488,7 +2795,8 @@ class AlignedMatrixXf : public AlignedMatrixX<float> {
     UT_ASSERT(m_Nr == m_Nc);
 #endif
     work->Resize(m_Nc);
-    const bool scc = LS::MarginalizeLDL(m_Nr, m_rows.data(), b.Data(), i, N, work->Data(), eps);
+    const bool scc = LS::MarginalizeLDL(m_Nr, m_rows.data(), b.Data(), i, N,
+                                        work->Data(), eps);
     if (erase) {
       Erase(i, N);
       b.Erase(i, N);
@@ -2582,12 +2890,13 @@ class AlignedMatrixXf : public AlignedMatrixX<float> {
     }
   }
 
-  inline bool AssertEqual(const AlignedMatrixXf &M,
-                          const int verbose = 1, const std::string str = "",
-                          const float epsAbs = 0.0f, const float epsRel = 0.0f) const {
+  inline bool AssertEqual(const AlignedMatrixXf &M, const int verbose = 1,
+                          const std::string str = "", const float epsAbs = 0.0f,
+                          const float epsRel = 0.0f) const {
     AlignedVectorXf V1, V2;
-    bool equal = M.m_Nr == m_Nr && M.m_Nc == m_Nc && M.m_symmetric == m_symmetric;
-    //const int verbose1 = verbose & 15, verbose2 = verbose >> 4;
+    bool equal =
+        M.m_Nr == m_Nr && M.m_Nc == m_Nc && M.m_symmetric == m_symmetric;
+    // const int verbose1 = verbose & 15, verbose2 = verbose >> 4;
     const int verbose1 = verbose, verbose2 = verbose;
     for (int i = 0; i < m_Nr && equal; ++i) {
       if (m_symmetric) {
@@ -2596,10 +2905,10 @@ class AlignedMatrixXf : public AlignedMatrixX<float> {
           break;
         }
         V1.Bind(m_rows[i] + i, N);
-        V2.Bind((float *) (M[i] + i), N);
+        V2.Bind((float *)(M[i] + i), N);
       } else {
         V1.Bind(m_rows[i], m_Nc);
-        V2.Bind((float *) M[i], m_Nc);
+        V2.Bind((float *)M[i], m_Nc);
       }
       equal = V1.AssertEqual(V2, verbose1, UT::String("%s %d", str.c_str(), i),
                              epsAbs, epsRel);
@@ -2617,22 +2926,23 @@ class AlignedMatrixXf : public AlignedMatrixX<float> {
     }
     return false;
   }
-  inline bool AssertEqual(const std::string fileName,
-                          const int verbose = 1, const std::string str = "",
-                          const float epsAbs = 0.0f, const float epsRel = 0.0f) const {
+  inline bool AssertEqual(const std::string fileName, const int verbose = 1,
+                          const std::string str = "", const float epsAbs = 0.0f,
+                          const float epsRel = 0.0f) const {
     AlignedMatrixXf M;
     M.LoadB(fileName);
     return AssertEqual(M, verbose, str, epsAbs, epsRel);
   }
   inline bool AssertZero(const int verbose = 1, const std::string str = "",
-                         const float epsAbs = 0.0f, const float epsRel = 0.0f) const {
+                         const float epsAbs = 0.0f,
+                         const float epsRel = 0.0f) const {
     bool zero = true;
-    //const int verbose1 = verbose & 15, verbose2 = verbose >> 4;
+    // const int verbose1 = verbose & 15, verbose2 = verbose >> 4;
     const int verbose1 = verbose, verbose2 = verbose;
     for (int i = 0; i < m_Nr && zero; ++i) {
       const AlignedVectorXf V(m_rows[i], m_Nc, false);
-      zero = V.AssertZero(verbose1, UT::String("%s %d", str.c_str(), i),
-                          epsAbs, epsRel);
+      zero = V.AssertZero(verbose1, UT::String("%s %d", str.c_str(), i), epsAbs,
+                          epsRel);
     }
     if (zero) {
       return true;
@@ -2643,7 +2953,8 @@ class AlignedMatrixXf : public AlignedMatrixX<float> {
     return false;
   }
 
-  static inline void AddAbTo(const AlignedMatrixXf &A, const AlignedVectorXf &b, float *Ab) {
+  static inline void AddAbTo(const AlignedMatrixXf &A, const AlignedVectorXf &b,
+                             float *Ab) {
 #ifdef CFG_DEBUG
     UT_ASSERT(A.GetColumns() == b.Size());
 #endif
@@ -2663,7 +2974,7 @@ class AlignedMatrixXf : public AlignedMatrixX<float> {
   }
 };
 
-template<int M, int N>
+template <int M, int N>
 inline void Convert(const AlignedMatrixXf &M1, AlignedMatrixMxNf<M, N> &M2) {
 #ifdef CFG_DEBUG
   UT_ASSERT(M1.GetRows() == M && M1.GetColumns() == N);
@@ -2673,7 +2984,7 @@ inline void Convert(const AlignedMatrixXf &M1, AlignedMatrixMxNf<M, N> &M2) {
     memcpy(M2[i], M1[i], _N);
   }
 }
-template<int N>
+template <int N>
 inline void Convert(const AlignedVectorXf &V1, float *V2) {
 #ifdef CFG_DEBUG
   UT_ASSERT(V1.Size() == N);
@@ -2682,15 +2993,13 @@ inline void Convert(const AlignedVectorXf &V1, float *V2) {
 }
 
 class AlignedMatrixXd : public AlignedMatrixX<double> {
-
  public:
-
   inline AlignedMatrixXd() {}
   inline AlignedMatrixXd(const AlignedMatrixXd &M) { *this = M; }
-  inline void operator = (const AlignedMatrixXd &M) { Set(M); }
+  inline void operator=(const AlignedMatrixXd &M) { Set(M); }
 
-  inline void operator *= (const double s) { Scale(s); }
-  inline AlignedMatrixXd operator - (const AlignedMatrixXd &B) const {
+  inline void operator*=(const double s) { Scale(s); }
+  inline AlignedMatrixXd operator-(const AlignedMatrixXd &B) const {
     const AlignedMatrixXd &A = *this;
 #ifdef CFG_DEBUG
     UT_ASSERT(A.GetRows() == B.GetRows() && A.GetColumns() == B.GetColumns());
@@ -3080,7 +3389,7 @@ class AlignedMatrixXd : public AlignedMatrixX<double> {
       M.SetLowerFromUpper();
     }
   }
-  
+
   inline void SetBlock(const int i, const int j, const AlignedMatrixXf &M) {
     const int Nr = M.GetRows(), Nc = M.GetColumns();
 #ifdef CFG_DEBUG
@@ -3117,8 +3426,9 @@ class AlignedMatrixXd : public AlignedMatrixX<double> {
       M.SetLowerFromUpper();
     }
   }
-  
-  inline void IncreaseBlock(const int i, const int j, const AlignedMatrix2x3f &M) {
+
+  inline void IncreaseBlock(const int i, const int j,
+                            const AlignedMatrix2x3f &M) {
 #ifdef CFG_DEBUG
     UT_ASSERT(i >= 0 && i + 2 <= m_Nr);
     UT_ASSERT(j >= 0 && j + 3 <= m_Nc);
@@ -3148,7 +3458,8 @@ class AlignedMatrixXd : public AlignedMatrixX<double> {
       }
     }
   }
-  inline void IncreaseBlock(const int i, const int j, const AlignedMatrix3x3f &M) {
+  inline void IncreaseBlock(const int i, const int j,
+                            const AlignedMatrix3x3f &M) {
 #ifdef CFG_DEBUG
     UT_ASSERT(i >= 0 && i + 3 <= m_Nr);
     UT_ASSERT(j >= 0 && j + 3 <= m_Nc);
@@ -3165,7 +3476,8 @@ class AlignedMatrixXd : public AlignedMatrixX<double> {
     }
   }
 
-  inline void IncreaseBlock(const int i, const int j, const AlignedMatrix6x6f &M) {
+  inline void IncreaseBlock(const int i, const int j,
+                            const AlignedMatrix6x6f &M) {
 #ifdef CFG_DEBUG
     UT_ASSERT(i >= 0 && i + 6 <= m_Nr);
     UT_ASSERT(j >= 0 && j + 6 <= m_Nc);
@@ -3229,7 +3541,8 @@ class AlignedMatrixXd : public AlignedMatrixX<double> {
     work->Resize(m_Nc);
     return LS::RankLDL(m_Nr, m_rows.data(), work->Data(), eps);
   }
-  inline bool InverseLDL(const double *eps = NULL, const bool decomposed = false) {
+  inline bool InverseLDL(const double *eps = NULL,
+                         const bool decomposed = false) {
 #ifdef CFG_DEBUG
     UT_ASSERT(m_Nr == m_Nc && !m_symmetric);
 #endif
@@ -3247,7 +3560,8 @@ class AlignedMatrixXd : public AlignedMatrixX<double> {
     UT_ASSERT(m_Nr == m_Nc);
 #endif
     work->Resize(m_Nc);
-    const bool scc = LS::MarginalizeLDL(m_Nr, m_rows.data(), b.Data(), i, N, work->Data(), eps);
+    const bool scc = LS::MarginalizeLDL(m_Nr, m_rows.data(), b.Data(), i, N,
+                                        work->Data(), eps);
     Erase(i, N);
     b.Erase(i, N);
     return scc;
@@ -3294,12 +3608,13 @@ class AlignedMatrixXd : public AlignedMatrixX<double> {
     }
     UT::Print("\n");
   }
-  inline bool AssertEqual(const AlignedMatrixXd &M,
-                          const int verbose = 1, const std::string str = "",
-                          const double epsAbs = 0.0, const double epsRel = 0.0) const {
+  inline bool AssertEqual(const AlignedMatrixXd &M, const int verbose = 1,
+                          const std::string str = "", const double epsAbs = 0.0,
+                          const double epsRel = 0.0) const {
     AlignedVectorXd V1, V2;
-    bool equal = M.m_Nr == m_Nr && M.m_Nc == m_Nc && M.m_symmetric == m_symmetric;
-    //const int verbose1 = verbose & 15, verbose2 = verbose >> 4;
+    bool equal =
+        M.m_Nr == m_Nr && M.m_Nc == m_Nc && M.m_symmetric == m_symmetric;
+    // const int verbose1 = verbose & 15, verbose2 = verbose >> 4;
     const int verbose1 = verbose, verbose2 = verbose;
     for (int i = 0; i < m_Nr && equal; ++i) {
       if (m_symmetric) {
@@ -3308,10 +3623,10 @@ class AlignedMatrixXd : public AlignedMatrixX<double> {
           break;
         }
         V1.Bind(m_rows[i] + i, N);
-        V2.Bind((float *) (M[i] + i), N);
+        V2.Bind((float *)(M[i] + i), N);
       } else {
         V1.Bind(m_rows[i], m_Nc);
-        V2.Bind((float *) M[i], m_Nc);
+        V2.Bind((float *)M[i], m_Nc);
       }
       equal = V1.AssertEqual(V2, verbose1, UT::String("%s %d", str.c_str(), i),
                              epsAbs, epsRel);
@@ -3330,14 +3645,15 @@ class AlignedMatrixXd : public AlignedMatrixX<double> {
     return false;
   }
   inline bool AssertZero(const int verbose = 1, const std::string str = "",
-                         const double epsAbs = 0.0, const double epsRel = 0.0) const {
+                         const double epsAbs = 0.0,
+                         const double epsRel = 0.0) const {
     bool zero = true;
-    //const int verbose1 = verbose & 15, verbose2 = verbose >> 4;
+    // const int verbose1 = verbose & 15, verbose2 = verbose >> 4;
     const int verbose1 = verbose, verbose2 = verbose;
     for (int i = 0; i < m_Nr && zero; ++i) {
       const AlignedVectorXd V(m_rows[i], m_Nc, false);
-      zero = V.AssertZero(verbose1, UT::String("%s %d", str.c_str(), i),
-                          epsAbs, epsRel);
+      zero = V.AssertZero(verbose1, UT::String("%s %d", str.c_str(), i), epsAbs,
+                          epsRel);
     }
     if (zero) {
       return true;
@@ -3348,7 +3664,8 @@ class AlignedMatrixXd : public AlignedMatrixX<double> {
     return false;
   }
 
-  static inline void AddAbTo(const AlignedMatrixXd &A, const AlignedVectorXd &b, double *Ab) {
+  static inline void AddAbTo(const AlignedMatrixXd &A, const AlignedVectorXd &b,
+                             double *Ab) {
 #ifdef CFG_DEBUG
     UT_ASSERT(A.GetColumns() == b.Size());
 #endif
@@ -3370,14 +3687,14 @@ class AlignedMatrixXd : public AlignedMatrixX<double> {
 }
 
 #ifdef CFG_DEBUG_EIGEN
-template<int M, int N>
+template <int M, int N>
 class EigenMatrixMxNf : public Eigen::Matrix<float, M, N, Eigen::RowMajor> {
  public:
   inline EigenMatrixMxNf() : Eigen::Matrix<float, M, N, Eigen::RowMajor>() {}
-  inline EigenMatrixMxNf(const Eigen::Matrix<float, M, N, Eigen::RowMajor> &e_M) :
-                         Eigen::Matrix<float, M, N, Eigen::RowMajor>(e_M) {}
-  inline EigenMatrixMxNf(const LA::MatrixMxNf<M, N> &_M) :
-                         Eigen::Matrix<float, M, N, Eigen::RowMajor>() {
+  inline EigenMatrixMxNf(const Eigen::Matrix<float, M, N, Eigen::RowMajor> &e_M)
+      : Eigen::Matrix<float, M, N, Eigen::RowMajor>(e_M) {}
+  inline EigenMatrixMxNf(const LA::MatrixMxNf<M, N> &_M)
+      : Eigen::Matrix<float, M, N, Eigen::RowMajor>() {
     Eigen::Matrix<float, M, N, Eigen::RowMajor> &e_M = *this;
     for (int i = 0; i < M; ++i) {
       for (int j = 0; j < N; ++j) {
@@ -3385,8 +3702,8 @@ class EigenMatrixMxNf : public Eigen::Matrix<float, M, N, Eigen::RowMajor> {
       }
     }
   }
-  inline EigenMatrixMxNf(const LA::AlignedMatrixMxNf<M, N> &_M) :
-                         Eigen::Matrix<float, M, N, Eigen::RowMajor>() {
+  inline EigenMatrixMxNf(const LA::AlignedMatrixMxNf<M, N> &_M)
+      : Eigen::Matrix<float, M, N, Eigen::RowMajor>() {
     Eigen::Matrix<float, M, N, Eigen::RowMajor> &e_M = *this;
     for (int i = 0; i < M; ++i) {
       for (int j = 0; j < N; ++j) {
@@ -3394,8 +3711,9 @@ class EigenMatrixMxNf : public Eigen::Matrix<float, M, N, Eigen::RowMajor> {
       }
     }
   }
-  inline void operator = (const Eigen::Matrix<float, M, N, Eigen::RowMajor> &e_M) {
-    *((Eigen::Matrix<float, M, N, Eigen::RowMajor> *) this) = e_M;
+  inline void operator=(
+      const Eigen::Matrix<float, M, N, Eigen::RowMajor> &e_M) {
+    *((Eigen::Matrix<float, M, N, Eigen::RowMajor> *)this) = e_M;
   }
   inline void Get(LA::AlignedMatrixMxNf<M, N> &_M) const {
     const Eigen::Matrix<float, M, N, Eigen::RowMajor> &e_M = *this;
@@ -3435,50 +3753,59 @@ class EigenMatrixMxNf : public Eigen::Matrix<float, M, N, Eigen::RowMajor> {
     }
   }
   inline void Print(const bool e = false) const { GetMatrixMxNf().Print(e); }
-  inline bool AssertEqual(const LA::MatrixMxNf<M, N> &_M,
-                          const int verbose = 1, const std::string str = "",
-                          const float epsAbs = 0.0f, const float epsRel = 0.0f) const {
+  inline bool AssertEqual(const LA::MatrixMxNf<M, N> &_M, const int verbose = 1,
+                          const std::string str = "", const float epsAbs = 0.0f,
+                          const float epsRel = 0.0f) const {
     return GetMatrixMxNf().AssertEqual(_M, verbose, str, epsAbs, epsRel);
   }
   inline bool AssertEqual(const LA::AlignedMatrixMxNf<M, N> &_M,
                           const int verbose = 1, const std::string str = "",
-                          const float epsAbs = 0.0f, const float epsRel = 0.0f) const {
+                          const float epsAbs = 0.0f,
+                          const float epsRel = 0.0f) const {
     return GetAlignedMatrixMxNf().AssertEqual(_M, verbose, str, epsAbs, epsRel);
   }
-  inline bool AssertEqual(const EigenMatrixMxNf &e_M,
-                          const int verbose = 1, const std::string str = "",
-                          const float epsAbs = 0.0f, const float epsRel = 0.0f) const {
+  inline bool AssertEqual(const EigenMatrixMxNf &e_M, const int verbose = 1,
+                          const std::string str = "", const float epsAbs = 0.0f,
+                          const float epsRel = 0.0f) const {
     return AssertEqual(e_M.GetMatrixMxNf(), verbose, str, epsAbs, epsRel);
   }
   inline bool AssertZero(const int verbose = 1, const std::string str = "",
-                         const float epsAbs = 0.0f, const float epsRel = 0.0f) const {
+                         const float epsAbs = 0.0f,
+                         const float epsRel = 0.0f) const {
     return GetAlignedMatrixMxNf().AssertZero(verbose, str, epsAbs, epsRel);
   }
 };
 class EigenMatrix2x9f : public EigenMatrixMxNf<2, 9> {
  public:
   inline EigenMatrix2x9f() : EigenMatrixMxNf<2, 9>() {}
-  inline EigenMatrix2x9f(const Eigen::Matrix<float, 2, 9, Eigen::RowMajor> &e_M) :
-                         EigenMatrixMxNf<2, 9>(e_M) {}
-  inline EigenMatrix2x9f(const LA::AlignedMatrix2x9f &M) : EigenMatrixMxNf<2, 9>(M) {}
-  inline EigenMatrix2x9f(const LA::AlignedMatrix2x3f &M0, const LA::AlignedMatrix2x3f &M1,
+  inline EigenMatrix2x9f(const Eigen::Matrix<float, 2, 9, Eigen::RowMajor> &e_M)
+      : EigenMatrixMxNf<2, 9>(e_M) {}
+  inline EigenMatrix2x9f(const LA::AlignedMatrix2x9f &M)
+      : EigenMatrixMxNf<2, 9>(M) {}
+  inline EigenMatrix2x9f(const LA::AlignedMatrix2x3f &M0,
+                         const LA::AlignedMatrix2x3f &M1,
                          const LA::AlignedMatrix2x3f &M2) {
     block<2, 3>(0, 0) = EigenMatrix2x3f(M0);
     block<2, 3>(0, 3) = EigenMatrix2x3f(M1);
     block<2, 3>(0, 6) = EigenMatrix2x3f(M2);
   }
-  inline void operator = (const Eigen::Matrix<float, 2, 9, Eigen::RowMajor> &e_M) {
-    *((Eigen::Matrix<float, 2, 9, Eigen::RowMajor> *) this) = e_M;
+  inline void operator=(
+      const Eigen::Matrix<float, 2, 9, Eigen::RowMajor> &e_M) {
+    *((Eigen::Matrix<float, 2, 9, Eigen::RowMajor> *)this) = e_M;
   }
 };
 class EigenMatrix2x13f : public EigenMatrixMxNf<2, 13> {
  public:
   inline EigenMatrix2x13f() : EigenMatrixMxNf<2, 13>() {}
-  inline EigenMatrix2x13f(const Eigen::Matrix<float, 2, 13, Eigen::RowMajor> &e_M) :
-                          EigenMatrixMxNf<2, 13>(e_M) {}
-  inline EigenMatrix2x13f(const LA::MatrixMxNf<2, 13> &_M) : EigenMatrixMxNf<2, 13>(_M) {}
-  inline EigenMatrix2x13f(const LA::AlignedMatrixMxNf<2, 13> &_M) : EigenMatrixMxNf<2, 13>(_M) {}
-  inline EigenMatrix2x13f(const EigenVector2f &e_M0, const EigenMatrix2x6f &e_M1,
+  inline EigenMatrix2x13f(
+      const Eigen::Matrix<float, 2, 13, Eigen::RowMajor> &e_M)
+      : EigenMatrixMxNf<2, 13>(e_M) {}
+  inline EigenMatrix2x13f(const LA::MatrixMxNf<2, 13> &_M)
+      : EigenMatrixMxNf<2, 13>(_M) {}
+  inline EigenMatrix2x13f(const LA::AlignedMatrixMxNf<2, 13> &_M)
+      : EigenMatrixMxNf<2, 13>(_M) {}
+  inline EigenMatrix2x13f(const EigenVector2f &e_M0,
+                          const EigenMatrix2x6f &e_M1,
                           const EigenMatrix2x6f &e_M2) {
     block<2, 1>(0, 0) = e_M0;
     block<2, 6>(0, 1) = e_M1;
@@ -3488,11 +3815,15 @@ class EigenMatrix2x13f : public EigenMatrixMxNf<2, 13> {
 class EigenMatrix2x14f : public EigenMatrixMxNf<2, 14> {
  public:
   inline EigenMatrix2x14f() : EigenMatrixMxNf<2, 14>() {}
-  inline EigenMatrix2x14f(const Eigen::Matrix<float, 2, 14, Eigen::RowMajor> &e_M) :
-                          EigenMatrixMxNf<2, 14>(e_M) {}
-  inline EigenMatrix2x14f(const LA::MatrixMxNf<2, 14> &_M) : EigenMatrixMxNf<2, 14>(_M) {}
-  inline EigenMatrix2x14f(const LA::AlignedMatrixMxNf<2, 14> &_M) : EigenMatrixMxNf<2, 14>(_M) {}
-  inline EigenMatrix2x14f(const EigenMatrix2x13f &e_M0, const EigenVector2f &e_M1) {
+  inline EigenMatrix2x14f(
+      const Eigen::Matrix<float, 2, 14, Eigen::RowMajor> &e_M)
+      : EigenMatrixMxNf<2, 14>(e_M) {}
+  inline EigenMatrix2x14f(const LA::MatrixMxNf<2, 14> &_M)
+      : EigenMatrixMxNf<2, 14>(_M) {}
+  inline EigenMatrix2x14f(const LA::AlignedMatrixMxNf<2, 14> &_M)
+      : EigenMatrixMxNf<2, 14>(_M) {}
+  inline EigenMatrix2x14f(const EigenMatrix2x13f &e_M0,
+                          const EigenVector2f &e_M1) {
     block<2, 13>(0, 0) = e_M0;
     block<2, 1>(0, 13) = e_M1;
   }
@@ -3500,60 +3831,86 @@ class EigenMatrix2x14f : public EigenMatrixMxNf<2, 14> {
 class EigenMatrix2x15f : public EigenMatrixMxNf<2, 15> {
  public:
   inline EigenMatrix2x15f() : EigenMatrixMxNf<2, 15>() {}
-  inline EigenMatrix2x15f(const Eigen::Matrix<float, 2, 15, Eigen::RowMajor> &e_M) :
-                          EigenMatrixMxNf<2, 15>(e_M) {}
+  inline EigenMatrix2x15f(
+      const Eigen::Matrix<float, 2, 15, Eigen::RowMajor> &e_M)
+      : EigenMatrixMxNf<2, 15>(e_M) {}
 };
 class EigenMatrix2x30f : public EigenMatrixMxNf<2, 30> {
  public:
   inline EigenMatrix2x30f() : EigenMatrixMxNf<2, 30>() {}
-  inline EigenMatrix2x30f(const Eigen::Matrix<float, 2, 30, Eigen::RowMajor> &e_M) :
-                          EigenMatrixMxNf<2, 30>(e_M) {}
-  inline EigenMatrix2x30f(const LA::MatrixMxNf<2, 30> &M) : EigenMatrixMxNf<2, 30>(M) {}
-  inline EigenMatrix2x30f(const LA::AlignedMatrixMxNf<2, 30> &M) : EigenMatrixMxNf<2, 30>(M) {}
+  inline EigenMatrix2x30f(
+      const Eigen::Matrix<float, 2, 30, Eigen::RowMajor> &e_M)
+      : EigenMatrixMxNf<2, 30>(e_M) {}
+  inline EigenMatrix2x30f(const LA::MatrixMxNf<2, 30> &M)
+      : EigenMatrixMxNf<2, 30>(M) {}
+  inline EigenMatrix2x30f(const LA::AlignedMatrixMxNf<2, 30> &M)
+      : EigenMatrixMxNf<2, 30>(M) {}
   inline void Get(EigenMatrix2x6f &e_M0, EigenMatrix2x9f &e_M1,
                   EigenMatrix2x6f &e_M2, EigenMatrix2x9f &e_M3) const {
-    e_M0 = block<2, 6>(0, 0);   e_M1 = block<2, 9>(0, 6);
-    e_M2 = block<2, 6>(0, 15);  e_M3 = block<2, 9>(0, 21);
+    e_M0 = block<2, 6>(0, 0);
+    e_M1 = block<2, 9>(0, 6);
+    e_M2 = block<2, 6>(0, 15);
+    e_M3 = block<2, 9>(0, 21);
   }
 };
 class EigenMatrix2x31f : public EigenMatrixMxNf<2, 31> {
  public:
   inline EigenMatrix2x31f() : EigenMatrixMxNf<2, 31>() {}
-  inline EigenMatrix2x31f(const Eigen::Matrix<float, 2, 31, Eigen::RowMajor> &e_M) :
-                          EigenMatrixMxNf<2, 31>(e_M) {}
-  inline EigenMatrix2x31f(const LA::MatrixMxNf<2, 31> &M) : EigenMatrixMxNf<2, 31>(M) {}
-  inline void Get(EigenMatrix2x3f &e_M0, EigenMatrix2x3f &e_M1, EigenMatrix2x3f &e_M2,
-                  EigenMatrix2x3f &e_M3, EigenMatrix2x3f &e_M4, EigenMatrix2x3f &e_M5,
-                  EigenMatrix2x3f &e_M6, EigenMatrix2x3f &e_M7, EigenMatrix2x3f &e_M8,
-                  EigenMatrix2x3f &e_M9, EigenVector2f &e_M10) const {
-    e_M0 = block<2, 3>(0, 0);   e_M1 = block<2, 3>(0, 3);   e_M2 = block<2, 3>(0, 6);
-    e_M3 = block<2, 3>(0, 9);   e_M4 = block<2, 3>(0, 12);  e_M5 = block<2, 3>(0, 15);
-    e_M6 = block<2, 3>(0, 18);  e_M7 = block<2, 3>(0, 21);  e_M8 = block<2, 3>(0, 24);
-    e_M9 = block<2, 3>(0, 27);  e_M10 = block<2, 1>(0, 30);
+  inline EigenMatrix2x31f(
+      const Eigen::Matrix<float, 2, 31, Eigen::RowMajor> &e_M)
+      : EigenMatrixMxNf<2, 31>(e_M) {}
+  inline EigenMatrix2x31f(const LA::MatrixMxNf<2, 31> &M)
+      : EigenMatrixMxNf<2, 31>(M) {}
+  inline void Get(EigenMatrix2x3f &e_M0, EigenMatrix2x3f &e_M1,
+                  EigenMatrix2x3f &e_M2, EigenMatrix2x3f &e_M3,
+                  EigenMatrix2x3f &e_M4, EigenMatrix2x3f &e_M5,
+                  EigenMatrix2x3f &e_M6, EigenMatrix2x3f &e_M7,
+                  EigenMatrix2x3f &e_M8, EigenMatrix2x3f &e_M9,
+                  EigenVector2f &e_M10) const {
+    e_M0 = block<2, 3>(0, 0);
+    e_M1 = block<2, 3>(0, 3);
+    e_M2 = block<2, 3>(0, 6);
+    e_M3 = block<2, 3>(0, 9);
+    e_M4 = block<2, 3>(0, 12);
+    e_M5 = block<2, 3>(0, 15);
+    e_M6 = block<2, 3>(0, 18);
+    e_M7 = block<2, 3>(0, 21);
+    e_M8 = block<2, 3>(0, 24);
+    e_M9 = block<2, 3>(0, 27);
+    e_M10 = block<2, 1>(0, 30);
   }
-  inline void Get(EigenMatrix2x6f &e_M0, EigenMatrix2x9f &e_M1, EigenMatrix2x6f &e_M2,
-                  EigenMatrix2x9f &e_M3, EigenVector2f &e_M10) const {
-    e_M0 = block<2, 6>(0, 0);   e_M1 = block<2, 9>(0, 6);
-    e_M2 = block<2, 6>(0, 15);  e_M3 = block<2, 9>(0, 21);
+  inline void Get(EigenMatrix2x6f &e_M0, EigenMatrix2x9f &e_M1,
+                  EigenMatrix2x6f &e_M2, EigenMatrix2x9f &e_M3,
+                  EigenVector2f &e_M10) const {
+    e_M0 = block<2, 6>(0, 0);
+    e_M1 = block<2, 9>(0, 6);
+    e_M2 = block<2, 6>(0, 15);
+    e_M3 = block<2, 9>(0, 21);
     e_M10 = block<2, 1>(0, 30);
   }
 };
 class EigenMatrix3x9f : public EigenMatrixMxNf<3, 9> {
  public:
   inline EigenMatrix3x9f() : EigenMatrixMxNf<3, 9>() {}
-  inline EigenMatrix3x9f(const Eigen::Matrix<float, 3, 9, Eigen::RowMajor> &e_M) :
-                         EigenMatrixMxNf<3, 9>(e_M) {}
-  inline EigenMatrix3x9f(const LA::MatrixMxNf<3, 9> &_M) : EigenMatrixMxNf<3, 9>(_M) {}
-  inline EigenMatrix3x9f(const LA::AlignedMatrixMxNf<3, 9> &_M) : EigenMatrixMxNf<3, 9>(_M) {}
+  inline EigenMatrix3x9f(const Eigen::Matrix<float, 3, 9, Eigen::RowMajor> &e_M)
+      : EigenMatrixMxNf<3, 9>(e_M) {}
+  inline EigenMatrix3x9f(const LA::MatrixMxNf<3, 9> &_M)
+      : EigenMatrixMxNf<3, 9>(_M) {}
+  inline EigenMatrix3x9f(const LA::AlignedMatrixMxNf<3, 9> &_M)
+      : EigenMatrixMxNf<3, 9>(_M) {}
 };
 class EigenMatrix3x13f : public EigenMatrixMxNf<3, 13> {
  public:
   inline EigenMatrix3x13f() : EigenMatrixMxNf<3, 13>() {}
-  inline EigenMatrix3x13f(const Eigen::Matrix<float, 3, 13, Eigen::RowMajor> &e_M) :
-                          EigenMatrixMxNf<3, 13>(e_M) {}
-  inline EigenMatrix3x13f(const LA::MatrixMxNf<3, 13> &_M) : EigenMatrixMxNf<3, 13>(_M) {}
-  inline EigenMatrix3x13f(const LA::AlignedMatrixMxNf<3, 13> &_M) : EigenMatrixMxNf<3, 13>(_M) {}
-  inline EigenMatrix3x13f(const EigenVector3f &e_M0, const EigenMatrix3x6f &e_M1,
+  inline EigenMatrix3x13f(
+      const Eigen::Matrix<float, 3, 13, Eigen::RowMajor> &e_M)
+      : EigenMatrixMxNf<3, 13>(e_M) {}
+  inline EigenMatrix3x13f(const LA::MatrixMxNf<3, 13> &_M)
+      : EigenMatrixMxNf<3, 13>(_M) {}
+  inline EigenMatrix3x13f(const LA::AlignedMatrixMxNf<3, 13> &_M)
+      : EigenMatrixMxNf<3, 13>(_M) {}
+  inline EigenMatrix3x13f(const EigenVector3f &e_M0,
+                          const EigenMatrix3x6f &e_M1,
                           const EigenMatrix3x6f &e_M2) {
     block<3, 1>(0, 0) = e_M0;
     block<3, 6>(0, 1) = e_M1;
@@ -3563,11 +3920,15 @@ class EigenMatrix3x13f : public EigenMatrixMxNf<3, 13> {
 class EigenMatrix3x14f : public EigenMatrixMxNf<3, 14> {
  public:
   inline EigenMatrix3x14f() : EigenMatrixMxNf<3, 14>() {}
-  inline EigenMatrix3x14f(const Eigen::Matrix<float, 3, 14, Eigen::RowMajor> &e_M) :
-                          EigenMatrixMxNf<3, 14>(e_M) {}
-  inline EigenMatrix3x14f(const LA::MatrixMxNf<3, 14> &M) : EigenMatrixMxNf<3, 14>(M) {}
-  inline EigenMatrix3x14f(const LA::AlignedMatrixMxNf<3, 14> &M) : EigenMatrixMxNf<3, 14>(M) {}
-  inline EigenMatrix3x14f(const EigenMatrix3x13f &e_M0, const EigenVector3f &e_M1) {
+  inline EigenMatrix3x14f(
+      const Eigen::Matrix<float, 3, 14, Eigen::RowMajor> &e_M)
+      : EigenMatrixMxNf<3, 14>(e_M) {}
+  inline EigenMatrix3x14f(const LA::MatrixMxNf<3, 14> &M)
+      : EigenMatrixMxNf<3, 14>(M) {}
+  inline EigenMatrix3x14f(const LA::AlignedMatrixMxNf<3, 14> &M)
+      : EigenMatrixMxNf<3, 14>(M) {}
+  inline EigenMatrix3x14f(const EigenMatrix3x13f &e_M0,
+                          const EigenVector3f &e_M1) {
     block<3, 13>(0, 0) = e_M0;
     block<3, 1>(0, 13) = e_M1;
   }
@@ -3575,19 +3936,26 @@ class EigenMatrix3x14f : public EigenMatrixMxNf<3, 14> {
 class EigenMatrix3x30f : public EigenMatrixMxNf<3, 30> {
  public:
   inline EigenMatrix3x30f() : EigenMatrixMxNf<3, 30>() {}
-  inline EigenMatrix3x30f(const Eigen::Matrix<float, 3, 30, Eigen::RowMajor> &e_M) :
-                          EigenMatrixMxNf<3, 30>(e_M) {}
-  inline EigenMatrix3x30f(const LA::MatrixMxNf<3, 30> &M) : EigenMatrixMxNf<3, 30>(M) {}
-  inline EigenMatrix3x30f(const LA::AlignedMatrixMxNf<3, 30> &M) : EigenMatrixMxNf<3, 30>(M) {}
+  inline EigenMatrix3x30f(
+      const Eigen::Matrix<float, 3, 30, Eigen::RowMajor> &e_M)
+      : EigenMatrixMxNf<3, 30>(e_M) {}
+  inline EigenMatrix3x30f(const LA::MatrixMxNf<3, 30> &M)
+      : EigenMatrixMxNf<3, 30>(M) {}
+  inline EigenMatrix3x30f(const LA::AlignedMatrixMxNf<3, 30> &M)
+      : EigenMatrixMxNf<3, 30>(M) {}
 };
 class EigenMatrix3x31f : public EigenMatrixMxNf<3, 31> {
  public:
   inline EigenMatrix3x31f() : EigenMatrixMxNf<3, 31>() {}
-  inline EigenMatrix3x31f(const Eigen::Matrix<float, 3, 31, Eigen::RowMajor> &e_M) :
-                          EigenMatrixMxNf<3, 31>(e_M) {}
-  inline EigenMatrix3x31f(const LA::MatrixMxNf<3, 31> &M) : EigenMatrixMxNf<3, 31>(M) {}
-  inline EigenMatrix3x31f(const LA::AlignedMatrixMxNf<3, 31> &M) : EigenMatrixMxNf<3, 31>(M) {}
-  inline EigenMatrix3x31f(const EigenMatrix3x30f &e_M0, const EigenVector3f &e_M1) {
+  inline EigenMatrix3x31f(
+      const Eigen::Matrix<float, 3, 31, Eigen::RowMajor> &e_M)
+      : EigenMatrixMxNf<3, 31>(e_M) {}
+  inline EigenMatrix3x31f(const LA::MatrixMxNf<3, 31> &M)
+      : EigenMatrixMxNf<3, 31>(M) {}
+  inline EigenMatrix3x31f(const LA::AlignedMatrixMxNf<3, 31> &M)
+      : EigenMatrixMxNf<3, 31>(M) {}
+  inline EigenMatrix3x31f(const EigenMatrix3x30f &e_M0,
+                          const EigenVector3f &e_M1) {
     block<3, 30>(0, 0) = e_M0;
     block<3, 1>(0, 30) = e_M1;
   }
@@ -3595,26 +3963,36 @@ class EigenMatrix3x31f : public EigenMatrixMxNf<3, 31> {
 class EigenMatrix6x9f : public EigenMatrixMxNf<6, 9> {
  public:
   inline EigenMatrix6x9f() : EigenMatrixMxNf<6, 9>() {}
-  inline EigenMatrix6x9f(const Eigen::Matrix<float, 6, 9, Eigen::RowMajor> &e_M) :
-                         EigenMatrixMxNf<6, 9>(e_M) {}
-  inline EigenMatrix6x9f(const LA::AlignedMatrix6x9f &M) : EigenMatrixMxNf<6, 9>(M) {}
-  inline EigenMatrix6x9f(const LA::AlignedMatrix3x3f &M00, const LA::AlignedMatrix3x3f &M01,
-                         const LA::AlignedMatrix3x3f &M02, const LA::AlignedMatrix3x3f &M10,
-                         const LA::AlignedMatrix3x3f &M11, const LA::AlignedMatrix3x3f &M12) {
-    block<3, 3>(0, 0) = EigenMatrix3x3f(M00);   block<3, 3>(0, 3) = EigenMatrix3x3f(M01);
-    block<3, 3>(0, 6) = EigenMatrix3x3f(M02);   block<3, 3>(3, 0) = EigenMatrix3x3f(M10);
-    block<3, 3>(3, 3) = EigenMatrix3x3f(M11);   block<3, 3>(3, 6) = EigenMatrix3x3f(M12);
+  inline EigenMatrix6x9f(const Eigen::Matrix<float, 6, 9, Eigen::RowMajor> &e_M)
+      : EigenMatrixMxNf<6, 9>(e_M) {}
+  inline EigenMatrix6x9f(const LA::AlignedMatrix6x9f &M)
+      : EigenMatrixMxNf<6, 9>(M) {}
+  inline EigenMatrix6x9f(const LA::AlignedMatrix3x3f &M00,
+                         const LA::AlignedMatrix3x3f &M01,
+                         const LA::AlignedMatrix3x3f &M02,
+                         const LA::AlignedMatrix3x3f &M10,
+                         const LA::AlignedMatrix3x3f &M11,
+                         const LA::AlignedMatrix3x3f &M12) {
+    block<3, 3>(0, 0) = EigenMatrix3x3f(M00);
+    block<3, 3>(0, 3) = EigenMatrix3x3f(M01);
+    block<3, 3>(0, 6) = EigenMatrix3x3f(M02);
+    block<3, 3>(3, 0) = EigenMatrix3x3f(M10);
+    block<3, 3>(3, 3) = EigenMatrix3x3f(M11);
+    block<3, 3>(3, 6) = EigenMatrix3x3f(M12);
   }
-  inline void operator = (const Eigen::Matrix<float, 6, 9, Eigen::RowMajor> &e_M) {
-    *((Eigen::Matrix<float, 6, 9, Eigen::RowMajor> *) this) = e_M;
+  inline void operator=(
+      const Eigen::Matrix<float, 6, 9, Eigen::RowMajor> &e_M) {
+    *((Eigen::Matrix<float, 6, 9, Eigen::RowMajor> *)this) = e_M;
   }
 };
 class EigenMatrix6x12f : public EigenMatrixMxNf<6, 12> {
  public:
   inline EigenMatrix6x12f() : EigenMatrixMxNf<6, 12>() {}
-  inline EigenMatrix6x12f(const Eigen::Matrix<float, 6, 12, Eigen::RowMajor> &e_M) :
-                          EigenMatrixMxNf<6, 12>(e_M) {}
-  inline EigenMatrix6x12f(const EigenMatrix6x6f &e_M0, const EigenMatrix6x6f &e_M1) {
+  inline EigenMatrix6x12f(
+      const Eigen::Matrix<float, 6, 12, Eigen::RowMajor> &e_M)
+      : EigenMatrixMxNf<6, 12>(e_M) {}
+  inline EigenMatrix6x12f(const EigenMatrix6x6f &e_M0,
+                          const EigenMatrix6x6f &e_M1) {
     block<6, 6>(0, 0) = e_M0;
     block<6, 6>(0, 6) = e_M1;
   }
@@ -3622,9 +4000,11 @@ class EigenMatrix6x12f : public EigenMatrixMxNf<6, 12> {
 class EigenMatrix6x13f : public EigenMatrixMxNf<6, 13> {
  public:
   inline EigenMatrix6x13f() : EigenMatrixMxNf<6, 13>() {}
-  inline EigenMatrix6x13f(const Eigen::Matrix<float, 6, 13, Eigen::RowMajor> &e_M) :
-                          EigenMatrixMxNf<6, 13>(e_M) {}
-  inline EigenMatrix6x13f(const EigenMatrix6x12f &e_M0, const EigenVector6f &e_M1) {
+  inline EigenMatrix6x13f(
+      const Eigen::Matrix<float, 6, 13, Eigen::RowMajor> &e_M)
+      : EigenMatrixMxNf<6, 13>(e_M) {}
+  inline EigenMatrix6x13f(const EigenMatrix6x12f &e_M0,
+                          const EigenVector6f &e_M1) {
     block<6, 12>(0, 0) = e_M0;
     block<6, 1>(0, 12) = e_M1;
   }
@@ -3632,41 +4012,60 @@ class EigenMatrix6x13f : public EigenMatrixMxNf<6, 13> {
 class EigenMatrix9x3f : public EigenMatrixMxNf<9, 3> {
  public:
   inline EigenMatrix9x3f() : EigenMatrixMxNf<9, 3>() {}
-  inline EigenMatrix9x3f(const Eigen::Matrix<float, 9, 3, Eigen::RowMajor> &e_M) :
-                         EigenMatrixMxNf<9, 3>(e_M) {}
-  inline EigenMatrix9x3f(const LA::AlignedMatrix9x3f &M) : EigenMatrixMxNf<9, 3>(M) {}
-  inline void operator = (const Eigen::Matrix<float, 9, 3, Eigen::RowMajor> &e_M) {
-    *((Eigen::Matrix<float, 9, 3, Eigen::RowMajor> *) this) = e_M;
+  inline EigenMatrix9x3f(const Eigen::Matrix<float, 9, 3, Eigen::RowMajor> &e_M)
+      : EigenMatrixMxNf<9, 3>(e_M) {}
+  inline EigenMatrix9x3f(const LA::AlignedMatrix9x3f &M)
+      : EigenMatrixMxNf<9, 3>(M) {}
+  inline void operator=(
+      const Eigen::Matrix<float, 9, 3, Eigen::RowMajor> &e_M) {
+    *((Eigen::Matrix<float, 9, 3, Eigen::RowMajor> *)this) = e_M;
   }
 };
 class EigenMatrix9x6f : public EigenMatrixMxNf<9, 6> {
  public:
   inline EigenMatrix9x6f() : EigenMatrixMxNf<9, 6>() {}
-  inline EigenMatrix9x6f(const Eigen::Matrix<float, 9, 6, Eigen::RowMajor> &e_M) :
-                         EigenMatrixMxNf<9, 6>(e_M) {}
-  inline EigenMatrix9x6f(const LA::AlignedMatrix9x6f &M) : EigenMatrixMxNf<9, 6>(M) {}
-  inline EigenMatrix9x6f(const LA::AlignedMatrix3x3f &M00, const LA::AlignedMatrix3x3f &M01,
-                         const LA::AlignedMatrix3x3f &M10, const LA::AlignedMatrix3x3f &M11,
-                         const LA::AlignedMatrix3x3f &M20, const LA::AlignedMatrix3x3f &M21) {
-    block<3, 3>(0, 0) = EigenMatrix3x3f(M00);       block<3, 3>(0, 3) = EigenMatrix3x3f(M01);
-    block<3, 3>(3, 0) = EigenMatrix3x3f(M10);       block<3, 3>(3, 3) = EigenMatrix3x3f(M11);
-    block<3, 3>(6, 0) = EigenMatrix3x3f(M20);       block<3, 3>(6, 3) = EigenMatrix3x3f(M21);
+  inline EigenMatrix9x6f(const Eigen::Matrix<float, 9, 6, Eigen::RowMajor> &e_M)
+      : EigenMatrixMxNf<9, 6>(e_M) {}
+  inline EigenMatrix9x6f(const LA::AlignedMatrix9x6f &M)
+      : EigenMatrixMxNf<9, 6>(M) {}
+  inline EigenMatrix9x6f(const LA::AlignedMatrix3x3f &M00,
+                         const LA::AlignedMatrix3x3f &M01,
+                         const LA::AlignedMatrix3x3f &M10,
+                         const LA::AlignedMatrix3x3f &M11,
+                         const LA::AlignedMatrix3x3f &M20,
+                         const LA::AlignedMatrix3x3f &M21) {
+    block<3, 3>(0, 0) = EigenMatrix3x3f(M00);
+    block<3, 3>(0, 3) = EigenMatrix3x3f(M01);
+    block<3, 3>(3, 0) = EigenMatrix3x3f(M10);
+    block<3, 3>(3, 3) = EigenMatrix3x3f(M11);
+    block<3, 3>(6, 0) = EigenMatrix3x3f(M20);
+    block<3, 3>(6, 3) = EigenMatrix3x3f(M21);
   }
-  inline void operator = (const Eigen::Matrix<float, 9, 6, Eigen::RowMajor> &e_M) {
-    *((Eigen::Matrix<float, 9, 6, Eigen::RowMajor> *) this) = e_M;
+  inline void operator=(
+      const Eigen::Matrix<float, 9, 6, Eigen::RowMajor> &e_M) {
+    *((Eigen::Matrix<float, 9, 6, Eigen::RowMajor> *)this) = e_M;
   }
 };
 class EigenMatrix9x9f : public EigenMatrixMxNf<9, 9> {
  public:
   inline EigenMatrix9x9f() : EigenMatrixMxNf<9, 9>() {}
-  inline EigenMatrix9x9f(const Eigen::Matrix<float, 9, 9, Eigen::RowMajor> &e_M) :
-                         EigenMatrixMxNf<9, 9>(e_M) {}
-  inline EigenMatrix9x9f(const LA::AlignedMatrix9x9f &M) : EigenMatrixMxNf<9, 9>(M) {}
-  inline EigenMatrix9x9f(const LA::Matrix9x9f &M) : EigenMatrixMxNf<9, 9>() { *this = M; }
-  inline EigenMatrix9x9f(const LA::SymmetricMatrix9x9f &M) : EigenMatrixMxNf<9, 9>() { *this = M; }
-  inline EigenMatrix9x9f(const LA::SymmetricMatrix3x3f &M00, const LA::AlignedMatrix3x3f &M01,
-                         const LA::AlignedMatrix3x3f &M02, const LA::SymmetricMatrix3x3f &M11,
-                         const LA::AlignedMatrix3x3f &M12, const LA::SymmetricMatrix3x3f &M22) {
+  inline EigenMatrix9x9f(const Eigen::Matrix<float, 9, 9, Eigen::RowMajor> &e_M)
+      : EigenMatrixMxNf<9, 9>(e_M) {}
+  inline EigenMatrix9x9f(const LA::AlignedMatrix9x9f &M)
+      : EigenMatrixMxNf<9, 9>(M) {}
+  inline EigenMatrix9x9f(const LA::Matrix9x9f &M) : EigenMatrixMxNf<9, 9>() {
+    *this = M;
+  }
+  inline EigenMatrix9x9f(const LA::SymmetricMatrix9x9f &M)
+      : EigenMatrixMxNf<9, 9>() {
+    *this = M;
+  }
+  inline EigenMatrix9x9f(const LA::SymmetricMatrix3x3f &M00,
+                         const LA::AlignedMatrix3x3f &M01,
+                         const LA::AlignedMatrix3x3f &M02,
+                         const LA::SymmetricMatrix3x3f &M11,
+                         const LA::AlignedMatrix3x3f &M12,
+                         const LA::SymmetricMatrix3x3f &M22) {
     block<3, 3>(0, 0) = EigenMatrix3x3f(M00);
     block<3, 3>(0, 3) = EigenMatrix3x3f(M01);
     block<3, 3>(0, 6) = EigenMatrix3x3f(M02);
@@ -3677,29 +4076,35 @@ class EigenMatrix9x9f : public EigenMatrixMxNf<9, 9> {
     block<3, 3>(6, 3) = block<3, 3>(3, 6).transpose();
     block<3, 3>(6, 6) = EigenMatrix3x3f(M22);
   }
-  inline EigenMatrix9x9f(const LA::AlignedMatrix3x3f &M00, const LA::AlignedMatrix3x3f &M01,
-                         const LA::AlignedMatrix3x3f &M02, const LA::AlignedMatrix3x3f &M10,
-                         const LA::AlignedMatrix3x3f &M11, const LA::AlignedMatrix3x3f &M12,
-                         const LA::AlignedMatrix3x3f &M20, const LA::AlignedMatrix3x3f &M21,
-                         const LA::AlignedMatrix3x3f &M22) {
-    block<3, 3>(0, 0) = EigenMatrix3x3f(M00);   block<3, 3>(0, 3) = EigenMatrix3x3f(M01);
-    block<3, 3>(0, 6) = EigenMatrix3x3f(M02);   block<3, 3>(3, 0) = EigenMatrix3x3f(M10);
-    block<3, 3>(3, 3) = EigenMatrix3x3f(M11);   block<3, 3>(3, 6) = EigenMatrix3x3f(M12);
-    block<3, 3>(6, 0) = EigenMatrix3x3f(M20);   block<3, 3>(6, 3) = EigenMatrix3x3f(M21);
+  inline EigenMatrix9x9f(
+      const LA::AlignedMatrix3x3f &M00, const LA::AlignedMatrix3x3f &M01,
+      const LA::AlignedMatrix3x3f &M02, const LA::AlignedMatrix3x3f &M10,
+      const LA::AlignedMatrix3x3f &M11, const LA::AlignedMatrix3x3f &M12,
+      const LA::AlignedMatrix3x3f &M20, const LA::AlignedMatrix3x3f &M21,
+      const LA::AlignedMatrix3x3f &M22) {
+    block<3, 3>(0, 0) = EigenMatrix3x3f(M00);
+    block<3, 3>(0, 3) = EigenMatrix3x3f(M01);
+    block<3, 3>(0, 6) = EigenMatrix3x3f(M02);
+    block<3, 3>(3, 0) = EigenMatrix3x3f(M10);
+    block<3, 3>(3, 3) = EigenMatrix3x3f(M11);
+    block<3, 3>(3, 6) = EigenMatrix3x3f(M12);
+    block<3, 3>(6, 0) = EigenMatrix3x3f(M20);
+    block<3, 3>(6, 3) = EigenMatrix3x3f(M21);
     block<3, 3>(6, 6) = EigenMatrix3x3f(M22);
   }
-  inline void operator = (const Eigen::Matrix<float, 9, 9, Eigen::RowMajor> &e_M) {
-    *((EigenMatrixMxNf<9, 9> *) this) = e_M;
+  inline void operator=(
+      const Eigen::Matrix<float, 9, 9, Eigen::RowMajor> &e_M) {
+    *((EigenMatrixMxNf<9, 9> *)this) = e_M;
   }
-  inline void operator = (const LA::Matrix9x9f &M) {
+  inline void operator=(const LA::Matrix9x9f &M) {
     Eigen::Matrix<float, 9, 9, Eigen::RowMajor> &e_M = *this;
     for (int i = 0; i < 9; ++i) {
       for (int j = 0; j < 9; ++j) {
         e_M(i, j) = M[i][j];
       }
-      }
+    }
   }
-  inline void operator = (const LA::SymmetricMatrix9x9f &M) {
+  inline void operator=(const LA::SymmetricMatrix9x9f &M) {
     Eigen::Matrix<float, 9, 9, Eigen::RowMajor> &e_M = *this;
     const float *_M = M;
     for (int i = 0, k = 0; i < 9; ++i) {
@@ -3708,26 +4113,27 @@ class EigenMatrix9x9f : public EigenMatrixMxNf<9, 9> {
       }
     }
   }
-  inline bool AssertEqual(const EigenMatrix9x9f &M,
-                          const int verbose = 1, const std::string str = "",
-                          const float epsAbs = 0.0f, const float epsRel = 0.0f) const {
+  inline bool AssertEqual(const EigenMatrix9x9f &M, const int verbose = 1,
+                          const std::string str = "", const float epsAbs = 0.0f,
+                          const float epsRel = 0.0f) const {
     return EigenMatrixMxNf<9, 9>::AssertEqual(M, verbose, str, epsAbs, epsRel);
   }
-  inline bool AssertEqual(const LA::AlignedMatrix9x9f &M,
-                          const int verbose = 1, const std::string str = "",
-                          const float epsAbs = 0.0f, const float epsRel = 0.0f) const {
+  inline bool AssertEqual(const LA::AlignedMatrix9x9f &M, const int verbose = 1,
+                          const std::string str = "", const float epsAbs = 0.0f,
+                          const float epsRel = 0.0f) const {
     return EigenMatrixMxNf<9, 9>::AssertEqual(M, verbose, str, epsAbs, epsRel);
   }
-  inline bool AssertEqual(const LA::Matrix9x9f &M,
-                          const int verbose = 1, const std::string str = "",
-                          const float epsAbs = 0.0f, const float epsRel = 0.0f) const {
+  inline bool AssertEqual(const LA::Matrix9x9f &M, const int verbose = 1,
+                          const std::string str = "", const float epsAbs = 0.0f,
+                          const float epsRel = 0.0f) const {
     LA::AlignedMatrix9x9f _M;
     _M.Set(M);
     return EigenMatrixMxNf<9, 9>::AssertEqual(_M, verbose, str, epsAbs, epsRel);
   }
   inline bool AssertEqual(const LA::SymmetricMatrix9x9f &M,
                           const int verbose = 1, const std::string str = "",
-                          const float epsAbs = 0.0f, const float epsRel = 0.0f) const {
+                          const float epsAbs = 0.0f,
+                          const float epsRel = 0.0f) const {
     LA::AlignedMatrix9x9f _M;
     _M.Set(M);
     return EigenMatrixMxNf<9, 9>::AssertEqual(_M, verbose, str, epsAbs, epsRel);
@@ -3746,88 +4152,113 @@ class EigenMatrix9x9f : public EigenMatrixMxNf<9, 9> {
 class EigenMatrix9x12f : public EigenMatrixMxNf<9, 12> {
  public:
   inline EigenMatrix9x12f() : EigenMatrixMxNf<9, 12>() {}
-  inline EigenMatrix9x12f(const Eigen::Matrix<float, 9, 12, Eigen::RowMajor> &e_M) :
-                          EigenMatrixMxNf<9, 12>(e_M) {}
-  inline EigenMatrix9x12f(const LA::AlignedMatrixMxNf<9, 12> &M) : EigenMatrixMxNf<9, 12>(M) {}
+  inline EigenMatrix9x12f(
+      const Eigen::Matrix<float, 9, 12, Eigen::RowMajor> &e_M)
+      : EigenMatrixMxNf<9, 12>(e_M) {}
+  inline EigenMatrix9x12f(const LA::AlignedMatrixMxNf<9, 12> &M)
+      : EigenMatrixMxNf<9, 12>(M) {}
 };
 class EigenMatrix13x14f : public EigenMatrixMxNf<13, 14> {
  public:
   inline EigenMatrix13x14f() : EigenMatrixMxNf<13, 14>() {}
-  inline EigenMatrix13x14f(const Eigen::Matrix<float, 13, 14, Eigen::RowMajor> &e_M) :
-                           EigenMatrixMxNf<13, 14>(e_M) {}
-  inline EigenMatrix13x14f(const LA::MatrixMxNf<13, 14> &M) : EigenMatrixMxNf<13, 14>(M) {}
-  inline EigenMatrix13x14f(const LA::AlignedMatrixMxNf<13, 14> &M) : EigenMatrixMxNf<13, 14>(M) {}
+  inline EigenMatrix13x14f(
+      const Eigen::Matrix<float, 13, 14, Eigen::RowMajor> &e_M)
+      : EigenMatrixMxNf<13, 14>(e_M) {}
+  inline EigenMatrix13x14f(const LA::MatrixMxNf<13, 14> &M)
+      : EigenMatrixMxNf<13, 14>(M) {}
+  inline EigenMatrix13x14f(const LA::AlignedMatrixMxNf<13, 14> &M)
+      : EigenMatrixMxNf<13, 14>(M) {}
 };
 class EigenMatrix15x2f : public EigenMatrixMxNf<15, 2> {
  public:
   inline EigenMatrix15x2f() : EigenMatrixMxNf<15, 2>() {}
-  inline EigenMatrix15x2f(const EigenMatrixMxNf<15, 2> &e_M) : EigenMatrixMxNf<15, 2>(e_M) {}
-  inline EigenMatrix15x2f(const Eigen::Matrix<float, 15, 2, Eigen::RowMajor> &e_M) :
-                          EigenMatrixMxNf<15, 2>(e_M) {}
+  inline EigenMatrix15x2f(const EigenMatrixMxNf<15, 2> &e_M)
+      : EigenMatrixMxNf<15, 2>(e_M) {}
+  inline EigenMatrix15x2f(
+      const Eigen::Matrix<float, 15, 2, Eigen::RowMajor> &e_M)
+      : EigenMatrixMxNf<15, 2>(e_M) {}
 };
 class EigenMatrix15x30f : public EigenMatrixMxNf<15, 30> {
  public:
   inline EigenMatrix15x30f() : EigenMatrixMxNf<15, 30>() {}
-  inline EigenMatrix15x30f(const EigenMatrixMxNf<15, 30> &e_M) : EigenMatrixMxNf<15, 30>(e_M) {}
-  inline EigenMatrix15x30f(const Eigen::Matrix<float, 15, 30, Eigen::RowMajor> &e_M) :
-                           EigenMatrixMxNf<15, 30>(e_M) {}
+  inline EigenMatrix15x30f(const EigenMatrixMxNf<15, 30> &e_M)
+      : EigenMatrixMxNf<15, 30>(e_M) {}
+  inline EigenMatrix15x30f(
+      const Eigen::Matrix<float, 15, 30, Eigen::RowMajor> &e_M)
+      : EigenMatrixMxNf<15, 30>(e_M) {}
 };
 class EigenMatrix30x15f : public EigenMatrixMxNf<30, 15> {
  public:
   inline EigenMatrix30x15f() : EigenMatrixMxNf<30, 15>() {}
-  inline EigenMatrix30x15f(const EigenMatrixMxNf<30, 15> &e_M) : EigenMatrixMxNf<30, 15>(e_M) {}
-  inline EigenMatrix30x15f(const Eigen::Matrix<float, 30, 15, Eigen::RowMajor> &e_M) :
-                           EigenMatrixMxNf<30, 15>(e_M) {}
+  inline EigenMatrix30x15f(const EigenMatrixMxNf<30, 15> &e_M)
+      : EigenMatrixMxNf<30, 15>(e_M) {}
+  inline EigenMatrix30x15f(
+      const Eigen::Matrix<float, 30, 15, Eigen::RowMajor> &e_M)
+      : EigenMatrixMxNf<30, 15>(e_M) {}
 };
 class EigenMatrix30x31f : public EigenMatrixMxNf<30, 31> {
  public:
   inline EigenMatrix30x31f() : EigenMatrixMxNf<30, 31>() {}
-  inline EigenMatrix30x31f(const Eigen::Matrix<float, 30, 31, Eigen::RowMajor> &e_M) :
-                           EigenMatrixMxNf<30, 31>(e_M) {}
+  inline EigenMatrix30x31f(
+      const Eigen::Matrix<float, 30, 31, Eigen::RowMajor> &e_M)
+      : EigenMatrixMxNf<30, 31>(e_M) {}
 };
-template<int N>
+template <int N>
 class EigenMatrixNxNf : public EigenMatrixMxNf<N, N> {
  public:
   inline EigenMatrixNxNf() : EigenMatrixMxNf<N, N>() {}
-  inline EigenMatrixNxNf(const EigenMatrixNxNf &e_M) : EigenMatrixMxNf<N, N>(e_M) {}
-  inline EigenMatrixNxNf(const Eigen::Matrix<float, N, N> &e_M) : EigenMatrixMxNf<N, N>(e_M) {}
-  static inline EigenVectorNf<N> Solve(const EigenMatrixNxNf<N> &A, const EigenVectorNf<N> &b,
+  inline EigenMatrixNxNf(const EigenMatrixNxNf &e_M)
+      : EigenMatrixMxNf<N, N>(e_M) {}
+  inline EigenMatrixNxNf(const Eigen::Matrix<float, N, N> &e_M)
+      : EigenMatrixMxNf<N, N>(e_M) {}
+  static inline EigenVectorNf<N> Solve(const EigenMatrixNxNf<N> &A,
+                                       const EigenVectorNf<N> &b,
                                        const int _N = N) {
     EigenVectorNf<N> x;
-    x.block(0, 0, _N, 1) = A.block(0, 0, _N, _N).inverse() * b.block(0, 0, _N, 1);
-    for (int i = _N; i < N; ++i)
-      x(i, 0) = 0.0f;
+    x.block(0, 0, _N, 1) =
+        A.block(0, 0, _N, _N).inverse() * b.block(0, 0, _N, 1);
+    for (int i = _N; i < N; ++i) x(i, 0) = 0.0f;
     return x;
   }
 };
 class EigenMatrix12x12f : public EigenMatrixNxNf<12> {
  public:
   inline EigenMatrix12x12f() : EigenMatrixNxNf<12>() {}
-  inline EigenMatrix12x12f(const EigenMatrixNxNf<12> &e_M) : EigenMatrixNxNf<12>(e_M) {}
-  inline EigenMatrix12x12f(const Eigen::Matrix<float, 12, 12, Eigen::RowMajor> &e_M) :
-                           EigenMatrixNxNf<12>(e_M) {}
+  inline EigenMatrix12x12f(const EigenMatrixNxNf<12> &e_M)
+      : EigenMatrixNxNf<12>(e_M) {}
+  inline EigenMatrix12x12f(
+      const Eigen::Matrix<float, 12, 12, Eigen::RowMajor> &e_M)
+      : EigenMatrixNxNf<12>(e_M) {}
 };
 class EigenMatrix15x15f : public EigenMatrixNxNf<15> {
  public:
   inline EigenMatrix15x15f() : EigenMatrixNxNf<15>() {}
-  inline EigenMatrix15x15f(const EigenMatrixNxNf<15> &e_M) : EigenMatrixNxNf<15>(e_M) {}
-  inline EigenMatrix15x15f(const Eigen::Matrix<float, 15, 15, Eigen::RowMajor> &e_M) :
-                           EigenMatrixNxNf<15>(e_M) {}
+  inline EigenMatrix15x15f(const EigenMatrixNxNf<15> &e_M)
+      : EigenMatrixNxNf<15>(e_M) {}
+  inline EigenMatrix15x15f(
+      const Eigen::Matrix<float, 15, 15, Eigen::RowMajor> &e_M)
+      : EigenMatrixNxNf<15>(e_M) {}
 };
 class EigenMatrix30x30f : public EigenMatrixNxNf<30> {
  public:
   inline EigenMatrix30x30f() : EigenMatrixNxNf<30>() {}
-  inline EigenMatrix30x30f(const Eigen::Matrix<float, 30, 30, Eigen::RowMajor> &e_M) :
-                           EigenMatrixNxNf<30>(e_M) {}
+  inline EigenMatrix30x30f(
+      const Eigen::Matrix<float, 30, 30, Eigen::RowMajor> &e_M)
+      : EigenMatrixNxNf<30>(e_M) {}
 };
-template<typename TYPE>
-class EigenMatrixX : public Eigen::Matrix<TYPE, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> {
+template <typename TYPE>
+class EigenMatrixX : public Eigen::Matrix<TYPE, Eigen::Dynamic, Eigen::Dynamic,
+                                          Eigen::RowMajor> {
  public:
-  inline EigenMatrixX() : Eigen::Matrix<TYPE, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>() {}
-  inline EigenMatrixX(const Eigen::Matrix<TYPE, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
-                      &e_M) : Eigen::Matrix<TYPE, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>(e_M) {}
-  inline EigenMatrixX(const AlignedMatrixX<TYPE> &M) :
-    Eigen::Matrix<TYPE, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>() {
+  inline EigenMatrixX()
+      : Eigen::Matrix<TYPE, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>() {
+  }
+  inline EigenMatrixX(const Eigen::Matrix<TYPE, Eigen::Dynamic, Eigen::Dynamic,
+                                          Eigen::RowMajor> &e_M)
+      : Eigen::Matrix<TYPE, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>(
+            e_M) {}
+  inline EigenMatrixX(const AlignedMatrixX<TYPE> &M)
+      : Eigen::Matrix<TYPE, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>() {
     EigenMatrixX<TYPE> &e_M = *this;
     const int Nr = M.GetRows(), Nc = M.GetColumns();
     Resize(Nr, Nc);
@@ -3840,15 +4271,20 @@ class EigenMatrixX : public Eigen::Matrix<TYPE, Eigen::Dynamic, Eigen::Dynamic, 
       SetLowerFromUpper();
     }
   }
-  inline void operator = (const Eigen::Matrix<TYPE, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
-                          &e_M) { *((Eigen::Matrix<TYPE, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> *) this) = e_M; }
-  inline const TYPE* operator[] (const int i) const { return &((*this)(i, 0)); }
-  inline       TYPE* operator[] (const int i)       { return &((*this)(i, 0)); }
+  inline void operator=(
+      const Eigen::Matrix<TYPE, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
+          &e_M) {
+    *((Eigen::Matrix<TYPE, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
+           *)this) = e_M;
+  }
+  inline const TYPE *operator[](const int i) const { return &((*this)(i, 0)); }
+  inline TYPE *operator[](const int i) { return &((*this)(i, 0)); }
   inline int GetRows() const { return int(this->rows()); }
   inline int GetColumns() const { return int(this->cols()); }
   inline void Resize(const int Nr, const int Nc) { this->resize(Nr, Nc); }
   inline void MakeZero() { this->setZero(); }
-  inline void Set(const EigenMatrixX<TYPE> &e_A, const EigenVectorX<TYPE> &e_b) {
+  inline void Set(const EigenMatrixX<TYPE> &e_A,
+                  const EigenVectorX<TYPE> &e_b) {
     const int Nr = e_A.GetRows(), Nc = e_A.GetColumns();
 #ifdef CFG_DEBUG
     UT_ASSERT(e_b.Size() == Nr);
@@ -3859,8 +4295,10 @@ class EigenMatrixX : public Eigen::Matrix<TYPE, Eigen::Dynamic, Eigen::Dynamic, 
   }
   inline void Get(EigenMatrixX<TYPE> &e_A, EigenVectorX<TYPE> &e_b) const {
     const int Nr = GetRows(), Nc = GetColumns() - 1;
-    e_A.Resize(Nr, Nc);   e_A = this->block(0, 0, Nr, Nc);
-    e_b.Resize(Nr);       e_b = this->block(0, Nc, Nr, 1);
+    e_A.Resize(Nr, Nc);
+    e_A = this->block(0, 0, Nr, Nc);
+    e_b.Resize(Nr);
+    e_b = this->block(0, Nc, Nr, 1);
   }
   inline void SetLowerFromUpper() {
     EigenMatrixX<TYPE> &e_M = *this;
@@ -3901,7 +4339,10 @@ class EigenMatrixX : public Eigen::Matrix<TYPE, Eigen::Dynamic, Eigen::Dynamic, 
     e_M.block(0, j + Nc, Nr, Nc3) = this->block(0, j, Nr, Nc3);
     this->swap(e_M);
   }
-  inline void Erase(const int i, const int N) { EraseRows(i, N); EraseColumns(i, N); }
+  inline void Erase(const int i, const int N) {
+    EraseRows(i, N);
+    EraseColumns(i, N);
+  }
   inline void EraseRows(const int i, const int Nr) {
     EigenMatrixX<TYPE> e_M;
     const int Nr1 = GetRows(), Nr2 = Nr1 - Nr, Nr3 = Nr2 - i, Nc = GetColumns();
@@ -3918,35 +4359,44 @@ class EigenMatrixX : public Eigen::Matrix<TYPE, Eigen::Dynamic, Eigen::Dynamic, 
     e_M.block(0, j, Nr, Nc3) = this->block(0, j + Nc, Nr, Nc3);
     this->swap(e_M);
   }
-  inline void Marginalize(const int i, const int Ni, const TYPE *eps = NULL, const bool erase = true,
-                          const bool upperLeft = true, const bool zero = false) {
+  inline void Marginalize(const int i, const int Ni, const TYPE *eps = NULL,
+                          const bool erase = true, const bool upperLeft = true,
+                          const bool zero = false) {
     const int Nr = GetRows(), Nc = GetColumns();
     const int j = i + Ni, N1 = i, N2r = Nr - i - Ni, N2c = Nc - j;
-    const EigenMatrixX<TYPE> e_Aii = EigenMatrixX<TYPE>(this->block(i, i, Ni, Ni));
-    //const EigenMatrixX<TYPE> e_Mii = EigenMatrixX<TYPE>(e_Aii.inverse()); {
+    const EigenMatrixX<TYPE> e_Aii =
+        EigenMatrixX<TYPE>(this->block(i, i, Ni, Ni));
+    // const EigenMatrixX<TYPE> e_Mii = EigenMatrixX<TYPE>(e_Aii.inverse()); {
     EigenMatrixX<TYPE> e_Mii = e_Aii;
     if (e_Mii.InverseLDL(eps)) {
-      const EigenMatrixX<TYPE> e_Ai1 = EigenMatrixX<TYPE>(this->block(i, 0, Ni, N1));
-      const EigenMatrixX<TYPE> e_Ai2 = EigenMatrixX<TYPE>(this->block(i, j, Ni, N2c));
+      const EigenMatrixX<TYPE> e_Ai1 =
+          EigenMatrixX<TYPE>(this->block(i, 0, Ni, N1));
+      const EigenMatrixX<TYPE> e_Ai2 =
+          EigenMatrixX<TYPE>(this->block(i, j, Ni, N2c));
       const EigenMatrixX<TYPE> e_Mi1 = EigenMatrixX<TYPE>(e_Mii * e_Ai1);
       const EigenMatrixX<TYPE> e_Mi2 = EigenMatrixX<TYPE>(e_Mii * e_Ai2);
-      const EigenMatrixX<TYPE> e_A1i = EigenMatrixX<TYPE>(this->block(0, i, N1, Ni));
-      //const EigenMatrixX<TYPE> e_A2i = EigenMatrixX<TYPE>(this->block(j, i, N2r, Ni));
-      const EigenMatrixX<TYPE> e_A2i = EigenMatrixX<TYPE>(this->block(i, j, Ni, N2r).transpose());
+      const EigenMatrixX<TYPE> e_A1i =
+          EigenMatrixX<TYPE>(this->block(0, i, N1, Ni));
+      // const EigenMatrixX<TYPE> e_A2i = EigenMatrixX<TYPE>(this->block(j, i,
+      // N2r, Ni));
+      const EigenMatrixX<TYPE> e_A2i =
+          EigenMatrixX<TYPE>(this->block(i, j, Ni, N2r).transpose());
       const EigenMatrixX<TYPE> e_M1i = EigenMatrixX<TYPE>(e_A1i * e_Mii);
       const EigenMatrixX<TYPE> e_M2i = EigenMatrixX<TYPE>(e_A2i * e_Mii);
       if (upperLeft) {
         this->block(0, 0, N1, N1) -= e_A1i * e_Mi1;
         this->block(0, j, N1, N2c) -= e_A1i * e_Mi2;
-        //this->block(j, 0, N2r, N1) -= e_A2i * e_Mi1;
+        // this->block(j, 0, N2r, N1) -= e_A2i * e_Mi1;
         this->block(j, 0, N2r, N1) = this->block(0, j, N1, N2r).transpose();
       }
-      //if (UT::Debugging()) {
-      //  UT::Print("%e - %e * %e = %e", (*this)(20, 20), e_A2i(20 - i - 1, 0), e_Mi2(0, 20 - i - 1),
-      //                                 (*this)(20, 20) - e_A2i(20 - i - 1, 0) * e_Mi2(0, 20 - i - 1));
+      // if (UT::Debugging()) {
+      //  UT::Print("%e - %e * %e = %e", (*this)(20, 20), e_A2i(20 - i - 1, 0),
+      //  e_Mi2(0, 20 - i - 1),
+      //                                 (*this)(20, 20) - e_A2i(20 - i - 1, 0)
+      //                                 * e_Mi2(0, 20 - i - 1));
       //}
       this->block(j, j, N2r, N2c) -= e_A2i * e_Mi2;
-      //if (UT::Debugging()) {
+      // if (UT::Debugging()) {
       //  UT::Print(" --> %e\n", (*this)(20, 20));
       //}
       this->block(i, i, Ni, Ni) = -e_Mii;
@@ -3955,7 +4405,7 @@ class EigenMatrixX : public Eigen::Matrix<TYPE, Eigen::Dynamic, Eigen::Dynamic, 
         this->block(0, i, N1, Ni) = -e_M1i;
       }
       this->block(i, j, Ni, N2c) = -e_Mi2;
-      //this->block(j, i, N2r, Ni) = -e_M2i;
+      // this->block(j, i, N2r, Ni) = -e_M2i;
       this->block(j, i, N2r, Ni) = this->block(i, j, Ni, N2r).transpose();
     } else {
       this->block(i, i, Ni, Ni).setZero();
@@ -3973,7 +4423,8 @@ class EigenMatrixX : public Eigen::Matrix<TYPE, Eigen::Dynamic, Eigen::Dynamic, 
       this->block(0, i, Nr, Ni).setZero();
     }
   }
-  inline LA::AlignedMatrixXf GetAlignedMatrixXf(const bool symmetric = false) const {
+  inline LA::AlignedMatrixXf GetAlignedMatrixXf(
+      const bool symmetric = false) const {
     LA::AlignedMatrixXf M;
     const int Nr = GetRows(), Nc = GetColumns();
     M.Resize(Nr, Nc, symmetric);
@@ -3985,7 +4436,8 @@ class EigenMatrixX : public Eigen::Matrix<TYPE, Eigen::Dynamic, Eigen::Dynamic, 
     }
     return M;
   }
-  inline LA::AlignedMatrixXd GetAlignedMatrixXd(const bool symmetric = false) const {
+  inline LA::AlignedMatrixXd GetAlignedMatrixXd(
+      const bool symmetric = false) const {
     LA::AlignedMatrixXd M;
     const int Nr = GetRows(), Nc = GetColumns();
     M.Resize(Nr, Nc, symmetric);
@@ -4022,25 +4474,32 @@ class EigenMatrixX : public Eigen::Matrix<TYPE, Eigen::Dynamic, Eigen::Dynamic, 
     A.InverseLDL(eps);
     return A;
   }
-  inline void Print(const bool e = false) const { GetAlignedMatrixXf().Print(e); }
-  inline void PrintDiagonal(const bool e = false) const { GetAlignedMatrixXf().PrintDiagonal(e); }
-  inline bool AssertEqual(const LA::AlignedMatrixXf &M,
-                          const int verbose = 1, const std::string str = "",
-                          const float epsAbs = 0.0f, const float epsRel = 0.0f) const {
-    return GetAlignedMatrixXf(M.Symmetric()).AssertEqual(M, verbose, str, epsAbs, epsRel);
+  inline void Print(const bool e = false) const {
+    GetAlignedMatrixXf().Print(e);
   }
-  inline bool AssertEqual(const LA::AlignedMatrixXd &M,
-                          const int verbose = 1, const std::string str = "",
-                          const double epsAbs = 0.0, const double epsRel = 0.0) const {
-    return GetAlignedMatrixXd(M.Symmetric()).AssertEqual(M, verbose, str, epsAbs, epsRel);
+  inline void PrintDiagonal(const bool e = false) const {
+    GetAlignedMatrixXf().PrintDiagonal(e);
   }
-  inline bool AssertEqual(const EigenMatrixX<TYPE> &e_M,
-                          const int verbose = 1, const std::string str = "",
-                          const float epsAbs = 0.0f, const float epsRel = 0.0f) const {
+  inline bool AssertEqual(const LA::AlignedMatrixXf &M, const int verbose = 1,
+                          const std::string str = "", const float epsAbs = 0.0f,
+                          const float epsRel = 0.0f) const {
+    return GetAlignedMatrixXf(M.Symmetric())
+        .AssertEqual(M, verbose, str, epsAbs, epsRel);
+  }
+  inline bool AssertEqual(const LA::AlignedMatrixXd &M, const int verbose = 1,
+                          const std::string str = "", const double epsAbs = 0.0,
+                          const double epsRel = 0.0) const {
+    return GetAlignedMatrixXd(M.Symmetric())
+        .AssertEqual(M, verbose, str, epsAbs, epsRel);
+  }
+  inline bool AssertEqual(const EigenMatrixX<TYPE> &e_M, const int verbose = 1,
+                          const std::string str = "", const float epsAbs = 0.0f,
+                          const float epsRel = 0.0f) const {
     return AssertEqual(e_M.GetAlignedMatrixXf(), verbose, str, epsAbs, epsRel);
   }
   inline bool AssertZero(const int verbose = 1, const std::string str = "",
-                         const float epsAbs = 0.0f, const float epsRel = 0.0f) const {
+                         const float epsAbs = 0.0f,
+                         const float epsRel = 0.0f) const {
     return GetAlignedMatrixXf().AssertZero(verbose, str, epsAbs, epsRel);
   }
   static inline EigenMatrixX<TYPE> Identity(const int N) {

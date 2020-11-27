@@ -60,11 +60,14 @@ void GlobalMap::LBA_DeleteKeyFrame(const int iFrm, const int iKF) {
 }
 
 ubyte GlobalMap::LBA_Synchronize(const int iFrm, AlignedVector<Rigid3D> &Cs,
-                                 AlignedVector<Rigid3D> &CsBkp, std::vector<ubyte> &ucs
+                                 AlignedVector<Rigid3D> &CsBkp,
+                                 std::vector<ubyte> &ucs
 #ifdef CFG_HANDLE_SCALE_JUMP
-                               , std::vector<float> &ds, std::vector<float> &dsBkp
+                                 ,
+                                 std::vector<float> &ds,
+                                 std::vector<float> &dsBkp
 #endif
-                               ) {
+                                 ) {
   ubyte ret;
   MT_WRITE_LOCK_BEGIN(m_MT, iFrm, MT_TASK_GM_LBA_Synchronize);
   if (m_Uc == GM_FLAG_FRAME_DEFAULT) {
@@ -104,12 +107,14 @@ ubyte GlobalMap::LBA_Synchronize(const int iFrm, AlignedVector<Rigid3D> &Cs,
   return ret;
 }
 
-void GlobalMap::GBA_Update(const std::vector<int> &iFrms, const AlignedVector<Rigid3D> &Cs,
+void GlobalMap::GBA_Update(const std::vector<int> &iFrms,
+                           const AlignedVector<Rigid3D> &Cs,
                            const std::vector<ubyte> &ucs
 #ifdef CFG_HANDLE_SCALE_JUMP
-                         , const std::vector<float> &ds
+                           ,
+                           const std::vector<float> &ds
 #endif
-                         ) {
+                           ) {
   MT_WRITE_LOCK_BEGIN(m_MT, iFrms.back(), MT_TASK_GM_GBA_Update);
   std::vector<Camera>::iterator i = m_Cs.begin();
   const int N = static_cast<int>(iFrms.size());

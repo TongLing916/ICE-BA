@@ -17,8 +17,8 @@
 //#ifndef CFG_DEBUG
 //#define CFG_DEBUG
 //#endif
-#include "LocalBundleAdjustor.h"
 #include "IBA_internal.h"
+#include "LocalBundleAdjustor.h"
 
 #ifdef CFG_DEBUG
 //#define LBA_DEBUG_ACTUAL_COST
@@ -57,7 +57,7 @@ void LocalBundleAdjustor::SaveB(FILE *fp) {
   UT::VectorSaveB(m_hists, fp);
   m_MH.SaveB(fp);
 #endif
-  //UT::SaveB(m_delta2, fp);
+  // UT::SaveB(m_delta2, fp);
   UT::VectorSaveB(m_ic2LF, fp);
   UT::SaveB(m_Zo, fp);
   UT::SaveB(m_Ao, fp);
@@ -109,7 +109,7 @@ void LocalBundleAdjustor::SaveB(FILE *fp) {
   m_SAcusLF.SaveB(fp);
   m_SMcusLF.SaveB(fp);
   m_SAcmsLF.SaveB(fp);
-  //UT::SaveB(m_F, fp);
+  // UT::SaveB(m_F, fp);
 }
 
 void LocalBundleAdjustor::LoadB(FILE *fp) {
@@ -132,7 +132,7 @@ void LocalBundleAdjustor::LoadB(FILE *fp) {
   UT::VectorLoadB(m_hists, fp);
   m_MH.LoadB(fp);
 #endif
-  //UT::LoadB(m_delta2, fp);
+  // UT::LoadB(m_delta2, fp);
   UT::VectorLoadB(m_ic2LF, fp);
   UT::LoadB(m_Zo, fp);
   UT::LoadB(m_Ao, fp);
@@ -168,8 +168,9 @@ void LocalBundleAdjustor::LoadB(FILE *fp) {
     for (int ic1 = 0, ic2 = 1; ic2 < Nc; ic1 = ic2++) {
       const int iLF1 = m_ic2LF[ic1], iLF2 = m_ic2LF[ic2];
       const IMU::Delta &D = m_DsLF[iLF2];
-      IMU::PreIntegrate(m_LFs[iLF2].m_us, m_LFs[iLF1].m_T.m_t, m_LFs[iLF2].m_T.m_t, m_CsLFGT[iLF1],
-                        &m_DsLFGT[iLF2], &m_work, true, &D.m_u1, &D.m_u2, BA_ANGLE_EPSILON);
+      IMU::PreIntegrate(m_LFs[iLF2].m_us, m_LFs[iLF1].m_T.m_t,
+                        m_LFs[iLF2].m_T.m_t, m_CsLFGT[iLF1], &m_DsLFGT[iLF2],
+                        &m_work, true, &D.m_u1, &D.m_u2, BA_ANGLE_EPSILON);
     }
   }
 #endif
@@ -209,19 +210,19 @@ void LocalBundleAdjustor::LoadB(FILE *fp) {
   m_SAcusLF.LoadB(fp);
   m_SMcusLF.LoadB(fp);
   m_SAcmsLF.LoadB(fp);
-  //UT::LoadB(m_F, fp);
+  // UT::LoadB(m_F, fp);
 }
 
-float LocalBundleAdjustor::PrintErrorStatistic(const std::string str,
-                                               const AlignedVector<Camera> &CsLF,
-                                               const AlignedVector<Rigid3D> &CsKF,
-                                               const std::vector<Depth::InverseGaussian> &ds,
-                                               const AlignedVector<IMU::Delta> &DsLF, bool detail) {
+float LocalBundleAdjustor::PrintErrorStatistic(
+    const std::string str, const AlignedVector<Camera> &CsLF,
+    const AlignedVector<Rigid3D> &CsKF,
+    const std::vector<Depth::InverseGaussian> &ds,
+    const AlignedVector<IMU::Delta> &DsLF, bool detail) {
   ES _ES = ComputeErrorStatistic(CsLF, CsKF, ds, DsLF);
   const float F = _ES.Total();
   if (detail) {
     const std::string _str(str.size(), ' ');
-    _ES.m_ESx.Print( str);
+    _ES.m_ESx.Print(str);
     _ES.m_ESm.Print(_str);
     _ES.m_ESd.Print(_str);
     UT::Print("%se  = %e\n", _str.c_str(), F);
@@ -232,11 +233,10 @@ float LocalBundleAdjustor::PrintErrorStatistic(const std::string str,
   return F;
 }
 
-LocalBundleAdjustor::ES
-LocalBundleAdjustor::ComputeErrorStatistic(const AlignedVector<Camera> &CsLF,
-                                           const AlignedVector<Rigid3D> &CsKF,
-                                           const std::vector<Depth::InverseGaussian> &ds,
-                                           const AlignedVector<IMU::Delta> &DsLF) {
+LocalBundleAdjustor::ES LocalBundleAdjustor::ComputeErrorStatistic(
+    const AlignedVector<Camera> &CsLF, const AlignedVector<Rigid3D> &CsKF,
+    const std::vector<Depth::InverseGaussian> &ds,
+    const AlignedVector<IMU::Delta> &DsLF) {
   AlignedVector<Depth::InverseGaussian> _ds;
   const int Nd = static_cast<int>(m_ds.size());
   if (static_cast<int>(ds.size()) < Nd) {
@@ -250,10 +250,11 @@ LocalBundleAdjustor::ComputeErrorStatistic(const AlignedVector<Camera> &CsLF,
         continue;
       }
       const int Nx = static_cast<int>(m_KFs[iKF].m_xs.size());
-      memcpy(_ds.Data() + m_iKF2d[iKF], ds.data() + iX, Nx * sizeof(Depth::InverseGaussian));
+      memcpy(_ds.Data() + m_iKF2d[iKF], ds.data() + iX,
+             Nx * sizeof(Depth::InverseGaussian));
     }
   } else {
-    _ds.Bind((Depth::InverseGaussian *) ds.data(), Nd);
+    _ds.Bind((Depth::InverseGaussian *)ds.data(), Nd);
   }
   ES _ES;
   _ES.m_ESx = ComputeErrorStatisticFeaturePriorDepth(CsLF, CsKF, _ds.Data());
@@ -265,29 +266,30 @@ LocalBundleAdjustor::ComputeErrorStatistic(const AlignedVector<Camera> &CsLF,
   return _ES;
 }
 
-FTR::ES LocalBundleAdjustor::ComputeErrorStatisticFeaturePriorDepth(const AlignedVector<Camera>
-                                                                    &CsLF, const AlignedVector<Rigid3D> &CsKF,
-                                                                    const Depth::InverseGaussian *ds) {
+FTR::ES LocalBundleAdjustor::ComputeErrorStatisticFeaturePriorDepth(
+    const AlignedVector<Camera> &CsLF, const AlignedVector<Rigid3D> &CsKF,
+    const Depth::InverseGaussian *ds) {
   FTR::ES ES;
   ES.Initialize();
   const int nLFs = int(m_LFs.size());
   for (int ic = 0; ic < nLFs; ++ic) {
     const int iLF = m_ic2LF[ic];
-    AccumulateErrorStatisticFeature(&m_LFs[iLF], CsLF[iLF].m_T, CsKF, ds, &ES, true);
+    AccumulateErrorStatisticFeature(&m_LFs[iLF], CsLF[iLF].m_T, CsKF, ds, &ES,
+                                    true);
   }
   const int nKFs = int(m_KFs.size());
   for (int iKF = 0; iKF < nKFs; ++iKF) {
-    AccumulateErrorStatisticFeature(&m_KFs[iKF], CsKF[iKF], CsKF, ds, &ES, false);
+    AccumulateErrorStatisticFeature(&m_KFs[iKF], CsKF[iKF], CsKF, ds, &ES,
+                                    false);
   }
   AccumulateErrorStatisticPriorDepth(ds, &ES);
   return ES;
 }
 
-void LocalBundleAdjustor::AccumulateErrorStatisticFeature(const FRM::Frame *F, const Rigid3D &C,
-                                                          const AlignedVector<Rigid3D> &CsKF,
-                                                          const Depth::InverseGaussian *ds,
-                                                          FTR::ES *ES, const bool localFrm) {
-  //float SFx = 0.0f;
+void LocalBundleAdjustor::AccumulateErrorStatisticFeature(
+    const FRM::Frame *F, const Rigid3D &C, const AlignedVector<Rigid3D> &CsKF,
+    const Depth::InverseGaussian *ds, FTR::ES *ES, const bool localFrm) {
+  // float SFx = 0.0f;
   Rigid3D Tr[2];
   FTR::Error e;
   const float w = localFrm ? BA_WEIGHT_FEATURE : BA_WEIGHT_FEATURE_KEY_FRAME;
@@ -316,7 +318,8 @@ void LocalBundleAdjustor::AccumulateErrorStatisticFeature(const FRM::Frame *F, c
       const FTR::ESIndex idx(KF.m_T.m_iFrm, ix, F->m_T.m_iFrm, iz);
 #ifdef CFG_STEREO
       if (z.m_z.Valid()) {
-        const float r2 = LA::SymmetricMatrix2x2f::MahalanobisDistance(z.m_W, e.m_e);
+        const float r2 =
+            LA::SymmetricMatrix2x2f::MahalanobisDistance(z.m_W, e.m_e);
         const float F = w * ME::Weight<LBA_ME_FUNCTION>(r2) * r2;
         const bool r = r2 < r2Max;
 //#ifdef CFG_DEBUG
@@ -324,10 +327,11 @@ void LocalBundleAdjustor::AccumulateErrorStatisticFeature(const FRM::Frame *F, c
         UT::Print("%d: %e + %e = %e\n", iz, F, ES->m_ESx.m_SF, F + ES->m_ESx.m_SF);
 #endif
         ES->Accumulate(m_K.m_K, e.m_e, F, idx, r);
-        //SF += F;
+        // SF += F;
       }
       if (z.m_zr.Valid()) {
-        const float r2 = LA::SymmetricMatrix2x2f::MahalanobisDistance(z.m_Wr, e.m_er);
+        const float r2 =
+            LA::SymmetricMatrix2x2f::MahalanobisDistance(z.m_Wr, e.m_er);
         const float F = w * ME::Weight<LBA_ME_FUNCTION>(r2) * r2;
         const bool r = r2 < r2Max;
 //#ifdef CFG_DEBUG
@@ -335,11 +339,12 @@ void LocalBundleAdjustor::AccumulateErrorStatisticFeature(const FRM::Frame *F, c
         UT::Print("%d: %e + %e = %e\n", iz, Fx, ES->m_ESx.m_SF, F + ES->m_ESx.m_SF);
 #endif
         ES->Accumulate(m_K.m_Kr, e.m_er, F, idx, r);
-        //SF += F;
+        // SF += F;
       }
 #else
-      const float r2 = LA::SymmetricMatrix2x2f::MahalanobisDistance(z.m_W, e.m_e);
-      //const float F = w * ME::Cost<LBA_ME_FUNCTION>(r2);
+      const float r2 =
+          LA::SymmetricMatrix2x2f::MahalanobisDistance(z.m_W, e.m_e);
+      // const float F = w * ME::Cost<LBA_ME_FUNCTION>(r2);
       const float F = w * ME::Weight<LBA_ME_FUNCTION>(r2) * r2;
       const bool r = r2 < r2Max;
 //#ifdef CFG_DEBUG
@@ -366,8 +371,8 @@ void LocalBundleAdjustor::AccumulateErrorStatisticFeature(const FRM::Frame *F, c
 #endif
 }
 
-void LocalBundleAdjustor::AccumulateErrorStatisticPriorDepth(const Depth::InverseGaussian *ds,
-                                                             FTR::ES *ES) {
+void LocalBundleAdjustor::AccumulateErrorStatisticPriorDepth(
+    const Depth::InverseGaussian *ds, FTR::ES *ES) {
 #ifdef CFG_STEREO
   LA::Vector2f e;
 #endif
@@ -376,15 +381,18 @@ void LocalBundleAdjustor::AccumulateErrorStatisticPriorDepth(const Depth::Invers
   for (int iKF = 0; iKF < nKFs; ++iKF) {
     const Depth::InverseGaussian *_ds = ds + m_iKF2d[iKF];
     const KeyFrame &KF = m_KFs[iKF];
-    const Depth::Prior zp(KF.m_d.u(), 1.0f / (BA_VARIANCE_PRIOR_FRAME_DEPTH + KF.m_d.s2()));
+    const Depth::Prior zp(KF.m_d.u(),
+                          1.0f / (BA_VARIANCE_PRIOR_FRAME_DEPTH + KF.m_d.s2()));
     const int Nx = static_cast<int>(KF.m_xs.size());
     for (int ix = 0; ix < Nx; ++ix) {
 #ifdef CFG_STEREO
       const FTR::Source &x = KF.m_xs[ix];
       if (x.m_xr.Valid()) {
         FTR::GetError(m_K.m_br, _ds[ix], x, e);
-        const float r2 = LA::SymmetricMatrix2x2f::MahalanobisDistance(x.m_Wr, e);
-        const float F = BA_WEIGHT_FEATURE_KEY_FRAME * ME::Weight<LBA_ME_FUNCTION>(r2) * r2;
+        const float r2 =
+            LA::SymmetricMatrix2x2f::MahalanobisDistance(x.m_Wr, e);
+        const float F =
+            BA_WEIGHT_FEATURE_KEY_FRAME * ME::Weight<LBA_ME_FUNCTION>(r2) * r2;
         const FTR::ESIndex idx(KF.m_T.m_iFrm, ix);
         const bool r = r2 < r2Max;
         ES->Accumulate(m_K.m_Kr, e, F, idx, r);
@@ -393,8 +401,10 @@ void LocalBundleAdjustor::AccumulateErrorStatisticPriorDepth(const Depth::Invers
       {
         const float ed = _ds[ix].u() - zp.m_d;
         const float r2d = zp.m_w * ed * ed;
-        //const float Fd = BA_WEIGHT_PRIOR_DEPTH * ME::Cost<LBA_ME_FUNCTION>(r2d);
-        const float Fd = BA_WEIGHT_PRIOR_DEPTH * ME::Weight<LBA_ME_FUNCTION>(r2d) * r2d;
+        // const float Fd = BA_WEIGHT_PRIOR_DEPTH *
+        // ME::Cost<LBA_ME_FUNCTION>(r2d);
+        const float Fd =
+            BA_WEIGHT_PRIOR_DEPTH * ME::Weight<LBA_ME_FUNCTION>(r2d) * r2d;
         const FTR::ESIndex idx(KF.m_T.m_iFrm, ix);
         const bool r = r2d < r2Max;
         ES->Accumulate(ed, Fd, idx, r);
@@ -407,8 +417,9 @@ void LocalBundleAdjustor::AccumulateErrorStatisticPriorDepth(const Depth::Invers
   }
 }
 
-CameraPrior::Motion::ES LocalBundleAdjustor::ComputeErrorStatisticPriorCameraMotion(const
-                                                                                    AlignedVector<Camera> &CsLF) {
+CameraPrior::Motion::ES
+LocalBundleAdjustor::ComputeErrorStatisticPriorCameraMotion(
+    const AlignedVector<Camera> &CsLF) {
   CameraPrior::Motion::ES ES;
   ES.Initialize();
   CameraPrior::Motion::Error e;
@@ -424,30 +435,31 @@ CameraPrior::Motion::ES LocalBundleAdjustor::ComputeErrorStatisticPriorCameraMot
   e.Get(&_e);
   _e += em;
   e.Set(_e);
-  LA::AlignedMatrix9x9f::Ab(m_ZpLF.m_Amm, _e, (float *) &Ae);
+  LA::AlignedMatrix9x9f::Ab(m_ZpLF.m_Amm, _e, (float *)&Ae);
   const float F = BA_WEIGHT_PRIOR_CAMERA_MOTION * _e.Dot(Ae);
 #endif
   ES.Accumulate(e, F, m_LFs[iLF].m_T.m_iFrm);
   return ES;
 }
 
-IMU::Delta::ES LocalBundleAdjustor::ComputeErrorStatisticIMU(const AlignedVector<Camera> &CsLF,
-                                                             const AlignedVector<IMU::Delta> &DsLF) {
+IMU::Delta::ES LocalBundleAdjustor::ComputeErrorStatisticIMU(
+    const AlignedVector<Camera> &CsLF, const AlignedVector<IMU::Delta> &DsLF) {
   IMU::Delta::ES ES;
   ES.Initialize();
   const int nLFs = int(m_LFs.size());
   for (int ic1 = 0, ic2 = 1; ic2 < nLFs; ic1 = ic2++) {
     const int iLF1 = m_ic2LF[ic1], iLF2 = m_ic2LF[ic2];
     const IMU::Delta &D = DsLF[iLF2];
-    const IMU::Delta::Error e = D.GetError(CsLF[iLF1], CsLF[iLF2], m_K.m_pu, BA_ANGLE_EPSILON);
+    const IMU::Delta::Error e =
+        D.GetError(CsLF[iLF1], CsLF[iLF2], m_K.m_pu, BA_ANGLE_EPSILON);
     const float F = D.GetCost(BA_WEIGHT_IMU, e);
     ES.Accumulate(e, F, m_LFs[iLF2].m_T.m_iFrm);
   }
   return ES;
 }
 
-Camera::Fix::Origin::ES LocalBundleAdjustor::ComputeErrorStatisticFixOrigin(const
-                                                                            AlignedVector<Camera> &CsLF) {
+Camera::Fix::Origin::ES LocalBundleAdjustor::ComputeErrorStatisticFixOrigin(
+    const AlignedVector<Camera> &CsLF) {
   Camera::Fix::Origin::ES ES;
   ES.Initialize();
   const int iLF = m_ic2LF[0], iFrm = m_LFs[iLF].m_T.m_iFrm;
@@ -460,11 +472,13 @@ Camera::Fix::Origin::ES LocalBundleAdjustor::ComputeErrorStatisticFixOrigin(cons
   return ES;
 }
 
-Camera::Fix::PositionZ::ES LocalBundleAdjustor::ComputeErrorStatisticFixPositionZ(const
-                                                                                  AlignedVector<Camera> &CsLF) {
+Camera::Fix::PositionZ::ES
+LocalBundleAdjustor::ComputeErrorStatisticFixPositionZ(
+    const AlignedVector<Camera> &CsLF) {
   Camera::Fix::PositionZ::ES ES;
   ES.Initialize();
-  const Camera::Fix::PositionZ z(BA_WEIGHT_FIX_POSITION_Z, BA_VARIANCE_FIX_POSITION_Z);
+  const Camera::Fix::PositionZ z(BA_WEIGHT_FIX_POSITION_Z,
+                                 BA_VARIANCE_FIX_POSITION_Z);
   const int nLFs = static_cast<int>(m_LFs.size());
   for (int iLF = 0; iLF < nLFs; ++iLF) {
     const float pz = CsLF[iLF].m_p.z();
@@ -473,19 +487,23 @@ Camera::Fix::PositionZ::ES LocalBundleAdjustor::ComputeErrorStatisticFixPosition
   return ES;
 }
 
-Camera::Fix::Motion::ES LocalBundleAdjustor::ComputeErrorStatisticFixMotion(const
-                                                                            AlignedVector<Camera> &CsLF) {
+Camera::Fix::Motion::ES LocalBundleAdjustor::ComputeErrorStatisticFixMotion(
+    const AlignedVector<Camera> &CsLF) {
   Camera::Fix::Motion::ES ES;
   ES.Initialize();
   const Camera::Fix::Zero zv[2] = {
-        Camera::Fix::Zero(BA_WEIGHT_FIX_MOTION, BA_VARIANCE_FIX_VELOCITY),
-        Camera::Fix::Zero(BA_WEIGHT_FIX_MOTION, BA_VARIANCE_FIX_VELOCITY_INITIAL)};
+      Camera::Fix::Zero(BA_WEIGHT_FIX_MOTION, BA_VARIANCE_FIX_VELOCITY),
+      Camera::Fix::Zero(BA_WEIGHT_FIX_MOTION,
+                        BA_VARIANCE_FIX_VELOCITY_INITIAL)};
   const Camera::Fix::Zero zba[2] = {
-        Camera::Fix::Zero(BA_WEIGHT_FIX_MOTION, BA_VARIANCE_FIX_BIAS_ACCELERATION),
-        Camera::Fix::Zero(BA_WEIGHT_FIX_MOTION, BA_VARIANCE_FIX_BIAS_ACCELERATION_INITIAL)};
+      Camera::Fix::Zero(BA_WEIGHT_FIX_MOTION,
+                        BA_VARIANCE_FIX_BIAS_ACCELERATION),
+      Camera::Fix::Zero(BA_WEIGHT_FIX_MOTION,
+                        BA_VARIANCE_FIX_BIAS_ACCELERATION_INITIAL)};
   const Camera::Fix::Zero zbw[2] = {
-        Camera::Fix::Zero(BA_WEIGHT_FIX_MOTION, BA_VARIANCE_FIX_BIAS_GYROSCOPE),
-        Camera::Fix::Zero(BA_WEIGHT_FIX_MOTION, BA_VARIANCE_FIX_BIAS_GYROSCOPE_INITIAL)};
+      Camera::Fix::Zero(BA_WEIGHT_FIX_MOTION, BA_VARIANCE_FIX_BIAS_GYROSCOPE),
+      Camera::Fix::Zero(BA_WEIGHT_FIX_MOTION,
+                        BA_VARIANCE_FIX_BIAS_GYROSCOPE_INITIAL)};
   const int nLFs = static_cast<int>(m_LFs.size());
   for (int iLF = 0; iLF < nLFs; ++iLF) {
     const int iFrm = m_LFs[iLF].m_T.m_iFrm;
@@ -498,17 +516,16 @@ Camera::Fix::Motion::ES LocalBundleAdjustor::ComputeErrorStatisticFixMotion(cons
   return ES;
 }
 
-float LocalBundleAdjustor::PrintErrorStatistic(const std::string str,
-                                               const AlignedVector<Camera> &CsLF,
-                                               const AlignedVector<Rigid3D> &CsKF,
-                                               const std::vector<Depth::InverseGaussian> &ds,
-                                               const LA::AlignedVectorXf &xs,
-                                               const bool detail) {
+float LocalBundleAdjustor::PrintErrorStatistic(
+    const std::string str, const AlignedVector<Camera> &CsLF,
+    const AlignedVector<Rigid3D> &CsKF,
+    const std::vector<Depth::InverseGaussian> &ds,
+    const LA::AlignedVectorXf &xs, const bool detail) {
   const ES _ES = ComputeErrorStatistic(CsLF, CsKF, ds, xs, false);
   const float F = _ES.Total();
   if (detail) {
     const std::string _str(str.size(), ' ');
-    _ES.m_ESx.Print( str/*, 0*/);
+    _ES.m_ESx.Print(str /*, 0*/);
     _ES.m_ESm.Print(_str);
     _ES.m_ESd.Print(_str);
     UT::Print("%se  = %e", _str.c_str(), F);
@@ -518,20 +535,20 @@ float LocalBundleAdjustor::PrintErrorStatistic(const std::string str,
   return F;
 }
 
-LocalBundleAdjustor::ES
-LocalBundleAdjustor::ComputeErrorStatistic(const AlignedVector<Camera> &CsLF,
-                                           const AlignedVector<Rigid3D> &CsKF,
-                                           const std::vector<Depth::InverseGaussian> &ds,
-                                           const LA::AlignedVectorXf &xs, const bool updateOnly) {
+LocalBundleAdjustor::ES LocalBundleAdjustor::ComputeErrorStatistic(
+    const AlignedVector<Camera> &CsLF, const AlignedVector<Rigid3D> &CsKF,
+    const std::vector<Depth::InverseGaussian> &ds,
+    const LA::AlignedVectorXf &xs, const bool updateOnly) {
   const int pc = 6, pm = 9;
-  const int Nc = static_cast<int>(m_LFs.size()), Nd = static_cast<int>(m_ds.size());
-  const LA::Vector6f *xcs = (LA::Vector6f *) xs.Data();
-  const LA::Vector9f *xms = (LA::Vector9f *) (xcs + Nc);
-  const float *xds = (float *) (xms + Nc);
+  const int Nc = static_cast<int>(m_LFs.size()),
+            Nd = static_cast<int>(m_ds.size());
+  const LA::Vector6f *xcs = (LA::Vector6f *)xs.Data();
+  const LA::Vector9f *xms = (LA::Vector9f *)(xcs + Nc);
+  const float *xds = (float *)(xms + Nc);
   AlignedVector<Depth::InverseGaussian> _ds;
   LA::AlignedVectorXf _xds;
   ConvertCameraUpdates(xcs, &m_xcsP);
-  //if (static_cast<int>(ds.size()) < Nd) {
+  // if (static_cast<int>(ds.size()) < Nd) {
   if (xs.Size() < Nc * (pc + pm) + Nd) {
     m_work.Resize(_ds.BindSize(Nd) + _xds.BindSize(Nd));
     _ds.Bind(m_work.Data(), Nd);
@@ -544,8 +561,10 @@ LocalBundleAdjustor::ComputeErrorStatistic(const AlignedVector<Camera> &CsLF,
       if (iX == -1) {
         continue;
       }
-      const int id = m_iKF2d[iKF], Nx = static_cast<int>(m_KFs[iKF].m_xs.size());
-      memcpy(_ds.Data() + id, ds.data() + iX, Nx * sizeof(Depth::InverseGaussian));
+      const int id = m_iKF2d[iKF],
+                Nx = static_cast<int>(m_KFs[iKF].m_xs.size());
+      memcpy(_ds.Data() + id, ds.data() + iX,
+             Nx * sizeof(Depth::InverseGaussian));
       const ubyte *uds = m_uds.data() + id;
       float *__xds = _xds.Data() + id;
       for (int ix = 0; ix < Nx; ++ix) {
@@ -555,15 +574,18 @@ LocalBundleAdjustor::ComputeErrorStatistic(const AlignedVector<Camera> &CsLF,
       }
     }
   } else {
-    _ds.Bind((Depth::InverseGaussian *) ds.data(), Nd);
-    _xds.Bind((float *) xds, Nd);
+    _ds.Bind((Depth::InverseGaussian *)ds.data(), Nd);
+    _xds.Bind((float *)xds, Nd);
   }
   ES _ES;
-  _ES.m_ESx = ComputeErrorStatisticFeaturePriorDepth(CsLF, CsKF, _ds.Data(), m_xcsP, _xds, updateOnly);
-  _ES.m_ESm = ComputeErrorStatisticPriorCameraMotion(m_xcsP.Data(), xms, updateOnly);
+  _ES.m_ESx = ComputeErrorStatisticFeaturePriorDepth(CsLF, CsKF, _ds.Data(),
+                                                     m_xcsP, _xds, updateOnly);
+  _ES.m_ESm =
+      ComputeErrorStatisticPriorCameraMotion(m_xcsP.Data(), xms, updateOnly);
   _ES.m_ESd = ComputeErrorStatisticIMU(m_xcsP.Data(), xms, updateOnly);
   _ES.m_ESo = ComputeErrorStatisticFixOrigin(CsLF, m_xcsP, updateOnly);
-  _ES.m_ESfp = ComputeErrorStatisticFixPositionZ(CsLF, m_xcsP.Data(), updateOnly);
+  _ES.m_ESfp =
+      ComputeErrorStatisticFixPositionZ(CsLF, m_xcsP.Data(), updateOnly);
   _ES.m_ESfm = ComputeErrorStatisticFixMotion(CsLF, xms, updateOnly);
   return _ES;
 }
@@ -572,12 +594,11 @@ LocalBundleAdjustor::ComputeErrorStatistic(const AlignedVector<Camera> &CsLF,
 static FTR::ES g_ESx;
 #endif
 
-FTR::ES LocalBundleAdjustor::ComputeErrorStatisticFeaturePriorDepth(const AlignedVector<Camera>
-                                                                    &CsLF, const AlignedVector<Rigid3D> &CsKF,
-                                                                    const Depth::InverseGaussian *ds,
-                                                                    const AlignedVector<LA::ProductVector6f> &xcs,
-                                                                    const LA::AlignedVectorXf &xds,
-                                                                    const bool updateOnly) {
+FTR::ES LocalBundleAdjustor::ComputeErrorStatisticFeaturePriorDepth(
+    const AlignedVector<Camera> &CsLF, const AlignedVector<Rigid3D> &CsKF,
+    const Depth::InverseGaussian *ds,
+    const AlignedVector<LA::ProductVector6f> &xcs,
+    const LA::AlignedVectorXf &xds, const bool updateOnly) {
   FTR::ES ES;
   ES.Initialize();
 #ifdef LBA_DEBUG_ACTUAL_COST
@@ -589,12 +610,11 @@ FTR::ES LocalBundleAdjustor::ComputeErrorStatisticFeaturePriorDepth(const Aligne
   return ES;
 }
 
-void LocalBundleAdjustor::AccumulateErrorStatisticFeatureLF(const AlignedVector<Camera> &CsLF,
-                                                            const AlignedVector<Rigid3D> &CsKF,
-                                                            const Depth::InverseGaussian *ds,
-                                                            const AlignedVector<LA::ProductVector6f> &xcs,
-                                                            const LA::AlignedVectorXf &xds,
-                                                            FTR::ES *ES, const bool updateOnly) {
+void LocalBundleAdjustor::AccumulateErrorStatisticFeatureLF(
+    const AlignedVector<Camera> &CsLF, const AlignedVector<Rigid3D> &CsKF,
+    const Depth::InverseGaussian *ds,
+    const AlignedVector<LA::ProductVector6f> &xcs,
+    const LA::AlignedVectorXf &xds, FTR::ES *ES, const bool updateOnly) {
 //#ifdef CFG_DEBUG
 #if 0
   float dF = 0.0f;
@@ -605,12 +625,14 @@ void LocalBundleAdjustor::AccumulateErrorStatisticFeatureLF(const AlignedVector<
   const int Nc = int(m_LFs.size());
   for (int ic = 0; ic < Nc; ++ic) {
     const int iLF = m_ic2LF[ic];
-    const LA::ProductVector6f *xc = !updateOnly || (m_ucsLF[iLF] & LBA_FLAG_FRAME_UPDATE_CAMERA) ?
-                                    &xcs[ic] : NULL;
+    const LA::ProductVector6f *xc =
+        !updateOnly || (m_ucsLF[iLF] & LBA_FLAG_FRAME_UPDATE_CAMERA) ? &xcs[ic]
+                                                                     : NULL;
 #ifdef LBA_DEBUG_ACTUAL_COST
-    const Rigid3D C = xc ? Rigid3D(CsLF[iLF].m_T, &xc->Get012(), &xc->Get345()) : CsLF[iLF].m_T;
+    const Rigid3D C = xc ? Rigid3D(CsLF[iLF].m_T, &xc->Get012(), &xc->Get345())
+                         : CsLF[iLF].m_T;
 #endif
-    //float SFx = 0.0f;
+    // float SFx = 0.0f;
     const LocalFrame &LF = m_LFs[iLF];
     const int NZ = int(LF.m_Zs.size());
     for (int iZ = 0; iZ < NZ; ++iZ) {
@@ -641,8 +663,9 @@ void LocalBundleAdjustor::AccumulateErrorStatisticFeatureLF(const AlignedVector<
 #endif
         const FTR::Measurement &z = LF.m_zs[iz];
         const int ix = z.m_ix;
-        const float *xd = !updateOnly || (uds[ix] & LBA_FLAG_TRACK_UPDATE_DEPTH) ?
-                          &_xds[ix] : NULL;
+        const float *xd = !updateOnly || (uds[ix] & LBA_FLAG_TRACK_UPDATE_DEPTH)
+                              ? &_xds[ix]
+                              : NULL;
         const FTR::Factor::FixSource::L &L = LF.m_Lzs[iz];
         if (xc || xd) {
           F = FTR::GetCost(L, z, xc, xd, e);
@@ -659,7 +682,7 @@ void LocalBundleAdjustor::AccumulateErrorStatisticFeatureLF(const AlignedVector<
           e.m_e = L.m_Je.m_e;
 #endif
         }
-        //SF += F;
+// SF += F;
 //#ifdef CFG_DEBUG
 #if 0
         dF = L.m_F - F + dF;
@@ -694,35 +717,40 @@ void LocalBundleAdjustor::AccumulateErrorStatisticFeatureLF(const AlignedVector<
 //#endif
 #ifdef CFG_STEREO
         if (z.m_z.Valid()) {
-          const float r2 = LA::SymmetricMatrix2x2f::MahalanobisDistance(z.m_W, e.m_e);
-          const float F = BA_WEIGHT_FEATURE * ME::Weight<LBA_ME_FUNCTION>(r2) * r2;
+          const float r2 =
+              LA::SymmetricMatrix2x2f::MahalanobisDistance(z.m_W, e.m_e);
+          const float F =
+              BA_WEIGHT_FEATURE * ME::Weight<LBA_ME_FUNCTION>(r2) * r2;
           const bool r = r2 < r2Max;
           g_ESx.Accumulate(m_K.m_K, e.m_e, F, idx, r);
         }
         if (z.m_zr.Valid()) {
-          const float r2 = LA::SymmetricMatrix2x2f::MahalanobisDistance(z.m_Wr, e.m_er);
-          const float F = BA_WEIGHT_FEATURE * ME::Weight<LBA_ME_FUNCTION>(r2) * r2;
+          const float r2 =
+              LA::SymmetricMatrix2x2f::MahalanobisDistance(z.m_Wr, e.m_er);
+          const float F =
+              BA_WEIGHT_FEATURE * ME::Weight<LBA_ME_FUNCTION>(r2) * r2;
           const bool r = r2 < r2Max;
           g_ESx.Accumulate(m_K.m_Kr, e.m_er, F, idx, r);
         }
 #else
-        const float r2 = LA::SymmetricMatrix2x2f::MahalanobisDistance(z.m_W, e.m_e);
-        //const float F = BA_WEIGHT_FEATURE * ME::Cost<LBA_ME_FUNCTION>(r2);
-        const float F = BA_WEIGHT_FEATURE * ME::Weight<LBA_ME_FUNCTION>(r2) * r2;
+        const float r2 =
+            LA::SymmetricMatrix2x2f::MahalanobisDistance(z.m_W, e.m_e);
+        // const float F = BA_WEIGHT_FEATURE * ME::Cost<LBA_ME_FUNCTION>(r2);
+        const float F =
+            BA_WEIGHT_FEATURE * ME::Weight<LBA_ME_FUNCTION>(r2) * r2;
         const bool r = r2 < r2Max;
         g_ESx.Accumulate(m_K.m_K, e.m_e, F, idx, r);
 #endif
 #endif
       }
     }
-    //UT::Print("[%d] %e\n", LF.m_T.m_iFrm, g_ESx.Total());
+    // UT::Print("[%d] %e\n", LF.m_T.m_iFrm, g_ESx.Total());
   }
 }
 
-void LocalBundleAdjustor::AccumulateErrorStatisticFeatureKF(const AlignedVector<Rigid3D> &CsKF,
-                                                            const Depth::InverseGaussian *ds,
-                                                            const LA::AlignedVectorXf &xds,
-                                                            FTR::ES *ES, const bool updateOnly) {
+void LocalBundleAdjustor::AccumulateErrorStatisticFeatureKF(
+    const AlignedVector<Rigid3D> &CsKF, const Depth::InverseGaussian *ds,
+    const LA::AlignedVectorXf &xds, FTR::ES *ES, const bool updateOnly) {
 //#ifdef CFG_DEBUG
 #if 0
   float dF = 0.0f;
@@ -756,8 +784,9 @@ void LocalBundleAdjustor::AccumulateErrorStatisticFeatureKF(const AlignedVector<
       for (int iz = Z.m_iz1; iz < Z.m_iz2; ++iz) {
         const FTR::Measurement &z = KF.m_zs[iz];
         const int ix = z.m_ix;
-        const float *xd = !updateOnly || (uds[ix] & LBA_FLAG_TRACK_UPDATE_DEPTH) ?
-                          &_xds[ix] : NULL;
+        const float *xd = !updateOnly || (uds[ix] & LBA_FLAG_TRACK_UPDATE_DEPTH)
+                              ? &_xds[ix]
+                              : NULL;
         const FTR::Factor::Depth &A = KF.m_Azs[iz];
         if (xd) {
           F = FTR::GetCost(A, z, *xd, e);
@@ -808,34 +837,40 @@ void LocalBundleAdjustor::AccumulateErrorStatisticFeatureKF(const AlignedVector<
 //#endif
 #ifdef CFG_STEREO
         if (z.m_z.Valid()) {
-          const float r2 = LA::SymmetricMatrix2x2f::MahalanobisDistance(z.m_W, e.m_e);
-          const float F = BA_WEIGHT_FEATURE_KEY_FRAME * ME::Weight<LBA_ME_FUNCTION>(r2) * r2;
+          const float r2 =
+              LA::SymmetricMatrix2x2f::MahalanobisDistance(z.m_W, e.m_e);
+          const float F = BA_WEIGHT_FEATURE_KEY_FRAME *
+                          ME::Weight<LBA_ME_FUNCTION>(r2) * r2;
           const bool r = r2 < r2Max;
           g_ESx.Accumulate(m_K.m_K, e.m_ex, F, idx, r);
         }
         if (z.m_zr.Valid()) {
-          const float r2 = LA::SymmetricMatrix2x2f::MahalanobisDistance(z.m_Wr, e.m_er);
-          const float F = BA_WEIGHT_FEATURE_KEY_FRAME * ME::Weight<LBA_ME_FUNCTION>(r2) * r2;
+          const float r2 =
+              LA::SymmetricMatrix2x2f::MahalanobisDistance(z.m_Wr, e.m_er);
+          const float F = BA_WEIGHT_FEATURE_KEY_FRAME *
+                          ME::Weight<LBA_ME_FUNCTION>(r2) * r2;
           const bool r = r2 < r2Max;
           g_ESx.Accumulate(m_K.m_Kr, e.m_er, Fx, idx, r);
         }
 #else
-        const float r2 = LA::SymmetricMatrix2x2f::MahalanobisDistance(z.m_W, e.m_e);
-        //const float F = BA_WEIGHT_FEATURE * ME::Cost<LBA_ME_FUNCTION>(r2x);
-        const float F = BA_WEIGHT_FEATURE_KEY_FRAME * ME::Weight<LBA_ME_FUNCTION>(r2) * r2;
+        const float r2 =
+            LA::SymmetricMatrix2x2f::MahalanobisDistance(z.m_W, e.m_e);
+        // const float F = BA_WEIGHT_FEATURE * ME::Cost<LBA_ME_FUNCTION>(r2x);
+        const float F =
+            BA_WEIGHT_FEATURE_KEY_FRAME * ME::Weight<LBA_ME_FUNCTION>(r2) * r2;
         const bool r = r2 < r2Max;
         _ES.Accumulate(m_K.m_K, e.m_e, F, idx, r);
 #endif
 #endif
       }
     }
-    //UT::Print("[%d] %e\n", KF.m_T.m_iFrm, g_ESx.Total());
+    // UT::Print("[%d] %e\n", KF.m_T.m_iFrm, g_ESx.Total());
   }
 }
 
-void LocalBundleAdjustor::AccumulateErrorStatisticPriorDepth(const Depth::InverseGaussian *ds,
-                                                             const LA::AlignedVectorXf &xds,
-                                                             FTR::ES *ES, const bool updateOnly) {
+void LocalBundleAdjustor::AccumulateErrorStatisticPriorDepth(
+    const Depth::InverseGaussian *ds, const LA::AlignedVectorXf &xds,
+    FTR::ES *ES, const bool updateOnly) {
 //#ifdef CFG_DEBUG
 #if 0
   float dF = 0.0f;
@@ -850,10 +885,12 @@ void LocalBundleAdjustor::AccumulateErrorStatisticPriorDepth(const Depth::Invers
     const ubyte *uds = m_uds.data() + id;
     const float *_xds = xds.Data() + id;
     const KeyFrame &KF = m_KFs[iKF];
-    const Depth::Prior zp(KF.m_d.u(), 1.0f / (BA_VARIANCE_PRIOR_FRAME_DEPTH + KF.m_d.s2()));
+    const Depth::Prior zp(KF.m_d.u(),
+                          1.0f / (BA_VARIANCE_PRIOR_FRAME_DEPTH + KF.m_d.s2()));
     const int Nx = static_cast<int>(KF.m_xs.size());
     for (int ix = 0; ix < Nx; ++ix) {
-      const bool ud = !updateOnly || (uds[ix] & LBA_FLAG_TRACK_UPDATE_DEPTH) != 0;
+      const bool ud =
+          !updateOnly || (uds[ix] & LBA_FLAG_TRACK_UPDATE_DEPTH) != 0;
 #ifdef CFG_STEREO
       if (KF.m_xs[ix].m_xr.Valid()) {
         const FTR::Factor::Stereo &a = KF.m_Ards[ix];
@@ -890,30 +927,39 @@ void LocalBundleAdjustor::AccumulateErrorStatisticPriorDepth(const Depth::Invers
   }
 }
 
-CameraPrior::Motion::ES LocalBundleAdjustor::ComputeErrorStatisticPriorCameraMotion(const
-                                                                                    LA::ProductVector6f *xcs,
-                                                                                    const LA::Vector9f *xms,
-                                                                                    const bool updateOnly) {
+CameraPrior::Motion::ES
+LocalBundleAdjustor::ComputeErrorStatisticPriorCameraMotion(
+    const LA::ProductVector6f *xcs, const LA::Vector9f *xms,
+    const bool updateOnly) {
   CameraPrior::Motion::ES ES;
   ES.Initialize();
   CameraPrior::Motion::Error e;
   const int iLF = m_ic2LF.front();
   const int iFrm = m_LFs[iLF].m_T.m_iFrm;
   const ubyte ucm = m_ucmsLF[iLF];
-  const bool ur = !updateOnly || (ucm & LBA_FLAG_CAMERA_MOTION_UPDATE_ROTATION) != 0;
-  const bool uv = !updateOnly || (ucm & LBA_FLAG_CAMERA_MOTION_UPDATE_VELOCITY) != 0;
-  const bool uba = !updateOnly || (ucm & LBA_FLAG_CAMERA_MOTION_UPDATE_BIAS_ACCELERATION) != 0;
-  const bool ubw = !updateOnly || (ucm & LBA_FLAG_CAMERA_MOTION_UPDATE_BIAS_GYROSCOPE) != 0;
+  const bool ur =
+      !updateOnly || (ucm & LBA_FLAG_CAMERA_MOTION_UPDATE_ROTATION) != 0;
+  const bool uv =
+      !updateOnly || (ucm & LBA_FLAG_CAMERA_MOTION_UPDATE_VELOCITY) != 0;
+  const bool uba = !updateOnly ||
+                   (ucm & LBA_FLAG_CAMERA_MOTION_UPDATE_BIAS_ACCELERATION) != 0;
+  const bool ubw =
+      !updateOnly || (ucm & LBA_FLAG_CAMERA_MOTION_UPDATE_BIAS_GYROSCOPE) != 0;
   if (ur || uv || uba || ubw) {
     LA::AlignedVector3f xr, xv, xba, xbw;
     const LA::ProductVector6f &xc = xcs[0];
     const LA::Vector9f &xm = xms[0];
-    const LA::AlignedVector3f *_xr = ur ? &(xr = LA::AlignedVector3f(&xc.v3())) : NULL;
-    const LA::AlignedVector3f *_xv = uv ? &(xv = LA::AlignedVector3f(&xm.v0())) : NULL;
-    const LA::AlignedVector3f *_xba = uba ? &(xba = LA::AlignedVector3f(&xm.v3())) : NULL;
-    const LA::AlignedVector3f *_xbw = ubw ? &(xbw = LA::AlignedVector3f(&xm.v6())) : NULL;
+    const LA::AlignedVector3f *_xr =
+        ur ? &(xr = LA::AlignedVector3f(&xc.v3())) : NULL;
+    const LA::AlignedVector3f *_xv =
+        uv ? &(xv = LA::AlignedVector3f(&xm.v0())) : NULL;
+    const LA::AlignedVector3f *_xba =
+        uba ? &(xba = LA::AlignedVector3f(&xm.v3())) : NULL;
+    const LA::AlignedVector3f *_xbw =
+        ubw ? &(xbw = LA::AlignedVector3f(&xm.v6())) : NULL;
 #ifdef CFG_CAMERA_PRIOR_SQUARE_FORM
-    const float F = m_ZpLF.GetCost(BA_WEIGHT_PRIOR_CAMERA_MOTION, m_ApLF.m_Je, _xr, _xv, _xba, _xbw, &e);
+    const float F = m_ZpLF.GetCost(BA_WEIGHT_PRIOR_CAMERA_MOTION, m_ApLF.m_Je,
+                                   _xr, _xv, _xba, _xbw, &e);
 #else
     m_ZpLF.GetError(m_ApLF.m_Je, _xr, _xv, _xba, _xbw, &e);
     CameraPrior::Element::MM Amm = m_ZpLF.m_Amm;
@@ -923,7 +969,7 @@ CameraPrior::Motion::ES LocalBundleAdjustor::ComputeErrorStatisticPriorCameraMot
     e.Get(&_e);
     _e += em;
     e.Set(_e);
-    LA::AlignedMatrix9x9f::Ab(m_ZpLF.m_Amm, _e, (float *) &Ae);
+    LA::AlignedMatrix9x9f::Ab(m_ZpLF.m_Amm, _e, (float *)&Ae);
     const float F = BA_WEIGHT_PRIOR_CAMERA_MOTION * _e.Dot(Ae);
 #endif
     ES.Accumulate(e, F, iFrm);
@@ -933,8 +979,9 @@ CameraPrior::Motion::ES LocalBundleAdjustor::ComputeErrorStatisticPriorCameraMot
   return ES;
 }
 
-IMU::Delta::ES LocalBundleAdjustor::ComputeErrorStatisticIMU(const LA::ProductVector6f *xcs,
-                                                             const LA::Vector9f *xms, const bool updateOnly) {
+IMU::Delta::ES LocalBundleAdjustor::ComputeErrorStatisticIMU(
+    const LA::ProductVector6f *xcs, const LA::Vector9f *xms,
+    const bool updateOnly) {
   IMU::Delta::ES ES;
   ES.Initialize();
 //#ifdef CFG_DEBUG
@@ -946,7 +993,7 @@ IMU::Delta::ES LocalBundleAdjustor::ComputeErrorStatisticIMU(const LA::ProductVe
   LA::AlignedVector3f xp[2], xr[2], xv[2], xba[2], xbw[2];
   LA::AlignedVector3f *_xp[2], *_xr[2], *_xv[2], *_xba[2], *_xbw[2];
   int r1 = 0, r2 = 1;
-  
+
   const ubyte ucmFlag = LBA_FLAG_CAMERA_MOTION_UPDATE_ROTATION |
                         LBA_FLAG_CAMERA_MOTION_UPDATE_POSITION;
   const int nLFs = int(m_LFs.size());
@@ -955,35 +1002,53 @@ IMU::Delta::ES LocalBundleAdjustor::ComputeErrorStatisticIMU(const LA::ProductVe
     const int iLF1 = m_ic2LF[ic1], iLF2 = m_ic2LF[ic2];
     if (ic1 == 0) {
       const ubyte ucm = m_ucmsLF[iLF1], uc = ucm & ucmFlag;
-      _xp[r1] = !updateOnly || uc ? &(xp[r1] = LA::AlignedVector3f(&xcs[ic1].v0())) : NULL;
-      _xr[r1] = !updateOnly || uc ? &(xr[r1] = LA::AlignedVector3f(&xcs[ic1].v3())) : NULL;
-      _xv[r1] = !updateOnly || (ucm & LBA_FLAG_CAMERA_MOTION_UPDATE_VELOCITY) ?
-                &(xv[r1] = LA::AlignedVector3f(&xms[ic1].v0())) : NULL;
-      _xba[r1] = !updateOnly || (ucm & LBA_FLAG_CAMERA_MOTION_UPDATE_BIAS_ACCELERATION) ?
-                 &(xba[r1] = LA::AlignedVector3f(&xms[ic1].v3())) : NULL;
-      _xbw[r1] = !updateOnly || (ucm & LBA_FLAG_CAMERA_MOTION_UPDATE_BIAS_GYROSCOPE) ?
-                 &(xbw[r1] = LA::AlignedVector3f(&xms[ic1].v6())) : NULL;
+      _xp[r1] = !updateOnly || uc
+                    ? &(xp[r1] = LA::AlignedVector3f(&xcs[ic1].v0()))
+                    : NULL;
+      _xr[r1] = !updateOnly || uc
+                    ? &(xr[r1] = LA::AlignedVector3f(&xcs[ic1].v3()))
+                    : NULL;
+      _xv[r1] = !updateOnly || (ucm & LBA_FLAG_CAMERA_MOTION_UPDATE_VELOCITY)
+                    ? &(xv[r1] = LA::AlignedVector3f(&xms[ic1].v0()))
+                    : NULL;
+      _xba[r1] =
+          !updateOnly || (ucm & LBA_FLAG_CAMERA_MOTION_UPDATE_BIAS_ACCELERATION)
+              ? &(xba[r1] = LA::AlignedVector3f(&xms[ic1].v3()))
+              : NULL;
+      _xbw[r1] =
+          !updateOnly || (ucm & LBA_FLAG_CAMERA_MOTION_UPDATE_BIAS_GYROSCOPE)
+              ? &(xbw[r1] = LA::AlignedVector3f(&xms[ic1].v6()))
+              : NULL;
     }
     const ubyte ucm = m_ucmsLF[iLF2], uc = ucm & ucmFlag;
-    _xp[r2] = !updateOnly || uc ? &(xp[r2] = LA::AlignedVector3f(&xcs[ic2].v0())) : NULL;
-    _xr[r2] = !updateOnly || uc ? &(xr[r2] = LA::AlignedVector3f(&xcs[ic2].v3())) : NULL;
-    _xv[r2] = !updateOnly || (ucm & LBA_FLAG_CAMERA_MOTION_UPDATE_VELOCITY) ?
-              &(xv[r2] = LA::AlignedVector3f(&xms[ic2].v0())) : NULL;
-    _xba[r2] = !updateOnly || (ucm & LBA_FLAG_CAMERA_MOTION_UPDATE_BIAS_ACCELERATION) ?
-               &(xba[r2] = LA::AlignedVector3f(&xms[ic2].v3())) : NULL;
-    _xbw[r2] = !updateOnly || (ucm & LBA_FLAG_CAMERA_MOTION_UPDATE_BIAS_GYROSCOPE) ?
-               &(xbw[r2] = LA::AlignedVector3f(&xms[ic2].v6())) : NULL;
+    _xp[r2] = !updateOnly || uc
+                  ? &(xp[r2] = LA::AlignedVector3f(&xcs[ic2].v0()))
+                  : NULL;
+    _xr[r2] = !updateOnly || uc
+                  ? &(xr[r2] = LA::AlignedVector3f(&xcs[ic2].v3()))
+                  : NULL;
+    _xv[r2] = !updateOnly || (ucm & LBA_FLAG_CAMERA_MOTION_UPDATE_VELOCITY)
+                  ? &(xv[r2] = LA::AlignedVector3f(&xms[ic2].v0()))
+                  : NULL;
+    _xba[r2] =
+        !updateOnly || (ucm & LBA_FLAG_CAMERA_MOTION_UPDATE_BIAS_ACCELERATION)
+            ? &(xba[r2] = LA::AlignedVector3f(&xms[ic2].v3()))
+            : NULL;
+    _xbw[r2] =
+        !updateOnly || (ucm & LBA_FLAG_CAMERA_MOTION_UPDATE_BIAS_GYROSCOPE)
+            ? &(xbw[r2] = LA::AlignedVector3f(&xms[ic2].v6()))
+            : NULL;
     const IMU::Delta &D = m_DsLF[iLF2];
     const IMU::Delta::Factor &A = m_AdsLF[iLF2];
     if (!updateOnly || ucm || m_ucmsLF[iLF1]) {
-      F = D.GetCost(BA_WEIGHT_IMU, A.m_Je, _xp[r1], _xr[r1], _xv[r1], _xba[r1], _xbw[r1],
-                    _xp[r2], _xr[r2], _xv[r2], _xba[r2], _xbw[r2], e);
+      F = D.GetCost(BA_WEIGHT_IMU, A.m_Je, _xp[r1], _xr[r1], _xv[r1], _xba[r1],
+                    _xbw[r1], _xp[r2], _xr[r2], _xv[r2], _xba[r2], _xbw[r2], e);
     } else {
       e = A.m_Je.m_e;
       F = A.m_F;
     }
     ES.Accumulate(e, F, m_LFs[iLF2].m_T.m_iFrm);
-    //UT::Print("%d %e\n", ic2, F);
+// UT::Print("%d %e\n", ic2, F);
 //#ifdef CFG_DEBUG
 #if 0
     dF = A.m_F - F + dF;
@@ -992,10 +1057,9 @@ IMU::Delta::ES LocalBundleAdjustor::ComputeErrorStatisticIMU(const LA::ProductVe
   return ES;
 }
 
-Camera::Fix::Origin::ES LocalBundleAdjustor::ComputeErrorStatisticFixOrigin(const
-                                                                            AlignedVector<Camera> &CsLF,
-                                                                            const AlignedVector<LA::ProductVector6f> &xcs,
-                                                                            const bool updateOnly) {
+Camera::Fix::Origin::ES LocalBundleAdjustor::ComputeErrorStatisticFixOrigin(
+    const AlignedVector<Camera> &CsLF,
+    const AlignedVector<LA::ProductVector6f> &xcs, const bool updateOnly) {
   Camera::Fix::Origin::ES ES;
   ES.Initialize();
   const int iLF = m_ic2LF[0], iFrm = m_LFs[iLF].m_T.m_iFrm;
@@ -1010,18 +1074,21 @@ Camera::Fix::Origin::ES LocalBundleAdjustor::ComputeErrorStatisticFixOrigin(cons
   return ES;
 }
 
-Camera::Fix::PositionZ::ES LocalBundleAdjustor::ComputeErrorStatisticFixPositionZ(const AlignedVector<Camera>
-                                                                                  &CsLF, const LA::ProductVector6f *xcs,
-                                                                                  const bool updateOnly) {
+Camera::Fix::PositionZ::ES
+LocalBundleAdjustor::ComputeErrorStatisticFixPositionZ(
+    const AlignedVector<Camera> &CsLF, const LA::ProductVector6f *xcs,
+    const bool updateOnly) {
   Camera::Fix::PositionZ::ES ES;
   ES.Initialize();
   float F;
-  const Camera::Fix::PositionZ z(BA_WEIGHT_FIX_POSITION_Z, BA_VARIANCE_FIX_POSITION_Z);
+  const Camera::Fix::PositionZ z(BA_WEIGHT_FIX_POSITION_Z,
+                                 BA_VARIANCE_FIX_POSITION_Z);
   const int Nc = static_cast<int>(m_LFs.size());
   for (int ic = 0; ic < Nc; ++ic) {
     const int iLF = m_ic2LF[ic];
     const float pz = CsLF[iLF].m_p.z();
-    if (!updateOnly || (m_ucmsLF[iLF] & LBA_FLAG_CAMERA_MOTION_UPDATE_POSITION)) {
+    if (!updateOnly ||
+        (m_ucmsLF[iLF] & LBA_FLAG_CAMERA_MOTION_UPDATE_POSITION)) {
       F = z.GetCost(pz, xcs[ic].v2());
     } else {
       F = m_AfpsLF[iLF].m_F;
@@ -1031,22 +1098,26 @@ Camera::Fix::PositionZ::ES LocalBundleAdjustor::ComputeErrorStatisticFixPosition
   return ES;
 }
 
-Camera::Fix::Motion::ES LocalBundleAdjustor::ComputeErrorStatisticFixMotion(const AlignedVector<Camera>
-                                                                            &CsLF, const LA::Vector9f *xms,
-                                                                            const bool updateOnly) {
+Camera::Fix::Motion::ES LocalBundleAdjustor::ComputeErrorStatisticFixMotion(
+    const AlignedVector<Camera> &CsLF, const LA::Vector9f *xms,
+    const bool updateOnly) {
   Camera::Fix::Motion::ES ES;
   ES.Initialize();
   LA::AlignedVector3f e;
   float F;
   const Camera::Fix::Zero zv[2] = {
-        Camera::Fix::Zero(BA_WEIGHT_FIX_MOTION, BA_VARIANCE_FIX_VELOCITY),
-        Camera::Fix::Zero(BA_WEIGHT_FIX_MOTION, BA_VARIANCE_FIX_VELOCITY_INITIAL)};
+      Camera::Fix::Zero(BA_WEIGHT_FIX_MOTION, BA_VARIANCE_FIX_VELOCITY),
+      Camera::Fix::Zero(BA_WEIGHT_FIX_MOTION,
+                        BA_VARIANCE_FIX_VELOCITY_INITIAL)};
   const Camera::Fix::Zero zba[2] = {
-        Camera::Fix::Zero(BA_WEIGHT_FIX_MOTION, BA_VARIANCE_FIX_BIAS_ACCELERATION),
-        Camera::Fix::Zero(BA_WEIGHT_FIX_MOTION, BA_VARIANCE_FIX_BIAS_ACCELERATION_INITIAL)};
+      Camera::Fix::Zero(BA_WEIGHT_FIX_MOTION,
+                        BA_VARIANCE_FIX_BIAS_ACCELERATION),
+      Camera::Fix::Zero(BA_WEIGHT_FIX_MOTION,
+                        BA_VARIANCE_FIX_BIAS_ACCELERATION_INITIAL)};
   const Camera::Fix::Zero zbw[2] = {
-        Camera::Fix::Zero(BA_WEIGHT_FIX_MOTION, BA_VARIANCE_FIX_BIAS_GYROSCOPE),
-        Camera::Fix::Zero(BA_WEIGHT_FIX_MOTION, BA_VARIANCE_FIX_BIAS_GYROSCOPE_INITIAL)};
+      Camera::Fix::Zero(BA_WEIGHT_FIX_MOTION, BA_VARIANCE_FIX_BIAS_GYROSCOPE),
+      Camera::Fix::Zero(BA_WEIGHT_FIX_MOTION,
+                        BA_VARIANCE_FIX_BIAS_GYROSCOPE_INITIAL)};
   const int Nc = static_cast<int>(m_LFs.size());
   for (int ic = 0; ic < Nc; ++ic) {
     const int iLF = m_ic2LF[ic];
@@ -1063,7 +1134,8 @@ Camera::Fix::Motion::ES LocalBundleAdjustor::ComputeErrorStatisticFixMotion(cons
       F = A.m_Av.F();
     }
     ES.AccumulateVelocity(e, F, iFrm);
-    if (!updateOnly || (ucm & LBA_FLAG_CAMERA_MOTION_UPDATE_BIAS_ACCELERATION)) {
+    if (!updateOnly ||
+        (ucm & LBA_FLAG_CAMERA_MOTION_UPDATE_BIAS_ACCELERATION)) {
       F = zba[i].GetCost(C.m_ba, &xm.v3(), e);
     } else {
       e = C.m_ba;
@@ -1081,21 +1153,21 @@ Camera::Fix::Motion::ES LocalBundleAdjustor::ComputeErrorStatisticFixMotion(cons
   return ES;
 }
 
-void LocalBundleAdjustor::ComputePriorStatisticPose(const CameraPrior::Pose &Zp,
-                                                    const AlignedVector<Rigid3D> &CsKF,
-                                                    const LA::AlignedMatrixXf &S,
-                                                    const LA::AlignedVectorXf &x,
-                                                    PS::Pose *PS) {
+void LocalBundleAdjustor::ComputePriorStatisticPose(
+    const CameraPrior::Pose &Zp, const AlignedVector<Rigid3D> &CsKF,
+    const LA::AlignedMatrixXf &S, const LA::AlignedVectorXf &x, PS::Pose *PS) {
   LA::Vector3f s2;
   const Rigid3D &Cr = CsKF[Zp.m_iKFr];
-  const LA::AlignedVector3f eg = Zp.GetReferenceRotationError(Cr, x.Data(), BA_ANGLE_EPSILON);
+  const LA::AlignedVector3f eg =
+      Zp.GetReferenceRotationError(Cr, x.Data(), BA_ANGLE_EPSILON);
   PS->m_eg = sqrtf(eg.SquaredLength()) * UT_FACTOR_RAD_TO_DEG;
   PS->m_sg = sqrtf(std::max(S[0][0], S[1][1])) * UT_FACTOR_RAD_TO_DEG;
   const int Nk = static_cast<int>(Zp.m_iKFs.size());
   for (int i = 0, ip = 2; i < Nk; ++i) {
     const int iKF = Zp.m_iKFs[i];
     const Rigid3D &Ci = iKF == INT_MAX ? CsKF.Back() : CsKF[iKF];
-    const LA::AlignedVector3f epi = Zp.GetPositionError(Cr, Ci, i, x.Data() + ip);
+    const LA::AlignedVector3f epi =
+        Zp.GetPositionError(Cr, Ci, i, x.Data() + ip);
     const float _epi = sqrtf(epi.SquaredLength());
     if (_epi > PS->m_ep) {
       PS->m_ep = _epi;
@@ -1103,8 +1175,8 @@ void LocalBundleAdjustor::ComputePriorStatisticPose(const CameraPrior::Pose &Zp,
       PS->m_sp = sqrtf(s2.Maximal());
     }
     ip += 3;
-    const LA::AlignedVector3f eri = Zp.GetRotationError(Cr, Ci, i, x.Data() + ip,
-                                                        BA_ANGLE_EPSILON);
+    const LA::AlignedVector3f eri =
+        Zp.GetRotationError(Cr, Ci, i, x.Data() + ip, BA_ANGLE_EPSILON);
     const float _eri = sqrtf(eri.SquaredLength()) * UT_FACTOR_RAD_TO_DEG;
     if (_eri > PS->m_er) {
       PS->m_er = _eri;
@@ -1115,11 +1187,10 @@ void LocalBundleAdjustor::ComputePriorStatisticPose(const CameraPrior::Pose &Zp,
   }
 }
 
-void LocalBundleAdjustor::ComputePriorStatisticMotion(const CameraPrior::Motion &Zp,
-                                                      const Camera &C,
-                                                      const LA::AlignedMatrixXf &S,
-                                                      const LA::AlignedVectorXf &x,
-                                                      PS::Motion *PS) {
+void LocalBundleAdjustor::ComputePriorStatisticMotion(
+    const CameraPrior::Motion &Zp, const Camera &C,
+    const LA::AlignedMatrixXf &S, const LA::AlignedVectorXf &x,
+    PS::Motion *PS) {
   LA::Vector3f s2;
   int ip = x.Size() - 9;
   const LA::AlignedVector3f ev = Zp.GetVelocityError(C, x.Data() + ip);
@@ -1138,25 +1209,24 @@ void LocalBundleAdjustor::ComputePriorStatisticMotion(const CameraPrior::Motion 
   PS->m_sbw = sqrtf(s2.Maximal()) * UT_FACTOR_RAD_TO_DEG;
 }
 
-void LocalBundleAdjustor::ComputePriorStatisticJoint(const CameraPrior::Joint &Zp,
-                                                     const AlignedVector<Rigid3D> &CsKF,
-                                                     const Camera &C,
-                                                     const LA::AlignedMatrixXf &S,
-                                                     const LA::AlignedVectorXf &x,
-                                                     PS::Joint *PS) {
+void LocalBundleAdjustor::ComputePriorStatisticJoint(
+    const CameraPrior::Joint &Zp, const AlignedVector<Rigid3D> &CsKF,
+    const Camera &C, const LA::AlignedMatrixXf &S, const LA::AlignedVectorXf &x,
+    PS::Joint *PS) {
   ComputePriorStatisticPose(Zp, CsKF, S, x, PS);
   ComputePriorStatisticMotion(Zp, C, S, x, PS);
 }
 
-LocalBundleAdjustor::MS
-LocalBundleAdjustor::ComputeMarginalizationStatistic(const LA::AlignedVectorXf *x) {
+LocalBundleAdjustor::MS LocalBundleAdjustor::ComputeMarginalizationStatistic(
+    const LA::AlignedVectorXf *x) {
   MS _MS;
   const int Npg = 2, Npc = 6, Npm = 9;
   const int Npgm = Npg + (m_MH.m_FdKF.Valid() ? Npm : 0), Npcm = Npc + Npm;
 #ifdef CFG_DEBUG
   UT_ASSERT(!m_Zp.m_iKFs.empty() && m_Zp.m_iKFs.back() == INT_MAX);
 #endif
-  const int Nk = static_cast<int>(m_Zp.m_iKFs.size()) - 1, Npk = Nk * Npc, Npgmk = Npgm + Npk;
+  const int Nk = static_cast<int>(m_Zp.m_iKFs.size()) - 1, Npk = Nk * Npc,
+            Npgmk = Npgm + Npk;
   const int Nc = static_cast<int>(m_MH.m_Fxs.size());
   UT_ASSERT(m_MH.m_b.Size() == Npgmk + Nc * Npcm);
 #ifdef CFG_DEBUG
@@ -1165,20 +1235,20 @@ LocalBundleAdjustor::ComputeMarginalizationStatistic(const LA::AlignedVectorXf *
   }
 #endif
   int ip;
-  const LA::Vector2f *xg = (LA::Vector2f *) (x ? x->Data() : NULL);
+  const LA::Vector2f *xg = (LA::Vector2f *)(x ? x->Data() : NULL);
   if (x) {
     _MS.m_Fp = m_MH.m_Fp.GetCost(xg);
     ip = Npg;
     if (m_MH.m_FdKF.Valid()) {
-      _MS.m_Fp += m_MH.m_Fp.GetCost((LA::Vector9f *) (x->Data() + ip));
+      _MS.m_Fp += m_MH.m_Fp.GetCost((LA::Vector9f *)(x->Data() + ip));
       ip += Npm;
     }
     for (int ik = 0; ik < Nk; ++ik, ip += Npc) {
-      _MS.m_Fp += m_MH.m_Fp.GetCost((LA::Vector6f *) (x->Data() + ip));
+      _MS.m_Fp += m_MH.m_Fp.GetCost((LA::Vector6f *)(x->Data() + ip));
     }
     for (int ic = 0; ic < Nc; ++ic, ip += Npcm) {
-      const LA::Vector9f *xm = (LA::Vector9f *) (x->Data() + ip + Npc);
-      _MS.m_Fp += m_MH.m_Fp.GetCost((LA::Vector6f *) (x->Data() + ip), xm);
+      const LA::Vector9f *xm = (LA::Vector9f *)(x->Data() + ip + Npc);
+      _MS.m_Fp += m_MH.m_Fp.GetCost((LA::Vector6f *)(x->Data() + ip), xm);
       if (ic == 0 && m_MH.m_FdKF.Invalid()) {
         _MS.m_Fp += m_MH.m_Fp.GetCost(xm);
       }
@@ -1202,12 +1272,15 @@ LocalBundleAdjustor::ComputeMarginalizationStatistic(const LA::AlignedVectorXf *
       ip += Npm;
     }
     ip += Npk;
-    xc[1].Set(x->Data() + ip);   ip += Npc;
-    xm[1].Set(x->Data() + ip);   ip += Npm;
+    xc[1].Set(x->Data() + ip);
+    ip += Npc;
+    xm[1].Set(x->Data() + ip);
+    ip += Npm;
   }
   if (m_MH.m_FdKF.Valid()) {
     if (x) {
-      _MS.m_Fd = m_MH.m_FdKF.GetCost(BA_WEIGHT_IMU, *xg, xm[0], xc[1], xm[1], &ed);
+      _MS.m_Fd =
+          m_MH.m_FdKF.GetCost(BA_WEIGHT_IMU, *xg, xm[0], xc[1], xm[1], &ed);
     } else {
       _MS.m_Fd = m_MH.m_FdKF.GetCost(BA_WEIGHT_IMU, &ed);
     }
@@ -1227,9 +1300,12 @@ LocalBundleAdjustor::ComputeMarginalizationStatistic(const LA::AlignedVectorXf *
   for (int i = 0, r1 = 0, r2 = 1; i < NdLF; ++i) {
     if (x) {
       UT_SWAP(r1, r2);
-      xc[r2].Set(x->Data() + ip);  ip += Npc;
-      xm[r2].Set(x->Data() + ip);  ip += Npm;
-      _MS.m_Fd += m_MH.m_FdsLF[i].GetCost(BA_WEIGHT_IMU, *xg, xc[r1], xm[r1], xc[r2], xm[r2], &ed);
+      xc[r2].Set(x->Data() + ip);
+      ip += Npc;
+      xm[r2].Set(x->Data() + ip);
+      ip += Npm;
+      _MS.m_Fd += m_MH.m_FdsLF[i].GetCost(BA_WEIGHT_IMU, *xg, xc[r1], xm[r1],
+                                          xc[r2], xm[r2], &ed);
     } else {
       _MS.m_Fd += m_MH.m_FdsLF[i].GetCost(BA_WEIGHT_IMU, &ed);
     }
@@ -1237,7 +1313,8 @@ LocalBundleAdjustor::ComputeMarginalizationStatistic(const LA::AlignedVectorXf *
       eds2[i] += sqrtf(eds1[i].SquaredLength());
     }
   }
-  const float s = UT::Inverse(static_cast<float>((m_MH.m_FdKF.Valid() ? 1 : 0) + NdLF));
+  const float s =
+      UT::Inverse(static_cast<float>((m_MH.m_FdKF.Valid() ? 1 : 0) + NdLF));
   for (int i = 0; i < 5; ++i) {
     eds2[i] *= s;
   }
@@ -1319,30 +1396,34 @@ LocalBundleAdjustor::ComputeMarginalizationStatistic(const LA::AlignedVectorXf *
   return _MS;
 }
 
-void LocalBundleAdjustor::AssertConsistency(const bool chkFlag, const bool chkSchur) {
-  //m_solver->m_internal->AssertConsistency();
+void LocalBundleAdjustor::AssertConsistency(const bool chkFlag,
+                                            const bool chkSchur) {
+  // m_solver->m_internal->AssertConsistency();
 
-  //const float epsAbs = 1.0e-3f;
+  // const float epsAbs = 1.0e-3f;
   const float epsAbs = 1.0e-2f;
   const float epsRel = 1.0e-3f;
-  //const float epsRel = 1.0e-2f;
-  //const float epsRel = 5.0e-2f;
+  // const float epsRel = 1.0e-2f;
+  // const float epsRel = 5.0e-2f;
 
   const FRM::Tag &T = m_LFs[m_ic2LF.back()].m_T;
   const int iFrm = T.m_iFrm;
   const std::string str = UT::String("LBA [%d]", iFrm);
-  const int nLFs = static_cast<int>(m_LFs.size()), nKFs = static_cast<int>(m_KFs.size());
+  const int nLFs = static_cast<int>(m_LFs.size()),
+            nKFs = static_cast<int>(m_KFs.size());
   const int STL = std::min(nLFs, LBA_MAX_SLIDING_TRACK_LENGTH);
   const int Nd = static_cast<int>(m_ds.size());
   UT_ASSERT(static_cast<int>(m_ic2LF.size()) == nLFs && m_CsLF.Size() == nLFs);
-  UT_ASSERT(static_cast<int>(m_ucsLF.size()) == nLFs && static_cast<int>(m_ucmsLF.size()) == nLFs);
+  UT_ASSERT(static_cast<int>(m_ucsLF.size()) == nLFs &&
+            static_cast<int>(m_ucmsLF.size()) == nLFs);
 #ifdef CFG_INCREMENTAL_PCG
   UT_ASSERT(m_xcsLF.Size() == nLFs && m_xmsLF.Size() == nLFs);
 #endif
   UT_ASSERT(m_DsLF.Size() == nLFs && m_AdsLF.Size() == nLFs);
   UT_ASSERT(m_AfpsLF.Size() == nLFs && m_AfmsLF.Size() == nLFs);
   UT_ASSERT(static_cast<int>(m_uds.size()) == Nd);
-  UT_ASSERT(m_SAcusLF.Size() == nLFs && m_SMcusLF.Size() == nLFs && m_SAcmsLF.Size() == nLFs);
+  UT_ASSERT(m_SAcusLF.Size() == nLFs && m_SMcusLF.Size() == nLFs &&
+            m_SAcmsLF.Size() == nLFs);
   UT_ASSERT(static_cast<int>(m_iFrmsKF.size()) == nKFs);
   UT_ASSERT(m_CsKF.Size() == nKFs && static_cast<int>(m_ucsKF.size()) == nKFs);
 #ifdef CFG_HANDLE_SCALE_JUMP
@@ -1350,13 +1431,14 @@ void LocalBundleAdjustor::AssertConsistency(const bool chkFlag, const bool chkSc
 #endif
 #ifdef CFG_GROUND_TRUTH
   if (m_CsGT) {
-    UT_ASSERT(m_CsLFGT.Size() == nLFs && m_CsKFGT.Size() == nKFs && m_DsLFGT.Size() == nLFs);
+    UT_ASSERT(m_CsLFGT.Size() == nLFs && m_CsKFGT.Size() == nKFs &&
+              m_DsLFGT.Size() == nLFs);
   } else {
     UT_ASSERT(m_CsLFGT.Empty() && m_CsKFGT.Empty() && m_DsLFGT.Empty());
   }
-  //if (m_dsGT) {
-  //  UT_ASSERT(m_dsGT->size() == Nd);
-  //}
+// if (m_dsGT) {
+//  UT_ASSERT(m_dsGT->size() == Nd);
+//}
 #endif
   for (int ic = 0; ic < nLFs; ++ic) {
     m_CsLF[m_ic2LF[ic]].AssertConsistency(1, str + UT::String(" Cc[%d]", ic));
@@ -1368,14 +1450,16 @@ void LocalBundleAdjustor::AssertConsistency(const bool chkFlag, const bool chkSc
       UT_ASSERT(m_Zp.m_iKFr != LF.m_iKFNearest);
     }
   }
-  //m_ZpKF.AssertConsistency();
+  // m_ZpKF.AssertConsistency();
 
   if (!m_xsGN.Empty()) {
-    ConvertCameraUpdates((float *) m_xsGN.Data(), (LA::AlignedVectorXf *) &m_xp2s, (LA::AlignedVectorXf *) &m_xr2s);
+    ConvertCameraUpdates((float *)m_xsGN.Data(), (LA::AlignedVectorXf *)&m_xp2s,
+                         (LA::AlignedVectorXf *)&m_xr2s);
   }
   const float eps = FLT_EPSILON;
   const float epsd = UT::Inverse(BA_VARIANCE_MAX_DEPTH, BA_WEIGHT_FEATURE, eps);
-  const float epsdST = UT::Inverse(BA_VARIANCE_MAX_DEPTH_SLIDING_TRACK, BA_WEIGHT_FEATURE, eps);
+  const float epsdST =
+      UT::Inverse(BA_VARIANCE_MAX_DEPTH_SLIDING_TRACK, BA_WEIGHT_FEATURE, eps);
   for (int ic = 0; ic < nLFs; ++ic) {
     const int iLF = m_ic2LF[ic];
     const LocalFrame &LF = m_LFs[iLF];
@@ -1395,7 +1479,8 @@ void LocalBundleAdjustor::AssertConsistency(const bool chkFlag, const bool chkSc
     LF.AssertConsistency();
     if (!m_xsGN.Empty()) {
       const ubyte dc = m_ucsLF[iLF] & LBA_FLAG_FRAME_UPDATE_DELTA;
-      if (m_xr2s[ic] > BA_BACK_SUBSTITUTE_ROTATION || m_xp2s[ic] > BA_BACK_SUBSTITUTE_POSITION) {
+      if (m_xr2s[ic] > BA_BACK_SUBSTITUTE_ROTATION ||
+          m_xp2s[ic] > BA_BACK_SUBSTITUTE_POSITION) {
         UT_ASSERT(dc != 0);
       } else {
         UT_ASSERT(dc == 0);
@@ -1431,7 +1516,7 @@ void LocalBundleAdjustor::AssertConsistency(const bool chkFlag, const bool chkSc
           FRM::Frame::HasFeatureMeasurementMatch(m_KFs[iKF], LF)) {
         UT_ASSERT(m_marksTmp1[iKF] != 0);
       } else {
-        //UT_ASSERT(m_marksTmp1[iKF] == 0);
+        // UT_ASSERT(m_marksTmp1[iKF] == 0);
       }
     }
   }
@@ -1440,7 +1525,8 @@ void LocalBundleAdjustor::AssertConsistency(const bool chkFlag, const bool chkSc
   if (chkFlag) {
     for (int iLF = 0; iLF < nLFs; ++iLF) {
       const ubyte uc = m_ucsLF[iLF], ucm = m_ucmsLF[iLF];
-      UT_ASSERT(!(uc & LBA_FLAG_FRAME_PUSH_TRACK) && !(uc & LBA_FLAG_FRAME_POP_TRACK) &&
+      UT_ASSERT(!(uc & LBA_FLAG_FRAME_PUSH_TRACK) &&
+                !(uc & LBA_FLAG_FRAME_POP_TRACK) &&
                 !(uc & LBA_FLAG_FRAME_UPDATE_DEPTH) &&
                 !(uc & LBA_FLAG_FRAME_UPDATE_TRACK_INFORMATION) &&
                 !(uc & LBA_FLAG_FRAME_UPDATE_TRACK_INFORMATION_KF) &&
@@ -1461,10 +1547,13 @@ void LocalBundleAdjustor::AssertConsistency(const bool chkFlag, const bool chkSc
           UT_ASSERT((uds[ix] & LBA_FLAG_TRACK_INVALID) == 0);
           UT_ASSERT((LF.m_ms[iz] & LBA_FLAG_MARGINALIZATION_UPDATE) == 0);
           const LocalFrame::SlidingTrack &ST = LF.m_STs[iz];
-          const int iST0 = KF.m_ix2ST[ix], iST1 = iST0 + ST.m_ist1, iST2 = iST0 + ST.m_ist2;
-          const bool nonZero1 = UT::VectorExistFlagNot<ubyte>(KF.m_usST.data() + iST1, iST2 - iST1,
-                                                              LBA_FLAG_TRACK_UPDATE_INFORMATION_ZERO);
-          const bool nonZero2 = (LF.m_ms[iz] & LBA_FLAG_MARGINALIZATION_NON_ZERO) != 0;
+          const int iST0 = KF.m_ix2ST[ix], iST1 = iST0 + ST.m_ist1,
+                    iST2 = iST0 + ST.m_ist2;
+          const bool nonZero1 = UT::VectorExistFlagNot<ubyte>(
+              KF.m_usST.data() + iST1, iST2 - iST1,
+              LBA_FLAG_TRACK_UPDATE_INFORMATION_ZERO);
+          const bool nonZero2 =
+              (LF.m_ms[iz] & LBA_FLAG_MARGINALIZATION_NON_ZERO) != 0;
           UT_ASSERT(nonZero1 == nonZero2);
         }
       }
@@ -1477,13 +1566,17 @@ void LocalBundleAdjustor::AssertConsistency(const bool chkFlag, const bool chkSc
         for (int i = i1; i < i2; ++i) {
           UT_ASSERT((LF.m_Zm.m_ms[i] & LBA_FLAG_MARGINALIZATION_UPDATE) == 0);
           const FTR::Measurement::Match &izm = LF.m_Zm.m_izms[i];
-          const LocalFrame::SlidingTrack &ST1 = LF.m_STs[izm.m_iz1], &ST2 = _LF.m_STs[izm.m_iz2];
-          UT_ASSERT(ST1.m_ist1 <= ST2.m_ist1 && ST1.m_ist2 <= ST2.m_ist2 && ST2.m_ist1 < ST1.m_ist2);
+          const LocalFrame::SlidingTrack &ST1 = LF.m_STs[izm.m_iz1],
+                                         &ST2 = _LF.m_STs[izm.m_iz2];
+          UT_ASSERT(ST1.m_ist1 <= ST2.m_ist1 && ST1.m_ist2 <= ST2.m_ist2 &&
+                    ST2.m_ist1 < ST1.m_ist2);
           const int ix = LF.m_zs[izm.m_iz1].m_ix, iST0 = KF.m_ix2ST[ix];
           const int iST1 = iST0 + ST2.m_ist1, iST2 = iST0 + ST1.m_ist2;
-          const bool nonZero1 = UT::VectorExistFlagNot<ubyte>(KF.m_usST.data() + iST1, iST2 - iST1,
-                                                              LBA_FLAG_TRACK_UPDATE_INFORMATION_ZERO);
-          const bool nonZero2 = (LF.m_Zm.m_ms[i] & LBA_FLAG_MARGINALIZATION_NON_ZERO) != 0;
+          const bool nonZero1 = UT::VectorExistFlagNot<ubyte>(
+              KF.m_usST.data() + iST1, iST2 - iST1,
+              LBA_FLAG_TRACK_UPDATE_INFORMATION_ZERO);
+          const bool nonZero2 =
+              (LF.m_Zm.m_ms[i] & LBA_FLAG_MARGINALIZATION_NON_ZERO) != 0;
           UT_ASSERT(nonZero1 == nonZero2);
         }
       }
@@ -1512,9 +1605,9 @@ void LocalBundleAdjustor::AssertConsistency(const bool chkFlag, const bool chkSc
 
   for (int iKF = 0; iKF < nKFs; ++iKF) {
     m_CsKF[iKF].AssertOrthogonal(1, str + UT::String(" Rk[%d]", iKF));
-    //const int id = m_iKF2d[iKF];
-    //const float u = AverageDepths(m_ds.data() + id, m_iKF2d[iKF + 1] - id);
-    //UT::AssertEqual(u, m_dsKF[iKF], 1, str + UT::String(" dk[%d]", iKF));
+    // const int id = m_iKF2d[iKF];
+    // const float u = AverageDepths(m_ds.data() + id, m_iKF2d[iKF + 1] - id);
+    // UT::AssertEqual(u, m_dsKF[iKF], 1, str + UT::String(" dk[%d]", iKF));
   }
   for (int iKF = 0; iKF < nKFs; ++iKF) {
     const KeyFrame &KF = m_KFs[iKF];
@@ -1539,7 +1632,7 @@ void LocalBundleAdjustor::AssertConsistency(const bool chkFlag, const bool chkSc
           FRM::Frame::HasFeatureMeasurementMatch(m_KFs[_iKF], KF)) {
         UT_ASSERT(m_marksTmp1[_iKF] != 0);
       } else {
-        //UT_ASSERT(m_marksTmp1[_iKF] == 0);
+        // UT_ASSERT(m_marksTmp1[_iKF] == 0);
       }
     }
     for (int _iKF = iKF + 1; _iKF < nKFs; ++_iKF) {
@@ -1547,7 +1640,7 @@ void LocalBundleAdjustor::AssertConsistency(const bool chkFlag, const bool chkSc
           FRM::Frame::HasFeatureMeasurementMatch(m_KFs[_iKF], KF)) {
         UT_ASSERT(m_marksTmp1[_iKF] != 0);
       } else {
-        //UT_ASSERT(m_marksTmp1[_iKF] == 0);
+        // UT_ASSERT(m_marksTmp1[_iKF] == 0);
       }
     }
   }
@@ -1557,7 +1650,8 @@ void LocalBundleAdjustor::AssertConsistency(const bool chkFlag, const bool chkSc
       const ubyte *uds = m_uds.data() + m_iKF2d[iKF];
       const KeyFrame &KF = m_KFs[iKF];
       const int Nx = static_cast<int>(KF.m_xs.size());
-      UT_ASSERT(!(uc & LBA_FLAG_FRAME_PUSH_TRACK) && !(uc & LBA_FLAG_FRAME_POP_TRACK) &&
+      UT_ASSERT(!(uc & LBA_FLAG_FRAME_PUSH_TRACK) &&
+                !(uc & LBA_FLAG_FRAME_POP_TRACK) &&
                 /*!(uc & LBA_FLAG_FRAME_UPDATE_TRACK_INFORMATION) &&
                 !(uc & LBA_FLAG_FRAME_UPDATE_TRACK_INFORMATION_KF) &&*/
                 !(uc & LBA_FLAG_FRAME_UPDATE_BACK_SUBSTITUTION));
@@ -1565,14 +1659,18 @@ void LocalBundleAdjustor::AssertConsistency(const bool chkFlag, const bool chkSc
                 UT::VectorExistFlag<ubyte>(uds, Nx, LBA_FLAG_TRACK_PUSH));
       UT_ASSERT(((uc & LBA_FLAG_FRAME_POP_TRACK) != 0) ==
                 UT::VectorExistFlag<ubyte>(uds, Nx, LBA_FLAG_TRACK_POP));
-      UT_ASSERT(((uc & LBA_FLAG_FRAME_UPDATE_DEPTH) != 0) ==
-                UT::VectorExistFlag<ubyte>(uds, Nx, LBA_FLAG_TRACK_UPDATE_DEPTH));
+      UT_ASSERT(
+          ((uc & LBA_FLAG_FRAME_UPDATE_DEPTH) != 0) ==
+          UT::VectorExistFlag<ubyte>(uds, Nx, LBA_FLAG_TRACK_UPDATE_DEPTH));
       UT_ASSERT(((uc & LBA_FLAG_FRAME_UPDATE_TRACK_INFORMATION) != 0) ==
-                UT::VectorExistFlag<ubyte>(uds, Nx, LBA_FLAG_TRACK_UPDATE_INFORMATION));
+                UT::VectorExistFlag<ubyte>(uds, Nx,
+                                           LBA_FLAG_TRACK_UPDATE_INFORMATION));
       UT_ASSERT(((uc & LBA_FLAG_FRAME_UPDATE_TRACK_INFORMATION_KF) != 0) ==
-                UT::VectorExistFlag<ubyte>(uds, Nx, LBA_FLAG_TRACK_UPDATE_INFORMATION_KF));
+                UT::VectorExistFlag<ubyte>(
+                    uds, Nx, LBA_FLAG_TRACK_UPDATE_INFORMATION_KF));
       UT_ASSERT(((uc & LBA_FLAG_FRAME_UPDATE_BACK_SUBSTITUTION) != 0) ==
-                UT::VectorExistFlag<ubyte>(uds, Nx, LBA_FLAG_TRACK_UPDATE_BACK_SUBSTITUTION));
+                UT::VectorExistFlag<ubyte>(
+                    uds, Nx, LBA_FLAG_TRACK_UPDATE_BACK_SUBSTITUTION));
       const int NZ = static_cast<int>(KF.m_Zs.size());
       for (int iZ = 0; iZ < NZ; ++iZ) {
         const FRM::Measurement &Z = KF.m_Zs[iZ];
@@ -1585,7 +1683,8 @@ void LocalBundleAdjustor::AssertConsistency(const bool chkFlag, const bool chkSc
         continue;
       }
       for (int ix = 0; ix < Nx; ++ix) {
-        const ubyte ud = uds[ix], zero = ud & LBA_FLAG_TRACK_UPDATE_INFORMATION_ZERO;
+        const ubyte ud = uds[ix],
+                    zero = ud & LBA_FLAG_TRACK_UPDATE_INFORMATION_ZERO;
         const float a = KF.m_Axs[ix].m_Sadd.m_a;
         if (a > epsd) {
           UT_ASSERT(zero == 0);
@@ -1596,13 +1695,16 @@ void LocalBundleAdjustor::AssertConsistency(const bool chkFlag, const bool chkSc
         }
         UT_ASSERT((KF.m_ms[ix] & LBA_FLAG_MARGINALIZATION_UPDATE) == 0);
         const int iST1 = KF.m_ix2ST[ix], iST2 = KF.m_ix2ST[ix + 1];
-        const bool nonZero1 = UT::VectorExistFlagNot<ubyte>(KF.m_usST.data() + iST1, iST2 - iST1,
-                                                            LBA_FLAG_TRACK_UPDATE_INFORMATION_ZERO);
-        const bool nonZero2 = (KF.m_ms[ix] & LBA_FLAG_MARGINALIZATION_NON_ZERO) != 0;
+        const bool nonZero1 = UT::VectorExistFlagNot<ubyte>(
+            KF.m_usST.data() + iST1, iST2 - iST1,
+            LBA_FLAG_TRACK_UPDATE_INFORMATION_ZERO);
+        const bool nonZero2 =
+            (KF.m_ms[ix] & LBA_FLAG_MARGINALIZATION_NON_ZERO) != 0;
         UT_ASSERT(nonZero1 == nonZero2);
         for (int iST = iST1; iST < iST2; ++iST) {
           const ubyte udST = KF.m_usST[iST];
-          UT_ASSERT(!(udST & LBA_FLAG_TRACK_PUSH) && !(udST & LBA_FLAG_TRACK_POP) &&
+          UT_ASSERT(!(udST & LBA_FLAG_TRACK_PUSH) &&
+                    !(udST & LBA_FLAG_TRACK_POP) &&
                     !(udST & LBA_FLAG_TRACK_UPDATE_DEPTH));
           UT_ASSERT(/*!(udST & LBA_FLAG_TRACK_UPDATE_INFORMATION) &&*/
                     !(udST & LBA_FLAG_TRACK_UPDATE_INFORMATION_KF));
@@ -1652,25 +1754,29 @@ void LocalBundleAdjustor::AssertConsistency(const bool chkFlag, const bool chkSc
     const float t1 = m_usKFLast.Front().t(), t2 = m_usKFLast.Back().t();
     UT_ASSERT(t1 >= m_KFs[nKFs - 2].m_T.m_t && t2 <= m_KFs[nKFs - 1].m_T.m_t);
   }
-  
+
   int SNd = 0;
   for (int iKF = 0; iKF < nKFs; ++iKF) {
     const KeyFrame &KF = m_KFs[iKF];
     UT_ASSERT(m_iKF2d[iKF] == SNd);
     SNd += int(KF.m_xs.size());
   }
-  UT_ASSERT(SNd == Nd && static_cast<int>(m_iKF2d.size()) == nKFs + 1 && m_iKF2d.back() == Nd);
+  UT_ASSERT(SNd == Nd && static_cast<int>(m_iKF2d.size()) == nKFs + 1 &&
+            m_iKF2d.back() == Nd);
 
   ////const float s2dMax = BA_VARIANCE_MAX_DEPTH == 0.0f ? FLT_MAX :
-  //const float s2dMax = BA_VARIANCE_MAX_DEPTH == 0.0f ? 0.0f :
-  //                     BA_VARIANCE_MAX_DEPTH + DEPTH_VARIANCE_EPSILON + FLT_EPSILON;
-  //for (int id = 0; id < Nd; ++id) {
+  // const float s2dMax = BA_VARIANCE_MAX_DEPTH == 0.0f ? 0.0f :
+  //                     BA_VARIANCE_MAX_DEPTH + DEPTH_VARIANCE_EPSILON +
+  //                     FLT_EPSILON;
+  // for (int id = 0; id < Nd; ++id) {
   //  UT_ASSERT(m_ds[id].s2() <= s2dMax);
   //}
 
-  const float add = UT::Inverse(BA_VARIANCE_REGULARIZATION_DEPTH, BA_WEIGHT_FEATURE);
+  const float add =
+      UT::Inverse(BA_VARIANCE_REGULARIZATION_DEPTH, BA_WEIGHT_FEATURE);
   m_work.Resize(Nd * sizeof(FTR::Factor::DD) / sizeof(float));
-  AlignedVector<FTR::Factor::DD> Sadds((FTR::Factor::DD *) m_work.Data(), Nd, false);
+  AlignedVector<FTR::Factor::DD> Sadds((FTR::Factor::DD *)m_work.Data(), Nd,
+                                       false);
   Sadds.MakeZero();
   for (int id = 0; id < Nd; ++id) {
     Sadds[id].m_a = add;
@@ -1692,15 +1798,16 @@ void LocalBundleAdjustor::AssertConsistency(const bool chkFlag, const bool chkSc
         _Sadds[ix] += KF.m_Apds[ix];
       }
       if (_Sadds[ix].AssertEqual(KF.m_Axps[ix].m_Sadd, 1,
-                                 str + UT::String(" iKF %d ix %d Axp", iKF, ix), epsAbs, epsRel)) {
+                                 str + UT::String(" iKF %d ix %d Axp", iKF, ix),
+                                 epsAbs, epsRel)) {
 #if !defined LBA_DEBUG_CORRECT_ERROR || LBA_DEBUG_CORRECT_ERROR <= 1
         continue;
 #endif
       }
 #if !defined LBA_DEBUG_CORRECT_ERROR && LBA_DEBUG_CORRECT_ERROR >= 1
-      *((FTR::Factor::DD *) &KF.m_Axps[ix].m_Sadd) = _Sadds[ix];
-      *((FTR::Factor::DD *) &KF.m_AxpsST[ix].m_Sadd) = KF.m_Axps[ix].m_Sadd *
-                                                       (1.0f / std::max(KF.m_Nsts[ix], 1));
+      *((FTR::Factor::DD *)&KF.m_Axps[ix].m_Sadd) = _Sadds[ix];
+      *((FTR::Factor::DD *)&KF.m_AxpsST[ix].m_Sadd) =
+          KF.m_Axps[ix].m_Sadd * (1.0f / std::max(KF.m_Nsts[ix], 1));
 #endif
     }
   }
@@ -1712,14 +1819,16 @@ void LocalBundleAdjustor::AssertConsistency(const bool chkFlag, const bool chkSc
     KeyFrame &KF = m_KFs[iKF];
     const int Nx = static_cast<int>(KF.m_xs.size());
     for (int ix = 0; ix < Nx; ++ix) {
-      if (_Sadds[ix].AssertEqual(KF.m_Axs[ix].m_Sadd, 1,
-                                 str + UT::String(" iKF %d ix %d Sadd", iKF, ix), epsAbs, epsRel)) {
+      if (_Sadds[ix].AssertEqual(
+              KF.m_Axs[ix].m_Sadd, 1,
+              str + UT::String(" iKF %d ix %d Sadd", iKF, ix), epsAbs,
+              epsRel)) {
 #if !defined LBA_DEBUG_CORRECT_ERROR || LBA_DEBUG_CORRECT_ERROR <= 1
         continue;
 #endif
       }
 #if !defined LBA_DEBUG_CORRECT_ERROR && LBA_DEBUG_CORRECT_ERROR >= 1
-      *((FTR::Factor::DD *) &KF.m_Axs[ix].m_Sadd) = _Sadds[ix];
+      *((FTR::Factor::DD *)&KF.m_Axs[ix].m_Sadd) = _Sadds[ix];
 #endif
     }
   }
@@ -1731,7 +1840,8 @@ void LocalBundleAdjustor::AssertConsistency(const bool chkFlag, const bool chkSc
   }
   const int NXST = iKF2XST.back();
   m_work.Resize(NXST * sizeof(FTR::Factor::DD) / sizeof(float));
-  AlignedVector<FTR::Factor::DD> SaddsST((FTR::Factor::DD *) m_work.Data(), NXST, false);
+  AlignedVector<FTR::Factor::DD> SaddsST((FTR::Factor::DD *)m_work.Data(), NXST,
+                                         false);
   SaddsST.MakeZero();
   for (int iST = 0; iST < NXST; ++iST) {
     SaddsST[iST].m_a = add;
@@ -1768,7 +1878,8 @@ void LocalBundleAdjustor::AssertConsistency(const bool chkFlag, const bool chkSc
         const FTR::Factor::DD &addST = LF.m_AzsST[iz].m_add;
         const LocalFrame::SlidingTrack &ST = LF.m_STs[iz];
         const int ix = LF.m_zs[iz].m_ix;
-        const int iST0 = KF.m_ix2ST[ix], iST1 = iST0 + ST.m_ist1, iST2 = iST0 + ST.m_ist2;
+        const int iST0 = KF.m_ix2ST[ix], iST1 = iST0 + ST.m_ist1,
+                  iST2 = iST0 + ST.m_ist2;
         for (int iST = iST1; iST < iST2; ++iST) {
 #if 0
 //#if 1
@@ -1791,14 +1902,16 @@ void LocalBundleAdjustor::AssertConsistency(const bool chkFlag, const bool chkSc
       const std::string _str = str + UT::String(" iKF %d ix %d", iKF, ix);
       const int iST1 = KF.m_ix2ST[ix], iST2 = KF.m_ix2ST[ix + 1];
       for (int iST = iST1; iST < iST2; ++iST) {
-        if (_SaddsST[iST].AssertEqual(KF.m_AxsST[iST].m_Sadd, 1, 
-                                      _str + UT::String(" ist %d SaddST", iST - iST1), epsAbs, epsRel)) {
+        if (_SaddsST[iST].AssertEqual(
+                KF.m_AxsST[iST].m_Sadd, 1,
+                _str + UT::String(" ist %d SaddST", iST - iST1), epsAbs,
+                epsRel)) {
 #if !defined LBA_DEBUG_CORRECT_ERROR || LBA_DEBUG_CORRECT_ERROR <= 1
           continue;
 #endif
         }
 #if !defined LBA_DEBUG_CORRECT_ERROR && LBA_DEBUG_CORRECT_ERROR >= 1
-        *((FTR::Factor::DD *) &KF.m_AxsST[iST].m_Sadd) = _SaddsST[iST];
+        *((FTR::Factor::DD *)&KF.m_AxsST[iST].m_Sadd) = _SaddsST[iST];
 #endif
       }
     }
@@ -1819,18 +1932,21 @@ void LocalBundleAdjustor::AssertConsistency(const bool chkFlag, const bool chkSc
       for (int iz = Z.m_iz1; iz < Z.m_iz2; ++iz) {
         const int ix = LF.m_zs[iz].m_ix;
         const FTR::Factor::DD &SmddST = LF.m_SmddsST[iz];
-        const std::string _str = str + UT::String(" iKF %d ix %d ic %d iz %d SmddST", iKF, ix, ic, iz);
+        const std::string _str =
+            str +
+            UT::String(" iKF %d ix %d ic %d iz %d SmddST", iKF, ix, ic, iz);
         if (LF.m_ms[iz] & LBA_FLAG_MARGINALIZATION_NON_ZERO) {
           FTR::Factor::DD _SmddST;
           _SmddST.MakeZero();
           const LocalFrame::SlidingTrack &ST = LF.m_STs[iz];
-          const int iST0 = KF.m_ix2ST[ix], iST1 = iST0 + ST.m_ist1, iST2 = iST0 + ST.m_ist2;
+          const int iST0 = KF.m_ix2ST[ix], iST1 = iST0 + ST.m_ist1,
+                    iST2 = iST0 + ST.m_ist2;
           for (int iST = iST1; iST < iST2; ++iST) {
             if (KF.m_usST[iST] & LBA_FLAG_TRACK_UPDATE_INFORMATION_ZERO) {
               continue;
             }
             if (chkSchur) {
-              const float a = KF.m_AxsST[iST].m_Sadd.m_a/* + add*/;
+              const float a = KF.m_AxsST[iST].m_Sadd.m_a /* + add*/;
               const float m = KF.m_MxsST[iST].m_mdd.m_a;
               UT_ASSERT(m == 1.0f / a);
             }
@@ -1853,7 +1969,7 @@ void LocalBundleAdjustor::AssertConsistency(const bool chkFlag, const bool chkSc
 #endif
           }
 #if !defined LBA_DEBUG_CORRECT_ERROR && LBA_DEBUG_CORRECT_ERROR >= 1
-          *((FTR::Factor::DD *) &SmddST) = _SmddST;
+          *((FTR::Factor::DD *)&SmddST) = _SmddST;
 #endif
         } else {
           SmddST.AssertZero(1, _str);
@@ -1873,12 +1989,15 @@ void LocalBundleAdjustor::AssertConsistency(const bool chkFlag, const bool chkSc
         const FTR::Measurement::Match &izm = LF.m_Zm.m_izms[i];
         const float &SmddST = LF.m_Zm.m_SmddsST[i];
         const int ix = LF.m_zs[izm.m_iz1].m_ix;
-        const std::string _str = str + UT::String(" iKF %d ix %d ic (%d, %d) iz (%d, %d) SmddST",
-                                                  iKF, ix, ic, _ic, izm.m_iz1, izm.m_iz2);
+        const std::string _str =
+            str + UT::String(" iKF %d ix %d ic (%d, %d) iz (%d, %d) SmddST",
+                             iKF, ix, ic, _ic, izm.m_iz1, izm.m_iz2);
         if (LF.m_Zm.m_ms[i] & LBA_FLAG_MARGINALIZATION_NON_ZERO) {
           float _SmddST = 0.0f;
-          const LocalFrame::SlidingTrack &ST1 = LF.m_STs[izm.m_iz1], &ST2 = _LF.m_STs[izm.m_iz2];
-          const int iST0 = KF.m_ix2ST[ix], iST1 = iST0 + ST2.m_ist1, iST2 = iST0 + ST1.m_ist2;
+          const LocalFrame::SlidingTrack &ST1 = LF.m_STs[izm.m_iz1],
+                                         &ST2 = _LF.m_STs[izm.m_iz2];
+          const int iST0 = KF.m_ix2ST[ix], iST1 = iST0 + ST2.m_ist1,
+                    iST2 = iST0 + ST1.m_ist2;
           for (int iST = iST1; iST < iST2; ++iST) {
             if (!(KF.m_usST[iST] & LBA_FLAG_TRACK_UPDATE_INFORMATION_ZERO)) {
               _SmddST = KF.m_MxsST[iST].m_mdd.m_a + _SmddST;
@@ -1890,7 +2009,7 @@ void LocalBundleAdjustor::AssertConsistency(const bool chkFlag, const bool chkSc
 #endif
           }
 #if !defined LBA_DEBUG_CORRECT_ERROR && LBA_DEBUG_CORRECT_ERROR >= 1
-          *((float *) &SmddST) = _SmddST;
+          *((float *)&SmddST) = _SmddST;
 #endif
         } else {
           UT::AssertZero(SmddST, 1, _str, -1.0f, -1.0f);
@@ -1927,10 +2046,12 @@ void LocalBundleAdjustor::AssertConsistency(const bool chkFlag, const bool chkSc
     if (LF.m_T.m_iFrm == 0) {
       SAczz += m_Ao.m_A;
     }
-    SAczz.AssertEqual(m_SAcusLF[iLF], 1, str + UT::String(" SAcc[%d][%d]", ic, ic),
-                      epsAbs, epsRel);
-    SMczz.AssertEqual(m_SMcusLF[iLF], 1, str + UT::String(" SMcc[%d][%d]", ic, ic),
-                      epsAbs, epsRel);
+    SAczz.AssertEqual(m_SAcusLF[iLF], 1,
+                      str + UT::String(" SAcc[%d][%d]", ic, ic), epsAbs,
+                      epsRel);
+    SMczz.AssertEqual(m_SMcusLF[iLF], 1,
+                      str + UT::String(" SMcc[%d][%d]", ic, ic), epsAbs,
+                      epsRel);
     const int Nk = int(LF.m_iLFsMatch.size());
     for (int ik = 0; ik < Nk; ++ik) {
       SMczm.MakeZero();
@@ -1941,24 +2062,26 @@ void LocalBundleAdjustor::AssertConsistency(const bool chkFlag, const bool chkSc
           SMczm += LF.m_Zm.m_Mczms[i];
         }
       }
-      SMczm.AssertEqual(LF.m_Zm.m_SMczms[ik], 1, str + UT::String(" SMcc[%d][%d]", ic, _ic),
-                        epsAbs, epsRel);
+      SMczm.AssertEqual(LF.m_Zm.m_SMczms[ik], 1,
+                        str + UT::String(" SMcc[%d][%d]", ic, _ic), epsAbs,
+                        epsRel);
     }
   }
 }
 
-void LocalBundleAdjustor::AccumulateFactorFeatureDD(const FRM::Frame *F,
-                                                    AlignedVector<FTR::Factor::DD> *Sadds,
-                                                    const bool localFrm) {
-  const LocalFrame *LF = localFrm ? (LocalFrame *) F : NULL;
-  const KeyFrame *KF = localFrm ? NULL : (KeyFrame *) F;
+void LocalBundleAdjustor::AccumulateFactorFeatureDD(
+    const FRM::Frame *F, AlignedVector<FTR::Factor::DD> *Sadds,
+    const bool localFrm) {
+  const LocalFrame *LF = localFrm ? (LocalFrame *)F : NULL;
+  const KeyFrame *KF = localFrm ? NULL : (KeyFrame *)F;
   const int NZ = int(F->m_Zs.size());
   for (int iZ = 0; iZ < NZ; ++iZ) {
     const FRM::Measurement &Z = F->m_Zs[iZ];
     FTR::Factor::DD *_Sadds = Sadds->Data() + m_iKF2d[Z.m_iKF];
     for (int iz = Z.m_iz1; iz < Z.m_iz2; ++iz) {
       const int ix = F->m_zs[iz].m_ix;
-      const FTR::Factor::DD &a = LF ? LF->m_Azs2[iz].m_add : KF->m_Azs[iz].m_add;
+      const FTR::Factor::DD &a =
+          LF ? LF->m_Azs2[iz].m_add : KF->m_Azs[iz].m_add;
       FTR::Factor::DD &Sa = _Sadds[ix];
 //#ifdef CFG_DEBUG
 #if 0

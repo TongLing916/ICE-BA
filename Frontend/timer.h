@@ -26,6 +26,7 @@ class ScopedMicrosecondTimer {
  public:
   explicit ScopedMicrosecondTimer(const std::string& text_id, int vlog_level);
   ~ScopedMicrosecondTimer();
+
  private:
   const std::string text_id_;
   const int vlog_level_;
@@ -35,10 +36,11 @@ class ScopedMicrosecondTimer {
 // Create a scoped timer.
 // The construction time and the deconstruction timestamp will be logged
 class ScopedLoopProfilingTimer {
-public:
+ public:
   explicit ScopedLoopProfilingTimer(const std::string& text_id, int vlog_level);
   ~ScopedLoopProfilingTimer();
-private:
+
+ private:
   const std::string text_id_;
   const int vlog_level_;
   std::chrono::time_point<std::chrono::steady_clock> t_start_;
@@ -51,6 +53,7 @@ class MicrosecondTimer {
   MicrosecondTimer();
   int end();
   ~MicrosecondTimer();
+
  private:
   bool has_ended_;
   const std::string text_id_;

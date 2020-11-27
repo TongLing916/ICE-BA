@@ -13,9 +13,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  *****************************************************************************/
-#include "stdafx.h"
 #include "Intrinsic.h"
 #include "Parameter.h"
+#include "stdafx.h"
 
 #ifdef CFG_DEBUG
 //#define FTR_UNDIST_VERBOSE  1
@@ -26,8 +26,10 @@
 void Intrinsic::UndistortionMap::Set(const Intrinsic &K) {
   const float sx = float(FTR_UNDIST_LUT_SIZE - 1) / K.w();
   const float sy = float(FTR_UNDIST_LUT_SIZE - 1) / K.h();
-  m_fx = sx * K.k().m_fx; m_fy = sy * K.k().m_fy;
-  m_cx = sx * K.k().m_cx; m_cy = sy * K.k().m_cy;
+  m_fx = sx * K.k().m_fx;
+  m_fy = sy * K.k().m_fy;
+  m_cx = sx * K.k().m_cx;
+  m_cy = sy * K.k().m_cy;
   const float fxI = 1.0f / m_fx, fyI = 1.0f / m_fy;
   m_xns.Resize(FTR_UNDIST_LUT_SIZE, FTR_UNDIST_LUT_SIZE);
 
@@ -40,7 +42,7 @@ void Intrinsic::UndistortionMap::Set(const Intrinsic &K) {
   int b[2][2] = {{x[0] - 1, x[0] + 1}, {x[1] - 1, x[1] + 1}};
   const int d[2] = {-1, 1};
   const int N = m_xns.Size();
-  for(int i = 0, ix = 0, id = 0; i < N; ++i) {
+  for (int i = 0, ix = 0, id = 0; i < N; ++i) {
     xd.x() = fxI * (x[0] - m_cx);
     xd.y() = fyI * (x[1] - m_cy);
     if (i == 0) {
@@ -85,8 +87,9 @@ void Intrinsic::UndistortionMap::Set(const Intrinsic &K) {
 #endif
 }
 
-bool Intrinsic::Undistort(const Point2D &xd, Point2D *xn, LA::AlignedMatrix2x2f *JT,
-                          UndistortionMap *UM, const bool initialized) const {
+bool Intrinsic::Undistort(const Point2D &xd, Point2D *xn,
+                          LA::AlignedMatrix2x2f *JT, UndistortionMap *UM,
+                          const bool initialized) const {
 #ifdef CFG_DEBUG
   if (FishEye()) {
     UT::Error("TODO (haomin)\n");
@@ -122,11 +125,12 @@ bool Intrinsic::Undistort(const Point2D &xd, Point2D *xn, LA::AlignedMatrix2x2f 
 #if defined FTR_UNDIST_VERBOSE && FTR_UNDIST_VERBOSE == 1
   const Point2D _xd = m_k.GetNormalizedToImage(xd);
   UT::Print("x = %03d %03d", int(_xd.x() + 0.5f), int(_xd.y() + 0.5f));
-  UT::Print("  e = %f", sqrtf((GetDistorted(*xn) - xd).SquaredLength() * m_k.m_fx * m_k.m_fy));
+  UT::Print("  e = %f", sqrtf((GetDistorted(*xn) - xd).SquaredLength() *
+                              m_k.m_fx * m_k.m_fy));
 #endif
   const float *ds = m_k.m_ds, *jds = m_k.m_jds;
   const float dx2Conv = FTR_UNDIST_CONVERGE * fxyI();
-  //const float dx2Conv = FTR_UNDIST_CONVERGE * m_k.m_fxyI;
+// const float dx2Conv = FTR_UNDIST_CONVERGE * m_k.m_fxyI;
 #ifdef FTR_UNDIST_DOG_LEG
   delta2 = FTR_UNDIST_DL_RADIUS_INITIAL;
 #endif
@@ -177,7 +181,7 @@ bool Intrinsic::Undistort(const Point2D &xd, Point2D *xn, LA::AlignedMatrix2x2f 
 #endif
     const LA::Vector2f b = J * e;
     if (!A.GetInverse(AI)) {
-      //return false;
+      // return false;
       break;
     }
     LA::AlignedMatrix2x2f::Ab(AI, b, dx);
@@ -201,7 +205,7 @@ bool Intrinsic::Undistort(const Point2D &xd, Point2D *xn, LA::AlignedMatrix2x2f 
           g.GetScaled(-xl, dxGD);
           dx2GD = xl * xl;
 #ifdef CFG_DEBUG
-         UT::AssertEqual(dxGD.SquaredLength(), dx2GD);
+          UT::AssertEqual(dxGD.SquaredLength(), dx2GD);
 #endif
         }
         if (dx2GN <= delta2) {
@@ -220,7 +224,8 @@ bool Intrinsic::Undistort(const Point2D &xd, Point2D *xn, LA::AlignedMatrix2x2f 
         } else {
           const LA::Vector2f v = dxGN - dxGD;
           const float d = dxGD.Dot(v), v2 = v.SquaredLength();
-          //beta = float((-d + sqrt(double(d) * d + (delta2 - dx2GD) * double(v2))) / v2);
+          // beta = float((-d + sqrt(double(d) * d + (delta2 - dx2GD) *
+          // double(v2))) / v2);
           beta = (-d + sqrtf(d * d + (delta2 - dx2GD) * v2)) / v2;
           dx = dxGD;
           dx += v * beta;
@@ -264,17 +269,20 @@ bool Intrinsic::Undistort(const Point2D &xd, Point2D *xn, LA::AlignedMatrix2x2f 
     const std::string str = UT::String("%02d  ", iIter);
     if (iIter == 0) {
       UT::PrintSeparator();
-      m_k.GetNormalizedToImage(xd).Print(std::string(str.size(), ' ') + "x = ", false, true);
+      m_k.GetNormalizedToImage(xd).Print(std::string(str.size(), ' ') + "x = ",
+                                         false, true);
     }
     GetNormalizedToImage(xnBkp).Print(str + "x = ", false, false);
-    UT::Print("  e = %f  dx = %f  beta = %f\n", sqrtf(F * fxy()), sqrtf(dx2 * fxy()), beta);
+    UT::Print("  e = %f  dx = %f  beta = %f\n", sqrtf(F * fxy()),
+              sqrtf(dx2 * fxy()), beta);
 #endif
   }
   if (JT) {
     J.GetTranspose(*JT);
   }
 #if defined FTR_UNDIST_VERBOSE && FTR_UNDIST_VERBOSE == 1
-  UT::Print(" --> %f\n", sqrtf((GetDistorted(*xn) - xd).SquaredLength() * m_k.m_fx * m_k.m_fy));
+  UT::Print(" --> %f\n", sqrtf((GetDistorted(*xn) - xd).SquaredLength() *
+                               m_k.m_fx * m_k.m_fy));
 #endif
   return true;
 }

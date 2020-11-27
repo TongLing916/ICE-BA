@@ -70,19 +70,19 @@ static inline void ConvertCamera(const Camera &Ci, CameraIMUState *Co) {
   Ci.m_bw.Get(Co->bw);
 }
 
-static inline void ConvertDepth(const Depth &di, ::Depth::InverseGaussian *_do) {
+static inline void ConvertDepth(const Depth &di,
+                                ::Depth::InverseGaussian *_do) {
   _do->u() = di.d;
   _do->s2() = di.s2;
 }
 
-static inline void ConvertDepth(const ::Depth::InverseGaussian &di, Depth *_do) {
+static inline void ConvertDepth(const ::Depth::InverseGaussian &di,
+                                Depth *_do) {
   _do->d = di.u();
   _do->s2 = di.s2();
 }
 
-Solver::Solver() {
-  m_internal = NULL;
-}
+Solver::Solver() { m_internal = NULL; }
 
 Solver::~Solver() {
 #ifdef CFG_DEBUG
@@ -90,9 +90,11 @@ Solver::~Solver() {
 #endif
 }
 
-void Solver::Create(const Calibration &K, const int serial, const int verbose, const int debug,
-                    const int history, const std::string param, const std::string dir,
-                    const std::vector<CameraIMUState> *XsGT, const std::vector<Depth> *dsGT) {
+void Solver::Create(const Calibration &K, const int serial, const int verbose,
+                    const int debug, const int history, const std::string param,
+                    const std::string dir,
+                    const std::vector<CameraIMUState> *XsGT,
+                    const std::vector<Depth> *dsGT) {
 #ifdef CFG_DEBUG
   UT_ASSERT(m_internal == NULL);
 #endif
@@ -100,7 +102,8 @@ void Solver::Create(const Calibration &K, const int serial, const int verbose, c
 #ifdef CFG_DEBUG
   UT_ASSERT(m_internal != NULL);
 #ifndef WIN32
-  UT_ASSERT((reinterpret_cast<std::uintptr_t>(m_internal) & (SIMD_ALIGN - 1)) == 0);
+  UT_ASSERT((reinterpret_cast<std::uintptr_t>(m_internal) & (SIMD_ALIGN - 1)) ==
+            0);
 #endif
 #endif
   Camera::Calibration &_K = m_internal->m_K;
@@ -149,12 +152,14 @@ void Solver::Create(const Calibration &K, const int serial, const int verbose, c
     DsGT.clear();
   }
   m_internal->m_dir = dir;
-  m_internal->m_LBA.Initialize(this, serial & 255, verbose & 255,
-                               static_cast<int>(static_cast<char>(debug & 255)),
-                               static_cast<int>(static_cast<char>(history & 255)));
-  m_internal->m_GBA.Initialize(this, (serial >> 8) & 255, (verbose >> 8) & 255,
-                               static_cast<int>(static_cast<char>((debug >> 8) & 255)),
-                               static_cast<int>(static_cast<char>((history >> 8) & 255)));
+  m_internal->m_LBA.Initialize(
+      this, serial & 255, verbose & 255,
+      static_cast<int>(static_cast<char>(debug & 255)),
+      static_cast<int>(static_cast<char>(history & 255)));
+  m_internal->m_GBA.Initialize(
+      this, (serial >> 8) & 255, (verbose >> 8) & 255,
+      static_cast<int>(static_cast<char>((debug >> 8) & 255)),
+      static_cast<int>(static_cast<char>((history >> 8) & 255)));
   m_internal->m_debug = static_cast<int>(static_cast<char>(debug & 255));
 }
 
@@ -195,21 +200,23 @@ void Solver::Stop() {
   m_internal->m_GBA.Stop();
 }
 
-void Solver::PushCurrentFrame(const CurrentFrame &CF, const KeyFrame *KF, const bool serial) {
+void Solver::PushCurrentFrame(const CurrentFrame &CF, const KeyFrame *KF,
+                              const bool serial) {
 //#ifdef CFG_DEBUG
 #if 0
   if (KF && KF->iFrm == 0 && CF.iFrm != 0) {
     KF = NULL;
   }
 #endif
-  //UT::Print("[%d]\n", CF.iFrm);
+  // UT::Print("[%d]\n", CF.iFrm);
   if (KF) {
-    //UT::Print("[%d]\n", KF->iFrm);
-    //UT::Print("%f\n", KF->C.R[0][0]);
+    // UT::Print("[%d]\n", KF->iFrm);
+    // UT::Print("%f\n", KF->C.R[0][0]);
     if (KF->iFrm == CF.iFrm) {
       m_internal->PushCurrentFrame(CF);
       m_internal->PushKeyFrame(*KF, &m_internal->m_ILF.m_C);
-      m_internal->m_LM.IBA_PushLocalFrame(LocalMap::CameraLF(m_internal->m_ILF.m_C, CF.iFrm));
+      m_internal->m_LM.IBA_PushLocalFrame(
+          LocalMap::CameraLF(m_internal->m_ILF.m_C, CF.iFrm));
       m_internal->m_LM.IBA_PushKeyFrame(m_internal->m_IKF);
       m_internal->m_LBA.PushLocalFrame(m_internal->m_ILF);
       m_internal->m_LBA.PushKeyFrame(m_internal->m_IKF, serial);
@@ -217,13 +224,15 @@ void Solver::PushCurrentFrame(const CurrentFrame &CF, const KeyFrame *KF, const 
       m_internal->PushKeyFrame(*KF);
       m_internal->PushCurrentFrame(CF);
       m_internal->m_LM.IBA_PushKeyFrame(m_internal->m_IKF);
-      m_internal->m_LM.IBA_PushLocalFrame(LocalMap::CameraLF(m_internal->m_ILF.m_C, CF.iFrm));
+      m_internal->m_LM.IBA_PushLocalFrame(
+          LocalMap::CameraLF(m_internal->m_ILF.m_C, CF.iFrm));
       m_internal->m_LBA.PushKeyFrame(m_internal->m_IKF, serial);
       m_internal->m_LBA.PushLocalFrame(m_internal->m_ILF);
     }
   } else {
     m_internal->PushCurrentFrame(CF);
-    m_internal->m_LM.IBA_PushLocalFrame(LocalMap::CameraLF(m_internal->m_ILF.m_C, CF.iFrm));
+    m_internal->m_LM.IBA_PushLocalFrame(
+        LocalMap::CameraLF(m_internal->m_ILF.m_C, CF.iFrm));
     m_internal->m_LBA.PushLocalFrame(m_internal->m_ILF);
   }
   m_internal->m_LBA.WakeUp(serial);
@@ -250,13 +259,13 @@ bool Solver::PushRelativeConstraint(const RelativeConstraint &Z) {
   UT_ASSERT(Z.iFrm1 < Z.iFrm2);
 #endif
   const std::vector<LocalMap::CameraKF> &CsKF = m_internal->m_CsKF;
-  const std::vector<LocalMap::CameraKF>::const_iterator i1 = std::lower_bound(CsKF.begin(),
-                                                                              CsKF.end(), Z.iFrm1);
+  const std::vector<LocalMap::CameraKF>::const_iterator i1 =
+      std::lower_bound(CsKF.begin(), CsKF.end(), Z.iFrm1);
   if (i1 == CsKF.end() || i1->m_iFrm != Z.iFrm1) {
     return false;
   }
-  const std::vector<LocalMap::CameraKF>::const_iterator i2 = std::lower_bound(i1, CsKF.end(),
-                                                                              Z.iFrm2);
+  const std::vector<LocalMap::CameraKF>::const_iterator i2 =
+      std::lower_bound(i1, CsKF.end(), Z.iFrm2);
   if (i2 == CsKF.end() || i2->m_iFrm != Z.iFrm2) {
     return false;
   }
@@ -274,21 +283,21 @@ bool Solver::PushRelativeConstraint(const RelativeConstraint &Z) {
     return false;
   }
   //////////////////////////////////////////////////////////////////////////
-  //const int verboseBkp = m_internal->m_GBA.m_verbose;
-  //m_internal->m_GBA.m_verbose = 2;
+  // const int verboseBkp = m_internal->m_GBA.m_verbose;
+  // m_internal->m_GBA.m_verbose = 2;
   //////////////////////////////////////////////////////////////////////////
   m_internal->m_GBA.PushCameraPriorPose(Z.iFrm2, _Z);
   m_internal->m_GBA.WakeUp();
   //////////////////////////////////////////////////////////////////////////
-  //m_internal->m_GBA.m_verbose = verboseBkp;
+  // m_internal->m_GBA.m_verbose = verboseBkp;
   //////////////////////////////////////////////////////////////////////////
   return true;
 }
 
 #ifdef CFG_GROUND_TRUTH
-static inline void OffsetPointer(const LA::AlignedVector3f *t0,
-                                 const AlignedVector<LA::AlignedVector3f> &ts,
-                                 std::vector<std::vector<::Depth::Measurement> > *zs) {
+static inline void OffsetPointer(
+    const LA::AlignedVector3f *t0, const AlignedVector<LA::AlignedVector3f> &ts,
+    std::vector<std::vector<::Depth::Measurement>> *zs) {
   if (ts.Data() == t0) {
     return;
   }
@@ -298,18 +307,18 @@ static inline void OffsetPointer(const LA::AlignedVector3f *t0,
     const int N = static_cast<int>(_zs.size());
     for (int i = 0; i < N; ++i) {
       ::Depth::Measurement &z = _zs[i];
-      //const int it1 = static_cast<int>(z.m_t - t0);
+      // const int it1 = static_cast<int>(z.m_t - t0);
       z.m_t = ts.Data() + static_cast<int>(z.m_t - t0);
-      //const int it2 = static_cast<int>(z.m_t - ts.Data());
+// const int it2 = static_cast<int>(z.m_t - ts.Data());
 #ifdef CFG_DEBUG
       UT_ASSERT(z.m_t >= ts.Data() && z.m_t < ts.End());
 #endif
     }
   }
 }
-static inline int PushTranslation(const LA::AlignedVector3f &t,
-                                  AlignedVector<LA::AlignedVector3f> *ts,
-                                  std::vector<std::vector<::Depth::Measurement> > *zs) {
+static inline int PushTranslation(
+    const LA::AlignedVector3f &t, AlignedVector<LA::AlignedVector3f> *ts,
+    std::vector<std::vector<::Depth::Measurement>> *zs) {
   const int it = ts->Size();
   if (it + 1 > ts->Capacity()) {
     const LA::AlignedVector3f *t0 = ts->Data();
@@ -336,7 +345,8 @@ void Solver::EstimateMotionGT(std::vector<CameraIMUState> *XsGT) {
   const std::vector<int> &iusGT = m_internal->m_iusGT;
   const std::vector<float> &tsGT = m_internal->m_tsGT;
 #ifdef CFG_DEBUG
-  UT_ASSERT(static_cast<int>(iusGT.size()) == Nc + 1 && static_cast<int>(tsGT.size()) == Nc);
+  UT_ASSERT(static_cast<int>(iusGT.size()) == Nc + 1 &&
+            static_cast<int>(tsGT.size()) == Nc);
 #endif
   for (int ic = 0; ic < Nc; ++ic) {
     Camera &C = CsGT[ic];
@@ -355,8 +365,8 @@ void Solver::EstimateMotionGT(std::vector<CameraIMUState> *XsGT) {
   LA::AlignedVectorXf b, ai;
   AlignedVector<LA::AlignedVector18f> x;
   AlignedVector<float> &work = m_internal->m_work, _work;
-  work.Resize(A.BindSize(Nmr, Nmc) + b.BindSize(Nmr) + x.BindSize(Nc) + ai.BindSize(Nmc) +
-              15 * 15);
+  work.Resize(A.BindSize(Nmr, Nmc) + b.BindSize(Nmr) + x.BindSize(Nc) +
+              ai.BindSize(Nmc) + 15 * 15);
   A.Bind(work.Data(), Nmr, Nmc);
   b.Bind(A.BindNext(), Nmr);
   x.Bind(b.BindNext(), Nc);
@@ -372,12 +382,16 @@ void Solver::EstimateMotionGT(std::vector<CameraIMUState> *XsGT) {
   LA::AlignedVector9f mi;
   LA::AlignedVector3f xv, xba, xbw;
   IMU::Delta::ES ES;
-  //const float eps = 0.0f;
+  // const float eps = 0.0f;
   const float eps = FLT_EPSILON;
-  const float epsv = UT::Inverse(BA_VARIANCE_MAX_VELOCITY, BA_WEIGHT_FEATURE, eps);
-  const float epsba = UT::Inverse(BA_VARIANCE_MAX_BIAS_ACCELERATION, BA_WEIGHT_FEATURE, eps);
-  const float epsbw = UT::Inverse(BA_VARIANCE_MAX_BIAS_GYROSCOPE, BA_WEIGHT_FEATURE, eps);
-  const float _eps[] = {epsv, epsv, epsv, epsba, epsba, epsba, epsbw, epsbw, epsbw};
+  const float epsv =
+      UT::Inverse(BA_VARIANCE_MAX_VELOCITY, BA_WEIGHT_FEATURE, eps);
+  const float epsba =
+      UT::Inverse(BA_VARIANCE_MAX_BIAS_ACCELERATION, BA_WEIGHT_FEATURE, eps);
+  const float epsbw =
+      UT::Inverse(BA_VARIANCE_MAX_BIAS_GYROSCOPE, BA_WEIGHT_FEATURE, eps);
+  const float _eps[] = {epsv,  epsv,  epsv,  epsba, epsba,
+                        epsba, epsbw, epsbw, epsbw};
   const int N = usGT.Size();
   bool converge = false;
   for (int iIter = 0; iIter < BA_MAX_ITERATIONS; ++iIter) {
@@ -386,11 +400,12 @@ void Solver::EstimateMotionGT(std::vector<CameraIMUState> *XsGT) {
     ES.Initialize();
     for (int ic1 = 0, ic2 = 1; ic2 < Nc; ic1 = ic2++, imp += pm, r = 1 - r) {
       const int i1 = iusGT[ic2], i2 = iusGT[ic2 + 1];
-      IMU::PreIntegrate(usGT.Data() + i1, i2 - i1, tsGT[ic1], tsGT[ic2], CsGT[ic1], &D, &_work,
-                        true, i1 == 0 ? NULL : &usGT[i1 - 1], i2 == N ? NULL : &usGT[i2],
-                        BA_ANGLE_EPSILON);
-      D.GetFactor(BA_WEIGHT_IMU, CsGT[ic1], CsGT[ic2], m_internal->m_K.m_pu, &Ad, &Ab, &U,
-                  BA_ANGLE_EPSILON);
+      IMU::PreIntegrate(usGT.Data() + i1, i2 - i1, tsGT[ic1], tsGT[ic2],
+                        CsGT[ic1], &D, &_work, true,
+                        i1 == 0 ? NULL : &usGT[i1 - 1],
+                        i2 == N ? NULL : &usGT[i2], BA_ANGLE_EPSILON);
+      D.GetFactor(BA_WEIGHT_IMU, CsGT[ic1], CsGT[ic2], m_internal->m_K.m_pu,
+                  &Ad, &Ab, &U, BA_ANGLE_EPSILON);
       Au[r] += Ad.m_A11.m_Amm;
       Au[1 - r] = Ad.m_A22.m_Amm;
       Ai.Set(Au[r].m_A);
@@ -469,9 +484,9 @@ void Solver::EstimateMotionGT(std::vector<CameraIMUState> *XsGT) {
       C.m_v -= xv;
       C.m_ba -= xba;
       C.m_bw -= xbw;
-      converge = converge && xv.SquaredLength() < BA_CONVERGE_VELOCITY
-                          && xba.SquaredLength() < BA_CONVERGE_BIAS_ACCELERATION
-                          && xbw.SquaredLength() < BA_CONVERGE_BIAS_GYROSCOPE;
+      converge = converge && xv.SquaredLength() < BA_CONVERGE_VELOCITY &&
+                 xba.SquaredLength() < BA_CONVERGE_BIAS_ACCELERATION &&
+                 xbw.SquaredLength() < BA_CONVERGE_BIAS_GYROSCOPE;
     }
   }
   XsGT->resize(Nc);
@@ -509,7 +524,7 @@ void Solver::PushDepthMeasurementsGT(const CurrentFrame &CF, const KeyFrame *KF,
     return;
   }
   if (KF) {
-    //UT::Print("[%d]\n", KF->iFrm);
+    // UT::Print("[%d]\n", KF->iFrm);
     if (KF->iFrm == CF.iFrm) {
       m_internal->PushCurrentFrame(CF);
       m_internal->PushKeyFrame(*KF, &m_internal->m_ILF.m_C);
@@ -518,7 +533,7 @@ void Solver::PushDepthMeasurementsGT(const CurrentFrame &CF, const KeyFrame *KF,
       m_internal->PushCurrentFrame(CF);
     }
 
-    //float e;
+    // float e;
     int it;
     LA::Vector3f Rx;
     const std::vector<LocalMap::CameraKF> &CsKF = m_internal->m_CsKF;
@@ -526,7 +541,7 @@ void Solver::PushDepthMeasurementsGT(const CurrentFrame &CF, const KeyFrame *KF,
     std::vector<::Depth::InverseGaussian> &dsGT = m_internal->m_dsGT;
     AlignedVector<Rotation3D> &RsGT = m_internal->m_RsGT;
     AlignedVector<LA::AlignedVector3f> &tsGT = m_internal->m_TsGT;
-    std::vector<std::vector<::Depth::Measurement> > &zsGT = m_internal->m_zsGT;
+    std::vector<std::vector<::Depth::Measurement>> &zsGT = m_internal->m_zsGT;
     AlignedVector<float> &work = m_internal->m_work;
     std::vector<int> &its = m_internal->m_idxsTmp;
 #ifdef CFG_STEREO
@@ -543,7 +558,8 @@ void Solver::PushDepthMeasurementsGT(const CurrentFrame &CF, const KeyFrame *KF,
       const int it0 = tsGT.Size();
       RsGT.Resize(0);
       its.assign(CsKF.size(), -1);
-      for (i2 = i1 + 1; i2 < N && IKF.m_Xs[i2].m_iKF == iKF; ++i2) {}
+      for (i2 = i1 + 1; i2 < N && IKF.m_Xs[i2].m_iKF == iKF; ++i2) {
+      }
       const GlobalMap::Point *Xs = IKF.m_Xs.data() + i1;
       const int Nx = i2 - i1, id = iKF2d[iKF + 1] - Nx;
       dsGT.insert(dsGT.begin() + id, Nx, ::Depth::InverseGaussian());
@@ -560,7 +576,8 @@ void Solver::PushDepthMeasurementsGT(const CurrentFrame &CF, const KeyFrame *KF,
         if (x.m_xr.Valid()) {
           Rx.Set(x.m_x.x(), x.m_x.y(), 1.0f);
           _zs.push_back(::Depth::Measurement(tsGT[0], Rx, x.m_xr, x.m_Wr));
-          ::Depth::Triangulate(1.0f, static_cast<int>(_zs.size()), _zs.data(), &d, &work);
+          ::Depth::Triangulate(1.0f, static_cast<int>(_zs.size()), _zs.data(),
+                               &d, &work);
         }
 #endif
         const int Nz = static_cast<int>(X.m_zs.size());
@@ -578,9 +595,9 @@ void Solver::PushDepthMeasurementsGT(const CurrentFrame &CF, const KeyFrame *KF,
           }
           const int iR = (it - it0)
 #ifdef CFG_STEREO
-                       >> 1
+                         >> 1
 #endif
-                       ;
+              ;
 //#ifdef CFG_DEBUG
 #if 0
           const Rigid3D T = CsGT[CsKF[z.m_iKF].m_iFrm].m_T / C;
@@ -596,15 +613,16 @@ void Solver::PushDepthMeasurementsGT(const CurrentFrame &CF, const KeyFrame *KF,
             _zs.push_back(::Depth::Measurement(tsGT[it], Rx, z.m_z, z.m_W));
           }
           if (z.m_zr.Valid()) {
-            _zs.push_back(::Depth::Measurement(tsGT[it + 1], Rx, z.m_zr, z.m_Wr));
+            _zs.push_back(
+                ::Depth::Measurement(tsGT[it + 1], Rx, z.m_zr, z.m_Wr));
           }
 #else
           _zs.push_back(::Depth::Measurement(tsGT[it], Rx, z.m_z, z.m_W));
 #endif
           ::Depth::Triangulate(1.0f, static_cast<int>(_zs.size()), _zs.data(),
-                               &d, &work, true/*, &e*/);
-          //const int iX = DsGT.size() - 1;
-          //UT::Print("iX = %d d = %f e = %f [%d]\n", iX, d.u(),
+                               &d, &work, true /*, &e*/);
+          // const int iX = DsGT.size() - 1;
+          // UT::Print("iX = %d d = %f e = %f [%d]\n", iX, d.u(),
           //          e * sqrtf(m_internal->m_K.m_K.fxy()), iFrmsKF[z.m_iKF]);
         }
       }
@@ -619,7 +637,7 @@ void Solver::PushDepthMeasurementsGT(const CurrentFrame &CF, const KeyFrame *KF,
 }
 
 void Internal::PushDepthMeasurementsGT(const FRM::Frame &F) {
-  //float e;
+  // float e;
   LA::Vector3f Rx;
   const int NZ = static_cast<int>(F.m_Zs.size());
   for (int iZ = 0; iZ < NZ; ++iZ) {
@@ -655,8 +673,8 @@ void Internal::PushDepthMeasurementsGT(const FRM::Frame &F) {
       _zs.push_back(::Depth::Measurement(m_TsGT[it], Rx, z.m_z, z.m_W));
 #endif
       ::Depth::Triangulate(1.0f, static_cast<int>(_zs.size()), _zs.data(),
-                           &ds[ix], &m_work, true/*, &e*/);
-      //UT::Print("iX = %d d = %f e = %f [%d]\n", iX, m_DsGT[iX].u(),
+                           &ds[ix], &m_work, true /*, &e*/);
+      // UT::Print("iX = %d d = %f e = %f [%d]\n", iX, m_DsGT[iX].u(),
       //          e * sqrtf(m_K.m_K.fxy()), F.m_T.m_iFrm);
     }
   }
@@ -679,7 +697,8 @@ void Solver::TriangulateDepthsGT(std::vector<Depth> *dsGT) {
       ::Depth::InverseGaussian &_d = m_internal->m_dsGT[id];
       const std::vector<::Depth::Measurement> &zs = m_internal->m_zsGT[id];
       const int Nz = static_cast<int>(zs.size());
-      if (::Depth::Triangulate(1.0f, Nz, zs.data(), &_d, &m_internal->m_work, true, &e)) {
+      if (::Depth::Triangulate(1.0f, Nz, zs.data(), &_d, &m_internal->m_work,
+                               true, &e)) {
         es.Push(e);
         ConvertDepth(_d, &d);
       } else {
@@ -693,8 +712,9 @@ void Solver::TriangulateDepthsGT(std::vector<Depth> *dsGT) {
   es *= sqrtf(m_internal->m_K.m_K.fxy());
   const int Nv = es.Size();
   UT::Print("Success %d / %d = %f%%\n", Nv, SNd, UT::Percentage(Nv, SNd));
-  UT::Print("Error = %f +- %f <= %f\n", es.Mean(), sqrtf(es.Variance()), es.Maximal());
-  //#ifdef CFG_DEBUG
+  UT::Print("Error = %f +- %f <= %f\n", es.Mean(), sqrtf(es.Variance()),
+            es.Maximal());
+//#ifdef CFG_DEBUG
 #if 0
   es.Save("D:/tmp/es.txt");
   //std::sort(es.Data(), es.End());
@@ -702,18 +722,18 @@ void Solver::TriangulateDepthsGT(std::vector<Depth> *dsGT) {
 }
 #endif
 
-void Solver::SetCallbackLBA(const IbaCallback& iba_callback) {
+void Solver::SetCallbackLBA(const IbaCallback &iba_callback) {
   m_internal->m_LBA.SetCallback(iba_callback);
 }
 
-void Solver::SetCallbackGBA(const IbaCallback& iba_callback) {
+void Solver::SetCallbackGBA(const IbaCallback &iba_callback) {
   m_internal->m_GBA.SetCallback(iba_callback);
 }
 
 bool Solver::GetSlidingWindow(SlidingWindow *SW) {
-  const ubyte Uc = m_internal->m_LM.IBA_Synchronize(m_internal->m_nFrms,
-                                                    m_internal->m_CsLF, m_internal->m_CsKF,
-                                                    m_internal->m_ds, m_internal->m_uds);
+  const ubyte Uc = m_internal->m_LM.IBA_Synchronize(
+      m_internal->m_nFrms, m_internal->m_CsLF, m_internal->m_CsKF,
+      m_internal->m_ds, m_internal->m_uds);
   SW->iFrms.resize(0);
   SW->CsLF.resize(0);
 #ifdef CFG_CHECK_REPROJECTION
@@ -721,7 +741,8 @@ bool Solver::GetSlidingWindow(SlidingWindow *SW) {
 #endif
   if (Uc & LM_FLAG_FRAME_UPDATE_CAMERA_LF) {
     CameraIMUState C;
-    for (std::list<LocalMap::CameraLF>::const_iterator i = m_internal->m_CsLF.begin();
+    for (std::list<LocalMap::CameraLF>::const_iterator i =
+             m_internal->m_CsLF.begin();
          i != m_internal->m_CsLF.end(); ++i) {
       if (!i->m_uc) {
         continue;
@@ -762,8 +783,9 @@ bool Solver::GetSlidingWindow(SlidingWindow *SW) {
     }
   }
   SW->Xs.resize(0);
-  const ubyte ucFlag = LM_FLAG_FRAME_UPDATE_CAMERA_KF | LM_FLAG_FRAME_UPDATE_DEPTH;
-  //if (Uc & LM_FLAG_FRAME_UPDATE_DEPTH) {
+  const ubyte ucFlag =
+      LM_FLAG_FRAME_UPDATE_CAMERA_KF | LM_FLAG_FRAME_UPDATE_DEPTH;
+  // if (Uc & LM_FLAG_FRAME_UPDATE_DEPTH) {
   if (Uc & ucFlag) {
     Rigid3D C;
     ::Point3D X1;
@@ -771,12 +793,13 @@ bool Solver::GetSlidingWindow(SlidingWindow *SW) {
     const int nKFs = static_cast<int>(CsKF.size());
     for (int iKF = 0; iKF < nKFs; ++iKF) {
       const LocalMap::CameraKF &_C = CsKF[iKF];
-      //if (!(_C.m_uc & LM_FLAG_FRAME_UPDATE_DEPTH)) {
+      // if (!(_C.m_uc & LM_FLAG_FRAME_UPDATE_DEPTH)) {
       if (!(_C.m_uc & ucFlag)) {
         continue;
       }
       const bool uc = (_C.m_uc & LM_FLAG_FRAME_UPDATE_CAMERA_KF) != 0;
-      const int id1 = m_internal->m_iKF2d[iKF], id2 = m_internal->m_iKF2d[iKF + 1];
+      const int id1 = m_internal->m_iKF2d[iKF],
+                id2 = m_internal->m_iKF2d[iKF + 1];
       const ::Point2D *xs = m_internal->m_xs.data() + id1;
       const ::Depth::InverseGaussian *ds = m_internal->m_ds.data() + id1;
       const ubyte *uds = m_internal->m_uds.data() + id1;
@@ -784,7 +807,7 @@ bool Solver::GetSlidingWindow(SlidingWindow *SW) {
       const int Nx = id2 - id1;
       C = _C.m_C;
       for (int ix = 0; ix < Nx; ++ix) {
-        //if (!(uds[ix] & LM_FLAG_TRACK_UPDATE_DEPTH)) {
+        // if (!(uds[ix] & LM_FLAG_TRACK_UPDATE_DEPTH)) {
         if (!uc && !(uds[ix] & LM_FLAG_TRACK_UPDATE_DEPTH)) {
           continue;
         }
@@ -847,8 +870,8 @@ int Solver::GetKeyFrameIndex(const int iKF) {
 
 int Solver::SearchKeyFrame(const int iFrm) {
   const std::vector<LocalMap::CameraKF> &CsKF = m_internal->m_CsKF;
-  const std::vector<LocalMap::CameraKF>::const_iterator i = std::lower_bound(CsKF.begin(),
-                                                                             CsKF.end(), iFrm);
+  const std::vector<LocalMap::CameraKF>::const_iterator i =
+      std::lower_bound(CsKF.begin(), CsKF.end(), iFrm);
   if (i == CsKF.end() || i->m_iFrm != iFrm) {
     return -1;
   }
@@ -866,7 +889,7 @@ bool Solver::DeleteKeyFrame(const int iFrm) {
     return false;
   }
 #ifdef IBA_VERBOSE
-//#if 0
+  //#if 0
   UT::Print("Delete KF%d [%d]\n", iKF, iFrm);
 #endif
   CsKF.erase(CsKF.begin() + iKF);
@@ -878,7 +901,8 @@ bool Solver::DeleteKeyFrame(const int iFrm) {
   }
   iKF2d.erase(iKF2d.begin() + iKF);
   std::vector<int> &id2X = m_internal->m_id2X, &iX2d = m_internal->m_iX2d;
-  std::vector<int> &id2idx = m_internal->m_id2idx, &idx2iX = m_internal->m_idx2iX;
+  std::vector<int> &id2idx = m_internal->m_id2idx,
+                   &idx2iX = m_internal->m_idx2iX;
   for (int id = id1; id < id2; ++id) {
     const int iX = id2X[id], idx = id2idx[id];
     if (iX != -1) {
@@ -934,17 +958,18 @@ void Solver::DeleteMapPoints(const std::vector<int> &idxs) {
   }
   std::vector<int> &ids = m_internal->m_idxsTmp;
   std::vector<int> &id2X = m_internal->m_id2X, &iX2d = m_internal->m_iX2d;
-  std::vector<int> &id2idx = m_internal->m_id2idx, &idx2iX = m_internal->m_idx2iX;
+  std::vector<int> &id2idx = m_internal->m_id2idx,
+                   &idx2iX = m_internal->m_idx2iX;
   const int N = static_cast<int>(idxs.size());
-//  ids.resize(N);
-//  for (int i = 0; i < N; ++i) {
-//    const int idx = idxs[i], iX = idx2iX[idx], id = iX2d[iX];
-//#ifdef CFG_DEBUG
-//    UT_ASSERT(iX != -1 && id != -1);
-//#endif
-//    ids[i] = id;
-//    id2X[id] = iX2d[iX] = id2idx[id] = idx2iX[idx] = -1;
-//  }
+  //  ids.resize(N);
+  //  for (int i = 0; i < N; ++i) {
+  //    const int idx = idxs[i], iX = idx2iX[idx], id = iX2d[iX];
+  //#ifdef CFG_DEBUG
+  //    UT_ASSERT(iX != -1 && id != -1);
+  //#endif
+  //    ids[i] = id;
+  //    id2X[id] = iX2d[iX] = id2idx[id] = idx2iX[idx] = -1;
+  //  }
   ids.resize(0);
   for (int i = 0; i < N; ++i) {
     const int idx = idxs[i], iX = idx2iX[idx];
@@ -970,7 +995,8 @@ void Solver::DeleteMapPoints(const std::vector<int> &idxs) {
   m_internal->m_LBA.PushDeleteMapPoints(m_internal->m_nFrms, ids);
 }
 
-void Solver::UpdateCameras(const std::vector<int> &iFrms, const std::vector<CameraPose> &Cs,
+void Solver::UpdateCameras(const std::vector<int> &iFrms,
+                           const std::vector<CameraPose> &Cs,
                            const bool serial) {
   Rigid3D C;
   std::vector<GlobalMap::InputCamera> &ICs = m_internal->m_ICs;
@@ -997,8 +1023,10 @@ void Solver::UpdateCameras(const std::vector<int> &iFrms, const std::vector<Came
   m_internal->m_LBA.WakeUp(serial);
 }
 
-bool Solver::PropagateState(const std::vector<IMUMeasurement> &us, const float t1, const float t2,
-                            const CameraIMUState &X1, CameraIMUState *X2, CameraPoseCovariance *S) {
+bool Solver::PropagateState(const std::vector<IMUMeasurement> &us,
+                            const float t1, const float t2,
+                            const CameraIMUState &X1, CameraIMUState *X2,
+                            CameraPoseCovariance *S) {
   AlignedVector<IMU::Measurement> &_us = m_internal->m_us;
   const int N = static_cast<int>(us.size());
   _us.Resize(N);
@@ -1022,8 +1050,8 @@ bool Solver::PropagateState(const std::vector<IMUMeasurement> &us, const float t
   Camera C1, C2;
   IMU::Delta &D = m_internal->m_D;
   ConvertCamera(X1, &C1);
-  IMU::PreIntegrate(_us, t1, t2, C1, &D, &m_internal->m_work, S != NULL, NULL, NULL,
-                    BA_ANGLE_EPSILON);
+  IMU::PreIntegrate(_us, t1, t2, C1, &D, &m_internal->m_work, S != NULL, NULL,
+                    NULL, BA_ANGLE_EPSILON);
   IMU::Propagate(pu, D, C1, C2, BA_ANGLE_EPSILON);
   ConvertCamera(C2, X2);
   if (S != NULL) {
@@ -1038,9 +1066,11 @@ bool Solver::PropagateState(const std::vector<IMUMeasurement> &us, const float t
       return false;
     }
     LA::AlignedMatrix3x3f Srr, Srp, Spr, Spp;
-    W.GetBlock(0, 0, Srr);  W.GetBlock(0, 6, Srp);
-    W.GetBlock(6, 0, Spr);  W.GetBlock(6, 6, Spp);
-    LA::AlignedMatrix3x3f U, Upp, Upr/*, Urp*/, Urr;
+    W.GetBlock(0, 0, Srr);
+    W.GetBlock(0, 6, Srp);
+    W.GetBlock(6, 0, Spr);
+    W.GetBlock(6, 6, Spp);
+    LA::AlignedMatrix3x3f U, Upp, Upr /*, Urp*/, Urr;
     const SkewSymmetricMatrix u = D.m_RT.GetApplied(pu);
     const Rotation3D R1T = C1.m_T.GetRotationTranspose();
     SkewSymmetricMatrix::ABT(Spr, u, U);
@@ -1049,7 +1079,7 @@ bool Solver::PropagateState(const std::vector<IMUMeasurement> &us, const float t
     SkewSymmetricMatrix::ABT(Srr, u, U);
     U += Srp;
     LA::AlignedMatrix3x3f::ABT(R1T, U, Upr);
-    //LA::AlignedMatrix3x3f::ABT(R1T, Spr, Urp);
+    // LA::AlignedMatrix3x3f::ABT(R1T, Spr, Urp);
     LA::AlignedMatrix3x3f::ABT(R1T, Srr, Urr);
     SkewSymmetricMatrix::ABT(Upr, u, U);
     U += Upp;
@@ -1064,7 +1094,8 @@ bool Solver::PropagateState(const std::vector<IMUMeasurement> &us, const float t
   return true;
 }
 
-bool Solver::SaveFeatures(const std::string fileName, const std::vector<MapPointMeasurement> &zs,
+bool Solver::SaveFeatures(const std::string fileName,
+                          const std::vector<MapPointMeasurement> &zs,
                           const std::vector<MapPoint> *Xs) {
   FILE *fp = fopen(fileName.c_str(), "w");
   if (!fp) {
@@ -1074,11 +1105,12 @@ bool Solver::SaveFeatures(const std::string fileName, const std::vector<MapPoint
   const int Nz = static_cast<int>(zs.size());
   for (int iz = 0; iz < Nz; ++iz) {
     const MapPointMeasurement &z = zs[iz];
-    //const int id = m_internal->m_iX2d[z.iX];
+    // const int id = m_internal->m_iX2d[z.iX];
     const int iX = m_internal->m_idx2iX[z.idx];
     const int id = m_internal->m_iX2d[iX];
     if (id != -1) {
-      fprintf(fp, "%f, %f, 0, 0, 0, 0, %d,\n", z.x.x[0], z.x.x[1], m_internal->m_id2idx[id]);
+      fprintf(fp, "%f, %f, 0, 0, 0, 0, %d,\n", z.x.x[0], z.x.x[1],
+              m_internal->m_id2idx[id]);
     }
   }
   fprintf(fp, "]\n");
@@ -1106,9 +1138,10 @@ bool Solver::LoadFeatures(const std::string fileName, const int iFrm,
                           std::vector<MapPoint> *Xs,
                           const std::vector<int> *iFrms
 #ifdef CFG_STEREO
-                        , const ubyte right
+                          ,
+                          const ubyte right
 #endif
-                        ) {
+                          ) {
 #ifdef CFG_STEREO
   if (!right)
 #endif
@@ -1131,7 +1164,7 @@ bool Solver::LoadFeatures(const std::string fileName, const int iFrm,
     idx2iXTmp.resize(0);
   }
 #endif
-  int i = 0/*, idx*/;
+  int i = 0 /*, idx*/;
   char *num;
   float v;
   const bool cov = FTR_VARIANCE == 0.0f;
@@ -1142,52 +1175,57 @@ bool Solver::LoadFeatures(const std::string fileName, const int iFrm,
   const std::vector<int> &idx2iX = m_internal->m_idx2iX;
   const int idxMax = static_cast<int>(idx2iX.size()) - 1;
   while (fgets(line, UT_STRING_WIDTH_MAX, fp)) {
-    const int len = int(std::remove(line, std::remove(line, line + strlen(line), 10), ' ') - line);
+    const int len =
+        int(std::remove(line, std::remove(line, line + strlen(line), 10), ' ') -
+            line);
     if (len == 0 || line[0] == '%' || line[len - 1] == ':') {
       continue;
     }
     line[len] = 0;
     num = strtok(line, " ,");
-    while (num && (sscanf(num, "%f", &v) == 1 || sscanf(num, "key_points:[%f", &v) == 1)) {
+    while (num && (sscanf(num, "%f", &v) == 1 ||
+                   sscanf(num, "key_points:[%f", &v) == 1)) {
       switch (i) {
-      case 0:
-        z.x.x[0] = v;
-        break;
-      case 1:
-        z.x.x[1] = v;
-        break;
-      case 2:
-        if (cov) {
-          z.x.S[0][0] = v;
-        }
-        break;
-      case 3:
-        if (cov) {
-          z.x.S[0][1] = z.x.S[0][1] = v;
-        }
-        break;
-      case 4:
-        if (cov) {
-          z.x.S[1][1] = v;
-        }
-        break;
-      case 5:
-        break;
-      case 6:
-        //idx = static_cast<int>(v);
-        //z.iX = idx > idxMax ? -1 : idx2iX[idx];
-        z.idx = static_cast<int>(v);
-        break;
+        case 0:
+          z.x.x[0] = v;
+          break;
+        case 1:
+          z.x.x[1] = v;
+          break;
+        case 2:
+          if (cov) {
+            z.x.S[0][0] = v;
+          }
+          break;
+        case 3:
+          if (cov) {
+            z.x.S[0][1] = z.x.S[0][1] = v;
+          }
+          break;
+        case 4:
+          if (cov) {
+            z.x.S[1][1] = v;
+          }
+          break;
+        case 5:
+          break;
+        case 6:
+          // idx = static_cast<int>(v);
+          // z.iX = idx > idxMax ? -1 : idx2iX[idx];
+          z.idx = static_cast<int>(v);
+          break;
       }
       ++i;
       if (i == 7) {
         i = 0;
         if (z.idx > idxMax || idx2iX[z.idx] == -1) {
-        //if (z.iX == -1) {
+          // if (z.iX == -1) {
           if (Xs) {
 #ifdef CFG_STEREO
             if (right) {
-              const int iX = z.idx < static_cast<int>(idx2iXTmp.size()) ? idx2iXTmp[z.idx] : -1;
+              const int iX = z.idx < static_cast<int>(idx2iXTmp.size())
+                                 ? idx2iXTmp[z.idx]
+                                 : -1;
               if (iX != -1) {
                 MapPoint &X = Xs->at(iX);
 #ifdef CFG_DEBUG
@@ -1228,7 +1266,9 @@ bool Solver::LoadFeatures(const std::string fileName, const int iFrm,
     int Nx, Nz, iX, idx;
     float tmp[2];
     while (fgets(line, UT_STRING_WIDTH_MAX, fp)) {
-      const int len = int(std::remove(line, std::remove(line, line + strlen(line), 10), ' ') - line);
+      const int len = int(
+          std::remove(line, std::remove(line, line + strlen(line), 10), ' ') -
+          line);
       if (len == 0 || line[0] == '%' || line[len - 1] == ':') {
         continue;
       }
@@ -1341,9 +1381,9 @@ void Solver::LoadB(FILE *fp) {
   UT::VectorLoadB(m_internal->m_uds, fp);
 #ifdef CFG_GROUND_TRUTH
   UT::VectorLoadB(m_internal->m_dsGT, fp);
-  //if (!m_internal->m_dsGT.empty()) {
-  //  m_internal->m_LBA.m_dsGT = m_internal->m_GBA.m_dsGT = &m_internal->m_dsGT;
-  //}
+// if (!m_internal->m_dsGT.empty()) {
+//  m_internal->m_LBA.m_dsGT = m_internal->m_GBA.m_dsGT = &m_internal->m_dsGT;
+//}
 #if 0
   m_internal->m_TsGT.LoadB(fp);
   UT::VectorsLoadB(m_internal->m_zsGT, fp);
@@ -1358,37 +1398,39 @@ void Solver::LoadB(FILE *fp) {
 
 void Solver::ComputeErrorLBA(Error *e) {
   m_internal->m_LBA.ComputeErrorFeature(&e->ex);
-  m_internal->m_LBA.ComputeErrorIMU(&e->eur, &e->eup, &e->euv, &e->euba, &e->eubw);
+  m_internal->m_LBA.ComputeErrorIMU(&e->eur, &e->eup, &e->euv, &e->euba,
+                                    &e->eubw);
   m_internal->m_LBA.ComputeErrorDrift(&e->edr, &e->edp);
 }
 
 void Solver::ComputeErrorGBA(Error *e) {
   m_internal->m_GBA.ComputeErrorFeature(&e->ex);
-  m_internal->m_GBA.ComputeErrorIMU(&e->eur, &e->eup, &e->euv, &e->euba, &e->eubw);
+  m_internal->m_GBA.ComputeErrorIMU(&e->eur, &e->eup, &e->euv, &e->euba,
+                                    &e->eubw);
   m_internal->m_GBA.ComputeErrorDrift(&e->edr, &e->edp);
 }
 
-float Solver::ComputeRMSELBA() {
-  return m_internal->m_LBA.ComputeRMSE();
-}
+float Solver::ComputeRMSELBA() { return m_internal->m_LBA.ComputeRMSE(); }
 
-float Solver::ComputeRMSEGBA() {
-  return m_internal->m_GBA.ComputeRMSE();
-}
+float Solver::ComputeRMSEGBA() { return m_internal->m_GBA.ComputeRMSE(); }
 
 float Solver::GetTotalDistance() {
   return m_internal->m_LBA.GetTotalDistance();
 }
 
-static inline std::string ConvertFileName(const std::string fileName, const std::string dir, const bool append = true) {
+static inline std::string ConvertFileName(const std::string fileName,
+                                          const std::string dir,
+                                          const bool append = true) {
   if (fileName == "") {
     return "";
   }
   std::string _fileName;
   if (UT::FileNameRemoveDirectoryExtension(fileName) == "*") {
-    _fileName = dir.substr(0, dir.length() - 1) + "." + UT::FileNameExtractExtension(fileName);
-    _fileName = UT::FileNameReplaceDirectory(_fileName, UT::FileNameExtractDirectory(_fileName),
-                                             UT::FileNameExtractDirectory(fileName));
+    _fileName = dir.substr(0, dir.length() - 1) + "." +
+                UT::FileNameExtractExtension(fileName);
+    _fileName = UT::FileNameReplaceDirectory(
+        _fileName, UT::FileNameExtractDirectory(_fileName),
+        UT::FileNameExtractDirectory(fileName));
   } else {
     _fileName = fileName;
   }
@@ -1407,49 +1449,65 @@ static inline std::string ConvertFileName(const std::string fileName, const std:
   return _fileName;
 }
 
-bool Solver::SaveCamerasLBA(const std::string fileName, const bool append, const bool poseOnly) {
-  const std::string _fileName = ConvertFileName(fileName, m_internal->m_dir, append);
+bool Solver::SaveCamerasLBA(const std::string fileName, const bool append,
+                            const bool poseOnly) {
+  const std::string _fileName =
+      ConvertFileName(fileName, m_internal->m_dir, append);
   return m_internal->m_LBA.SaveCameras(_fileName, poseOnly);
 }
 
-bool Solver::SaveCamerasGBA(const std::string fileName, const bool append, const bool poseOnly) {
-  const std::string _fileName = ConvertFileName(fileName, m_internal->m_dir, append);
+bool Solver::SaveCamerasGBA(const std::string fileName, const bool append,
+                            const bool poseOnly) {
+  const std::string _fileName =
+      ConvertFileName(fileName, m_internal->m_dir, append);
   return m_internal->m_GBA.SaveCameras(_fileName, poseOnly);
 }
 
-bool Solver::SaveCostsLBA(const std::string fileName, const bool append, const int type) {
-  const std::string _fileName = ConvertFileName(fileName, m_internal->m_dir, append);
+bool Solver::SaveCostsLBA(const std::string fileName, const bool append,
+                          const int type) {
+  const std::string _fileName =
+      ConvertFileName(fileName, m_internal->m_dir, append);
   return m_internal->m_LBA.SaveCosts(_fileName, type);
 }
 
-bool Solver::SaveCostsGBA(const std::string fileName, const bool append, const int type) {
-  const std::string _fileName = ConvertFileName(fileName, m_internal->m_dir, append);
+bool Solver::SaveCostsGBA(const std::string fileName, const bool append,
+                          const int type) {
+  const std::string _fileName =
+      ConvertFileName(fileName, m_internal->m_dir, append);
   return m_internal->m_GBA.SaveCosts(_fileName, type);
 }
 
-bool Solver::SaveResidualsLBA(const std::string fileName, const bool append, const int type) {
-  const std::string _fileName = ConvertFileName(fileName, m_internal->m_dir, append);
+bool Solver::SaveResidualsLBA(const std::string fileName, const bool append,
+                              const int type) {
+  const std::string _fileName =
+      ConvertFileName(fileName, m_internal->m_dir, append);
   return m_internal->m_LBA.SaveResiduals(_fileName, type);
 }
 
-bool Solver::SaveResidualsGBA(const std::string fileName, const bool append, const int type) {
-  const std::string _fileName = ConvertFileName(fileName, m_internal->m_dir, append);
+bool Solver::SaveResidualsGBA(const std::string fileName, const bool append,
+                              const int type) {
+  const std::string _fileName =
+      ConvertFileName(fileName, m_internal->m_dir, append);
   return m_internal->m_GBA.SaveResiduals(_fileName, type);
 }
 
-bool Solver::SavePriors(const std::string fileName, const bool append, const int type) {
-  const std::string _fileName = ConvertFileName(fileName, m_internal->m_dir, append);
+bool Solver::SavePriors(const std::string fileName, const bool append,
+                        const int type) {
+  const std::string _fileName =
+      ConvertFileName(fileName, m_internal->m_dir, append);
   return m_internal->m_LBA.SavePriors(_fileName, type);
 }
 
-bool Solver::SaveMarginalizations(const std::string fileName, const bool append, const int type) {
-  const std::string _fileName = ConvertFileName(fileName, m_internal->m_dir, append);
+bool Solver::SaveMarginalizations(const std::string fileName, const bool append,
+                                  const int type) {
+  const std::string _fileName =
+      ConvertFileName(fileName, m_internal->m_dir, append);
   return m_internal->m_LBA.SaveMarginalizations(_fileName, type);
 }
 
 bool Solver::SavePointsLBA(const std::string fileName, const bool append) {
-  return m_internal->SavePoints(m_internal->m_LBA.m_CsKF, m_internal->m_LBA.m_ds,
-                                fileName, append);
+  return m_internal->SavePoints(m_internal->m_LBA.m_CsKF,
+                                m_internal->m_LBA.m_ds, fileName, append);
 }
 
 bool Solver::SavePointsGBA(const std::string fileName, const bool append) {
@@ -1504,21 +1562,23 @@ bool Internal::SavePoints(const AlignedVector<Rigid3D> &CsKF,
 
 void Solver::GetTimeLBA(Time *t) {
   t->t = m_internal->m_LBA.GetTotalTime(&t->n);
-  //t->nd = m_internal->m_LBA.GetTotalPoints();
+  // t->nd = m_internal->m_LBA.GetTotalPoints();
 }
 
 void Solver::GetTimeGBA(Time *t) {
   t->t = m_internal->m_GBA.GetTotalTime(&t->n);
-  //t->nd = m_internal->m_GBA.GetTotalPoints();
+  // t->nd = m_internal->m_GBA.GetTotalPoints();
 }
 
 bool Solver::SaveTimesLBA(const std::string fileName, const bool append) {
-  const std::string _fileName = ConvertFileName(fileName, m_internal->m_dir, append);
+  const std::string _fileName =
+      ConvertFileName(fileName, m_internal->m_dir, append);
   return m_internal->m_LBA.SaveTimes(_fileName);
 }
 
 bool Solver::SaveTimesGBA(const std::string fileName, const bool append) {
-  const std::string _fileName = ConvertFileName(fileName, m_internal->m_dir, append);
+  const std::string _fileName =
+      ConvertFileName(fileName, m_internal->m_dir, append);
   return m_internal->m_GBA.SaveTimes(_fileName);
 }
 
@@ -1527,9 +1587,10 @@ static inline void Rectify(const ::Intrinsic &K, const Point2D &x,
                            ::Intrinsic::UndistortionMap *UM = NULL,
                            const float eps = 0.0f
 #ifdef CFG_STEREO
-                         , Rotation3D *Rr = NULL
+                           ,
+                           Rotation3D *Rr = NULL
 #endif
-                         ) {
+                           ) {
   ::Point2D xd;
   Point2DCovariance Sd, Sn;
   LA::AlignedMatrix2x2f J, JS;
@@ -1559,11 +1620,12 @@ static inline void Rectify(const ::Intrinsic &K, const Point2D &x,
   Sn.IncreaseDiagonal(eps);
   Sn.GetInverse(*Wn);
   //////////////////////////////////////////////////////////////////////////
-  //Wn->Set(Wd.m00(), Wd.m01(), Wd.m11());
+  // Wn->Set(Wd.m00(), Wd.m01(), Wd.m11());
   //////////////////////////////////////////////////////////////////////////
 }
 
-const LocalBundleAdjustor::InputLocalFrame& Internal::PushCurrentFrame(const CurrentFrame &CF) {
+const LocalBundleAdjustor::InputLocalFrame &Internal::PushCurrentFrame(
+    const CurrentFrame &CF) {
   m_ILF.m_T.m_iFrm = CF.iFrm;
   m_ILF.m_T.m_t = CF.t;
   m_ILF.m_T.m_fileName = CF.fileName;
@@ -1596,12 +1658,14 @@ const LocalBundleAdjustor::InputLocalFrame& Internal::PushCurrentFrame(const Cur
   return m_ILF;
 }
 
-const GlobalMap::InputKeyFrame& Internal::PushKeyFrame(const KeyFrame &KF, const Camera *C) {
+const GlobalMap::InputKeyFrame &Internal::PushKeyFrame(const KeyFrame &KF,
+                                                       const Camera *C) {
 //#ifdef CFG_DEBUG
 #if 0
   UT::Print("%d\n", KF.iFrm);
 #endif
-  const std::vector<FRM::Tag>::iterator T = std::lower_bound(m_Ts.begin(), m_Ts.end(), KF.iFrm);
+  const std::vector<FRM::Tag>::iterator T =
+      std::lower_bound(m_Ts.begin(), m_Ts.end(), KF.iFrm);
 #ifdef CFG_DEBUG
   UT_ASSERT(T != m_Ts.end() && T->m_iFrm == KF.iFrm);
 #endif
@@ -1630,8 +1694,9 @@ const GlobalMap::InputKeyFrame& Internal::PushKeyFrame(const KeyFrame &KF, const
     for (int i = 1; i < Nz; ++i) {
       const MapPointMeasurement &z1 = X.zs[i - 1], &z2 = X.zs[i];
 #ifdef CFG_STEREO
-//#if 1
-      UT_ASSERT(z1.iFrm < z2.iFrm || z1.iFrm == z2.iFrm && !z1.right && z2.right);
+      //#if 1
+      UT_ASSERT(z1.iFrm < z2.iFrm ||
+                z1.iFrm == z2.iFrm && !z1.right && z2.right);
 #else
       UT_ASSERT(z1.iFrm < z2.iFrm);
 #endif
@@ -1656,12 +1721,15 @@ const GlobalMap::InputKeyFrame& Internal::PushKeyFrame(const KeyFrame &KF, const
     if ((_C.m_iFrm = ixsSort.front().m_iFrm) < m_CsKF.front().m_iFrm) {
       iKF0 = 0;
     } else {
-      iKF0 = static_cast<int>(std::upper_bound(m_CsKF.begin(), m_CsKF.end(), _C) -
-                                               m_CsKF.begin()) - 1;
+      iKF0 =
+          static_cast<int>(std::upper_bound(m_CsKF.begin(), m_CsKF.end(), _C) -
+                           m_CsKF.begin()) -
+          1;
     }
     _C.m_iFrm = ixsSort.back().m_iFrm;
-    iKF2 = static_cast<int>(std::upper_bound(m_CsKF.begin() + iKF0, m_CsKF.end(), _C) -
-                                             m_CsKF.begin());
+    iKF2 = static_cast<int>(
+        std::upper_bound(m_CsKF.begin() + iKF0, m_CsKF.end(), _C) -
+        m_CsKF.begin());
     C1 = m_CsKF[iKF0].m_C;
   }
   int i1, i2;
@@ -1685,9 +1753,10 @@ const GlobalMap::InputKeyFrame& Internal::PushKeyFrame(const KeyFrame &KF, const
     if (ix.m_iFrm < m_CsKF[iKF1].m_iFrm) {
       continue;
     } else if (ix.m_iFrm > m_CsKF[iKF1].m_iFrm) {
-      iKF1 = static_cast<int>(std::lower_bound(m_CsKF.begin() + iKF1,
-                                               m_CsKF.begin() + iKF2, ix.m_iFrm) -
-                                               m_CsKF.begin());
+      iKF1 =
+          static_cast<int>(std::lower_bound(m_CsKF.begin() + iKF1,
+                                            m_CsKF.begin() + iKF2, ix.m_iFrm) -
+                           m_CsKF.begin());
       if (iKF1 == nKFs || m_CsKF[iKF1].m_iFrm != ix.m_iFrm) {
         --iKF1;
         continue;
@@ -1710,9 +1779,10 @@ const GlobalMap::InputKeyFrame& Internal::PushKeyFrame(const KeyFrame &KF, const
         if (X1.zs[i - 1].iFrm != _z.iFrm) {
           z.m_z.Invalidate();
         }
-        z.m_iKF = static_cast<int>(std::lower_bound(m_CsKF.begin() + z.m_iKF,
-                                                    m_CsKF.begin() + iKF2, _z.iFrm) -
-                                                    m_CsKF.begin());
+        z.m_iKF =
+            static_cast<int>(std::lower_bound(m_CsKF.begin() + z.m_iKF,
+                                              m_CsKF.begin() + iKF2, _z.iFrm) -
+                             m_CsKF.begin());
         if (z.m_iKF != nKFs && m_CsKF[z.m_iKF].m_iFrm == _z.iFrm) {
           X2.m_zs.push_back(z);
         } else {
@@ -1731,8 +1801,9 @@ const GlobalMap::InputKeyFrame& Internal::PushKeyFrame(const KeyFrame &KF, const
           z.m_zr.Invalidate();
 #endif
           z.m_iKF = static_cast<int>(std::lower_bound(m_CsKF.begin() + z.m_iKF,
-                                                      m_CsKF.begin() + iKF2, _z.iFrm) -
-                                                      m_CsKF.begin());
+                                                      m_CsKF.begin() + iKF2,
+                                                      _z.iFrm) -
+                                     m_CsKF.begin());
           if (z.m_iKF != nKFs && m_CsKF[z.m_iKF].m_iFrm == _z.iFrm) {
             X2.m_zs.push_back(z);
           } else {
@@ -1783,7 +1854,8 @@ const GlobalMap::InputKeyFrame& Internal::PushKeyFrame(const KeyFrame &KF, const
   m_idx2iX.resize(idxMax + 1, -1);
   for (int i1 = 0, i2 = 0; i1 < Nx2; i1 = i2) {
     const int iKF = m_IKF.m_Xs[i1].m_iKF;
-    for (i2 = i1 + 1; i2 < Nx2 && m_IKF.m_Xs[i2].m_iKF == iKF; ++i2) {}
+    for (i2 = i1 + 1; i2 < Nx2 && m_IKF.m_Xs[i2].m_iKF == iKF; ++i2) {
+    }
     const int id = m_iKF2d[iKF + 1], Nx = i2 - i1;
     for (int jKF = iKF; jKF < nKFs; ++jKF) {
       m_iKF2d[jKF + 1] += Nx;
@@ -1896,13 +1968,14 @@ const GlobalMap::InputKeyFrame& Internal::PushKeyFrame(const KeyFrame &KF, const
   return m_IKF;
 }
 
-void Internal::ConvertFeatureMeasurements(const std::vector<MapPointMeasurement> &zs,
-                                          FRM::Frame *F) {
+void Internal::ConvertFeatureMeasurements(
+    const std::vector<MapPointMeasurement> &zs, FRM::Frame *F) {
   F->ClearMeasurements();
 
   int i, j;
   const float eps = FTR_VARIANCE_EPSILON * m_K.m_K.fxyI();
-  const int N = static_cast<int>(m_idx2iX.size()), Nz1 = static_cast<int>(zs.size());
+  const int N = static_cast<int>(m_idx2iX.size()),
+            Nz1 = static_cast<int>(zs.size());
   m_zsSortTmp.resize(Nz1);
   for (i = j = 0; i < Nz1; ++i) {
     const MapPointMeasurement &z1 = zs[i];
@@ -1943,14 +2016,17 @@ void Internal::ConvertFeatureMeasurements(const std::vector<MapPointMeasurement>
   FTR::Measurement z;
   for (int i1 = 0, i2 = 0, iKF = 0; i1 < Nz2; i1 = i2) {
     const int id1 = m_zsSortTmp[i1].m_id;
-    iKF = static_cast<int>(std::upper_bound(m_iKF2d.begin() + iKF, m_iKF2d.end(), id1) -
-                                            m_iKF2d.begin()) - 1;
+    iKF = static_cast<int>(
+              std::upper_bound(m_iKF2d.begin() + iKF, m_iKF2d.end(), id1) -
+              m_iKF2d.begin()) -
+          1;
     const int id0 = m_iKF2d[iKF], id2 = m_iKF2d[iKF + 1];
 #ifdef CFG_DEBUG
     UT_ASSERT(id1 >= id0 && id1 < id2);
 #endif
-    i2 = static_cast<int>(std::lower_bound(m_zsSortTmp.begin() + i1, m_zsSortTmp.end(), id2) -
-                                           m_zsSortTmp.begin());
+    i2 = static_cast<int>(
+        std::lower_bound(m_zsSortTmp.begin() + i1, m_zsSortTmp.end(), id2) -
+        m_zsSortTmp.begin());
 #ifdef CFG_DEBUG
     UT_ASSERT(i2 == Nz2 || m_zsSortTmp[i2].m_id >= id2);
     for (i = i1; i < i2; ++i) {
@@ -2006,7 +2082,8 @@ void Internal::ConvertFeatureMeasurements(const std::vector<MapPointMeasurement>
 }
 
 void Internal::AssertConsistency() {
-  const int N = static_cast<int>(m_Ts.size()), nKFs = static_cast<int>(m_CsKF.size());
+  const int N = static_cast<int>(m_Ts.size()),
+            nKFs = static_cast<int>(m_CsKF.size());
   if (N > 0) {
     for (int i = 1; i < N; ++i) {
       UT_ASSERT(m_Ts[i - 1] < m_Ts[i]);
@@ -2030,15 +2107,16 @@ void Internal::AssertConsistency() {
     UT_ASSERT(m_id2X[id] == iX);
     ++SNd;
   }
-  //UT_ASSERT(SNd == Nd);
-  UT_ASSERT(static_cast<int>(m_id2X.size()) == Nd && static_cast<int>(m_id2idx.size()) == Nd);
+  // UT_ASSERT(SNd == Nd);
+  UT_ASSERT(static_cast<int>(m_id2X.size()) == Nd &&
+            static_cast<int>(m_id2idx.size()) == Nd);
   for (int id = 0; id < Nd; ++id) {
     const int iX = m_id2X[id], idx = m_id2idx[id];
     if (iX == -1) {
       UT_ASSERT(idx == -1);
     } else {
       UT_ASSERT(m_iX2d[iX] == id);
-      //if (idx != -1) {
+      // if (idx != -1) {
       //  UT_ASSERT(m_idx2iX[idx] == iX);
       //}
       UT_ASSERT(idx != -1);
@@ -2063,13 +2141,12 @@ void Internal::AssertConsistency() {
   if (m_LBA.m_serial && m_GBA.m_serial) {
     UT_ASSERT(m_LBA.m_CsKF.Size() == nKFs && m_GBA.m_Cs.Size() == nKFs);
     for (int iKF = 0; iKF < nKFs; ++iKF) {
-      //m_LBA.m_CsKF[iKF].AssertEqual(m_GBA.m_Cs[iKF], 0, "", -1.0f, -1.0f);
+      // m_LBA.m_CsKF[iKF].AssertEqual(m_GBA.m_Cs[iKF], 0, "", -1.0f, -1.0f);
       UT_ASSERT(m_LBA.m_CsKF[iKF] == m_GBA.m_Cs[iKF]);
 #ifdef CFG_HANDLE_SCALE_JUMP
       UT_ASSERT(m_LBA.m_dsKF[iKF] == m_GBA.m_dsKF[iKF]);
 #endif
     }
-
   }
 #endif
 }
@@ -2079,7 +2156,7 @@ void LoadParameters(const std::string fileName) {
     return;
   }
   const Configurator cfgor(fileName.c_str());
-  //cfgor.Print();
+  // cfgor.Print();
   ::LoadParameters(cfgor);
 }
 
@@ -2113,7 +2190,7 @@ bool LoadCalibration(const std::string fileName, Calibration *K) {
 }
 
 bool LoadCalibration(const std::string fileName, float T[3][4], Intrinsic *K,
-                     float *ba, float *bw/*, float *sa*/) {
+                     float *ba, float *bw /*, float *sa*/) {
   FILE *fp = fopen(fileName.c_str(), "r");
   if (!fp) {
     return false;
@@ -2124,10 +2201,10 @@ bool LoadCalibration(const std::string fileName, float T[3][4], Intrinsic *K,
   if (bw) {
     bw[0] = bw[1] = bw[2] = 0.0f;
   }
-  //if (sa) {
+  // if (sa) {
   //  sa[0] = sa[1] = sa[2] = 1.0f;
   //}
-/*  const std::string ext = UT::FileNameExtractExtension(fileName);
+  /*  const std::string ext = UT::FileNameExtractExtension(fileName);
   if (ext == "txt") {
     memset(T, 0, sizeof(float) * 12);
     T[0][0] = T[1][1] = T[2][2] = 1.0f;
@@ -2136,53 +2213,59 @@ bool LoadCalibration(const std::string fileName, float T[3][4], Intrinsic *K,
     memset(K->ds, 0, sizeof(K->ds));
     for (int i = 0; i < 8 && UT::Load<float>(K->ds[i], fp); ++i) {}
   }
-  else if (ext == "yaml") */{
+  else if (ext == "yaml") */ {
     int i = 0, j = 0;
     float k[3];
     char line[UT_STRING_WIDTH_MAX];
     memset(K->ds, 0, sizeof(K->ds));
     while (fgets(line, UT_STRING_WIDTH_MAX, fp)) {
-      const int len = int(std::remove(line, std::remove(line, line + strlen(line), 10), ' ') - line);
-      if (len == 0 || line[len - 1] == ':')
-        continue;
+      const int len = int(
+          std::remove(line, std::remove(line, line + strlen(line), 10), ' ') -
+          line);
+      if (len == 0 || line[len - 1] == ':') continue;
       line[len] = 0;
       switch (i) {
-      case 0: {
-        if (j == 3 ||
-            sscanf(line, "- [%f, %f, %f, %f]", &T[j][0], &T[j][1], &T[j][2], &T[j][3]) == 4) {
-          ++j;
-        }
-        break; }
-      case 1: {
-        if (sscanf(line, "- [%f, %f, %f]", &k[0], &k[1], &k[2]) == 3) {
-          if (j == 0) {
-            K->fx = k[0];
-            K->cx = k[2];
-          } else if (j == 1) {
-            K->fy = k[1];
-            K->cy = k[2];
+        case 0: {
+          if (j == 3 ||
+              sscanf(line, "- [%f, %f, %f, %f]", &T[j][0], &T[j][1], &T[j][2],
+                     &T[j][3]) == 4) {
+            ++j;
           }
+          break;
+        }
+        case 1: {
+          if (sscanf(line, "- [%f, %f, %f]", &k[0], &k[1], &k[2]) == 3) {
+            if (j == 0) {
+              K->fx = k[0];
+              K->cx = k[2];
+            } else if (j == 1) {
+              K->fy = k[1];
+              K->cy = k[2];
+            }
+            ++j;
+          }
+          break;
+        }
+        case 2: {
+          if (sscanf(line, "- [%f]", &K->ds[j]) == 1) ++j;
+          break;
+        }
+        case 3: {
+          if (j == 0 && ba) {
+            sscanf(line, "accel_bias: [%f, %f, %f]", &ba[0], &ba[1], &ba[2]);
+          }
+          if (j == 1 && bw) {
+            sscanf(line, "gyro_bias: [%f, %f, %f]", &bw[0], &bw[1], &bw[2]);
+          }
+          // if (j == 2 && sa) {
+          //  sscanf(line, "accel_scale: [%f, %f, %f]", &sa[0], &sa[1], &sa[2]);
+          //}
           ++j;
+          break;
         }
-        break; }
-      case 2: {
-        if (sscanf(line, "- [%f]", &K->ds[j]) == 1)
-          ++j;
-        break; }
-      case 3: {
-        if (j == 0 && ba) {
-          sscanf(line, "accel_bias: [%f, %f, %f]", &ba[0], &ba[1], &ba[2]);
-        }
-        if (j == 1 && bw) {
-          sscanf(line, "gyro_bias: [%f, %f, %f]", &bw[0], &bw[1], &bw[2]);
-        }
-        //if (j == 2 && sa) {
-        //  sscanf(line, "accel_scale: [%f, %f, %f]", &sa[0], &sa[1], &sa[2]);
-        //}
-        ++j;
-        break; }
       }
-      if ((i == 0 && j == 4) || (i == 1 && j == 3) || (i == 2 && j == 8) || (i == 3 && j == 2)) {
+      if ((i == 0 && j == 4) || (i == 1 && j == 3) || (i == 2 && j == 8) ||
+          (i == 3 && j == 2)) {
         j = 0;
         ++i;
       }
@@ -2208,24 +2291,28 @@ void PrintCalibration(const Calibration &K) {
   T.Print("Tlr = ", false);
 #endif
   UT::Print("K   = %f %f %f %f\n", K.K.fx, K.K.fy, K.K.cx, K.K.cy);
-  UT::Print("d   = %f %f %f %f %f %f %f %f\n", K.K.ds[0], K.K.ds[1], K.K.ds[2], K.K.ds[3],
-                                               K.K.ds[4], K.K.ds[5], K.K.ds[6], K.K.ds[7]);
+  UT::Print("d   = %f %f %f %f %f %f %f %f\n", K.K.ds[0], K.K.ds[1], K.K.ds[2],
+            K.K.ds[3], K.K.ds[4], K.K.ds[5], K.K.ds[6], K.K.ds[7]);
 #ifdef CFG_STEREO
   UT::Print("Kr  = %f %f %f %f\n", K.Kr.fx, K.Kr.fy, K.Kr.cx, K.Kr.cy);
-  UT::Print("dr  = %f %f %f %f %f %f %f %f\n", K.Kr.ds[0], K.Kr.ds[1], K.Kr.ds[2], K.Kr.ds[3],
-                                               K.Kr.ds[4], K.Kr.ds[5], K.Kr.ds[6], K.Kr.ds[7]);
+  UT::Print("dr  = %f %f %f %f %f %f %f %f\n", K.Kr.ds[0], K.Kr.ds[1],
+            K.Kr.ds[2], K.Kr.ds[3], K.Kr.ds[4], K.Kr.ds[5], K.Kr.ds[6],
+            K.Kr.ds[7]);
 #endif
 }
 
-bool SaveGroundTruth(const std::string fileName, const std::vector<CameraIMUState> &XsGT) {
+bool SaveGroundTruth(const std::string fileName,
+                     const std::vector<CameraIMUState> &XsGT) {
   return UT::VectorSaveB(XsGT, fileName.c_str());
 }
 
-bool LoadGroundTruth(const std::string fileName, std::vector<CameraIMUState> *XsGT) {
+bool LoadGroundTruth(const std::string fileName,
+                     std::vector<CameraIMUState> *XsGT) {
   return UT::VectorLoadB(*XsGT, fileName.c_str());
 }
 
-bool SaveGroundTruth(const std::string fileName, const std::vector<Depth> &dsGT) {
+bool SaveGroundTruth(const std::string fileName,
+                     const std::vector<Depth> &dsGT) {
   return UT::VectorSaveB(dsGT, fileName.c_str());
 }
 
@@ -2245,7 +2332,8 @@ bool LoadGroundTruth(const std::string fileName, std::vector<Depth> *dsGT) {
   return true;
 }
 
-static inline bool LoadIndexes(const std::string fileName, std::vector<int> *idxs) {
+static inline bool LoadIndexes(const std::string fileName,
+                               std::vector<int> *idxs) {
   idxs->resize(0);
   FILE *fp = fopen(fileName.c_str(), "r");
   if (!fp) {
@@ -2259,7 +2347,8 @@ static inline bool LoadIndexes(const std::string fileName, std::vector<int> *idx
   return true;
 }
 
-static inline bool SaveIndexes(const std::string fileName, const std::vector<int> &idxs) {
+static inline bool SaveIndexes(const std::string fileName,
+                               const std::vector<int> &idxs) {
   FILE *fp = fopen(fileName.c_str(), "w");
   if (!fp) {
     return false;
@@ -2269,7 +2358,7 @@ static inline bool SaveIndexes(const std::string fileName, const std::vector<int
     fprintf(fp, "%d\n", idxs[i]);
   }
   fclose(fp);
-  return true; 
+  return true;
 }
 
 bool SaveKeyFrames(const std::string fileName, const std::vector<int> &iFrms) {
@@ -2326,7 +2415,8 @@ bool LoadMapPoints(const std::string fileName, std::vector<int> *idxs) {
   return LoadIndexes(fileName, idxs);
 }
 
-bool SaveCurrentFrame(const std::string fileName, const CurrentFrame &CF, const KeyFrame &KF) {
+bool SaveCurrentFrame(const std::string fileName, const CurrentFrame &CF,
+                      const KeyFrame &KF) {
   FILE *fp = fopen(fileName.c_str(), "wb");
   if (!fp) {
     return false;
@@ -2357,7 +2447,8 @@ bool SaveCurrentFrame(const std::string fileName, const CurrentFrame &CF, const 
 }
 
 #ifdef IBA_DEBUG_REMOVE_RIGHT_MEASUREMENTS
-static inline void RemoveRightMeasurements(std::vector<MapPointMeasurement> *zs) {
+static inline void RemoveRightMeasurements(
+    std::vector<MapPointMeasurement> *zs) {
   int i, j;
   const int N = static_cast<int>(zs->size());
   for (i = j = 0; i < N; ++i) {
@@ -2370,7 +2461,8 @@ static inline void RemoveRightMeasurements(std::vector<MapPointMeasurement> *zs)
 }
 #endif
 
-bool LoadCurrentFrame(const std::string fileName, CurrentFrame *CF, KeyFrame *KF) {
+bool LoadCurrentFrame(const std::string fileName, CurrentFrame *CF,
+                      KeyFrame *KF) {
   FILE *fp = fopen(fileName.c_str(), "rb");
   if (!fp) {
     return false;
@@ -2383,7 +2475,7 @@ bool LoadCurrentFrame(const std::string fileName, CurrentFrame *CF, KeyFrame *KF
   UT::LoadB(CF->d, fp);
   UT::StringLoadB(CF->fileName, fp);
 #ifdef CFG_STEREO
-//#if 1
+  //#if 1
   UT::StringLoadB(CF->fileNameRight, fp);
 #endif
   UT::LoadB(KF->iFrm, fp);
@@ -2408,11 +2500,11 @@ bool LoadCurrentFrame(const std::string fileName, CurrentFrame *CF, KeyFrame *KF
   }
 #endif
 #ifdef CFG_DEBUG
-//#if 1
+  //#if 1
   for (int iX = 0; iX < NX; ++iX) {
     const MapPoint &X = KF->Xs[iX];
     UT_ASSERT(X.zs.back().iFrm == KF->iFrm);
-    //UT::Print("%d: %f %f %f\n", X.X.idx, X.X.X[0], X.X.X[1], X.X.X[2]);
+    // UT::Print("%d: %f %f %f\n", X.X.idx, X.X.X[0], X.X.X[1], X.X.X[2]);
   }
 #endif
 //#ifdef CFG_DEBUG
@@ -2470,8 +2562,10 @@ bool LoadCurrentFrameTime(const std::string fileName, double *t) {
   return true;
 }
 
-bool LoadRelativeConstraints(const std::string fileName, const std::vector<float> &ts,
-                             std::vector<RelativeConstraint> *Zs, const float dtMax) {
+bool LoadRelativeConstraints(const std::string fileName,
+                             const std::vector<float> &ts,
+                             std::vector<RelativeConstraint> *Zs,
+                             const float dtMax) {
   Zs->resize(0);
   FILE *fp = fopen(fileName.c_str(), "r");
   if (!fp) {
@@ -2480,8 +2574,8 @@ bool LoadRelativeConstraints(const std::string fileName, const std::vector<float
   char line[UT_STRING_WIDTH_MAX];
   float t1, t2;
   RelativeConstraint Z;
-  //const float sr = 1.0f * UT_FACTOR_DEG_TO_RAD;
-  //const float sr2 = sr * sr;
+  // const float sr = 1.0f * UT_FACTOR_DEG_TO_RAD;
+  // const float sr2 = sr * sr;
   std::string format = "%f";
   for (int i = 0; i < 40; ++i) {
     format = format + " %f";
@@ -2491,30 +2585,27 @@ bool LoadRelativeConstraints(const std::string fileName, const std::vector<float
     if (line[0] == '#') {
       continue;
     }
-    sscanf(line, format.c_str(),
-           &t1, &t2,
-           &Z.T.p[0], &Z.T.p[1], &Z.T.p[2],
-           &Z.T.R[0][0], &Z.T.R[0][1], &Z.T.R[0][2],
-           &Z.T.R[1][0], &Z.T.R[1][1], &Z.T.R[1][2],
-           &Z.T.R[2][0], &Z.T.R[2][1], &Z.T.R[2][2],
-           &Z.S.S[0][0], &Z.S.S[0][1], &Z.S.S[0][2],
-           &Z.S.S[1][0], &Z.S.S[1][1], &Z.S.S[1][2],
-           &Z.S.S[2][0], &Z.S.S[2][1], &Z.S.S[2][2],
-           &Z.S.S[0][3], &Z.S.S[0][4], &Z.S.S[0][5],
-           &Z.S.S[1][3], &Z.S.S[1][4], &Z.S.S[1][5],
-           &Z.S.S[2][3], &Z.S.S[2][4], &Z.S.S[2][5],
-           &Z.S.S[3][3], &Z.S.S[3][4], &Z.S.S[3][5],
-           &Z.S.S[4][3], &Z.S.S[4][4], &Z.S.S[4][5],
-           &Z.S.S[5][3], &Z.S.S[5][4], &Z.S.S[5][5]);
-    //Z.S.S[3][3] = Z.S.S[4][4] = Z.S.S[5][5] = sr2;
+    sscanf(line, format.c_str(), &t1, &t2, &Z.T.p[0], &Z.T.p[1], &Z.T.p[2],
+           &Z.T.R[0][0], &Z.T.R[0][1], &Z.T.R[0][2], &Z.T.R[1][0], &Z.T.R[1][1],
+           &Z.T.R[1][2], &Z.T.R[2][0], &Z.T.R[2][1], &Z.T.R[2][2], &Z.S.S[0][0],
+           &Z.S.S[0][1], &Z.S.S[0][2], &Z.S.S[1][0], &Z.S.S[1][1], &Z.S.S[1][2],
+           &Z.S.S[2][0], &Z.S.S[2][1], &Z.S.S[2][2], &Z.S.S[0][3], &Z.S.S[0][4],
+           &Z.S.S[0][5], &Z.S.S[1][3], &Z.S.S[1][4], &Z.S.S[1][5], &Z.S.S[2][3],
+           &Z.S.S[2][4], &Z.S.S[2][5], &Z.S.S[3][3], &Z.S.S[3][4], &Z.S.S[3][5],
+           &Z.S.S[4][3], &Z.S.S[4][4], &Z.S.S[4][5], &Z.S.S[5][3], &Z.S.S[5][4],
+           &Z.S.S[5][5]);
+    // Z.S.S[3][3] = Z.S.S[4][4] = Z.S.S[5][5] = sr2;
     for (int i = 0; i < 3; ++i) {
       for (int j = 3; j < 6; ++j) {
         Z.S.S[j][i] = Z.S.S[i][j];
       }
     }
-    const std::vector<float>::const_iterator it1 = std::lower_bound(ts.begin(), ts.end(), t1);
-    const std::vector<float>::const_iterator it2 = std::lower_bound(ts.begin(), ts.end(), t2);
-    if (it1 != ts.end() && fabs(t1 - *it1) <= dtMax && it2 != ts.end() && fabs(t2 - *it2) <= dtMax) {
+    const std::vector<float>::const_iterator it1 =
+        std::lower_bound(ts.begin(), ts.end(), t1);
+    const std::vector<float>::const_iterator it2 =
+        std::lower_bound(ts.begin(), ts.end(), t2);
+    if (it1 != ts.end() && fabs(t1 - *it1) <= dtMax && it2 != ts.end() &&
+        fabs(t2 - *it2) <= dtMax) {
       Z.iFrm1 = static_cast<int>(it1 - ts.begin());
       Z.iFrm2 = static_cast<int>(it2 - ts.begin());
       Zs->push_back(Z);
@@ -2598,7 +2689,8 @@ void PrintPoints(const std::vector<Point3D> &Xs) {
   }
 }
 
-static inline bool AssertError(const int iFrm, const float e, const float eMax, const std::string str) {
+static inline bool AssertError(const int iFrm, const float e, const float eMax,
+                               const std::string str) {
   if (e <= eMax) {
     return true;
   }
@@ -2611,8 +2703,10 @@ bool AssertError(const int iFrm, const Error &e) {
   const bool eur = AssertError(iFrm, e.eur, MAX_ERROR_IMU_ROTATION, "eur");
   const bool eup = AssertError(iFrm, e.eup, MAX_ERROR_IMU_POSITION, "eup");
   const bool euv = AssertError(iFrm, e.euv, MAX_ERROR_IMU_VELOCITY, "euv");
-  const bool euba = AssertError(iFrm, e.euba, MAX_ERROR_IMU_BIAS_ACCELERATION, "euba");
-  const bool eubw = AssertError(iFrm, e.eubw, MAX_ERROR_IMU_BIAS_GYROSCOPE, "eubw");
+  const bool euba =
+      AssertError(iFrm, e.euba, MAX_ERROR_IMU_BIAS_ACCELERATION, "euba");
+  const bool eubw =
+      AssertError(iFrm, e.eubw, MAX_ERROR_IMU_BIAS_GYROSCOPE, "eubw");
   const bool edr = AssertError(iFrm, e.edr, MAX_ERROR_DRIFT_ROTATION, "edr");
   const bool edp = AssertError(iFrm, e.edp, MAX_ERROR_DRIFT_POSITION, "edp");
   return ex && eur && eup && euv && euba && eubw && edr && edp;
@@ -2622,7 +2716,8 @@ void PrintError(const std::string str, const Error &e) {
   const std::string _str(str.size(), ' ');
   UT::PrintSeparator();
   UT::Print("%sex = %f\n", str.c_str(), e.ex);
-  UT::Print("%seu = %f %f %f %f %f\n", _str.c_str(), e.eur, e.eup, e.euv, e.euba, e.eubw);
+  UT::Print("%seu = %f %f %f %f %f\n", _str.c_str(), e.eur, e.eup, e.euv,
+            e.euba, e.eubw);
   UT::Print("%sed = %f %f\n", _str.c_str(), e.edr, e.edp);
 }
 

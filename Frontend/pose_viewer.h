@@ -17,15 +17,15 @@
 #define XP_INCLUDE_XP_HELPER_POSE_VIEWER_H_
 
 #include <Eigen/Core>
+#include <atomic>
+#include <deque>
+#include <list>
+#include <mutex>
 #include <opencv2/core/core.hpp>
 #include <opencv2/highgui/highgui.hpp>
 #include <opencv2/imgproc/imgproc.hpp>
 #include <string>
-#include <atomic>
-#include <mutex>
-#include <list>
 #include <vector>
-#include <deque>
 namespace XP {
 class PoseViewer {
  public:
@@ -34,16 +34,16 @@ class PoseViewer {
   constexpr static const int imageSize = 400;
   PoseViewer();  // this we can register as a callback
   void set_clear_canvas_before_draw(bool clear_canvas_before_draw);
-  void addPose(const Eigen::Matrix4f & T_WS,
-               const Eigen::Matrix<float, 9, 1> & speedAndBiases,
+  void addPose(const Eigen::Matrix4f& T_WS,
+               const Eigen::Matrix<float, 9, 1>& speedAndBiases,
                const float travel_dist);
-  void addPose(const Eigen::Matrix4f & T_WS);
-  void addPose(const Eigen::Matrix4f & T_WS, int path_id);
+  void addPose(const Eigen::Matrix4f& T_WS);
+  void addPose(const Eigen::Matrix4f& T_WS, int path_id);
   void displayTo(const std::string& win_name);
   bool drawTo(cv::Mat* img);
 
  private:
-  cv::Point2f convertToImageCoordinates(const cv::Point2f & pointInMeters);
+  cv::Point2f convertToImageCoordinates(const cv::Point2f& pointInMeters);
   void drawPath(cv::Mat* img);
   bool clear_canvas_before_draw_;
   cv::Mat _image;  // for display to

@@ -16,30 +16,27 @@
 #ifndef _IBA_INTERNAL_H_
 #define _IBA_INTERNAL_H_
 
+#include "GlobalBundleAdjustor.h"
 #include "IBA.h"
 #include "LocalBundleAdjustor.h"
-#include "GlobalBundleAdjustor.h"
 
 class ViewerIBA;
 
 namespace IBA {
 
 class Internal {
-
  public:
-
   class FeatureMeasurement {
    public:
-    inline bool operator < (const FeatureMeasurement &z) const {
+    inline bool operator<(const FeatureMeasurement &z) const {
       return m_id < z.m_id
 #ifdef CFG_STEREO
-          || (m_id == z.m_id && !m_right && z.m_right)
+             || (m_id == z.m_id && !m_right && z.m_right)
 #endif
-        ;
+          ;
     }
-    inline bool operator < (const int id) const {
-      return m_id < id;
-    }
+    inline bool operator<(const int id) const { return m_id < id; }
+
    public:
     int m_id;
     ::Point2D m_z;
@@ -50,9 +47,9 @@ class Internal {
   class MapPointIndex {
    public:
     inline MapPointIndex() {}
-    inline MapPointIndex(const int iFrm, const int idx, const int ix) :
-                         m_iFrm(iFrm), m_idx(idx), m_ix(ix) {}
-    inline bool operator < (const MapPointIndex &idx) const {
+    inline MapPointIndex(const int iFrm, const int idx, const int ix)
+        : m_iFrm(iFrm), m_idx(idx), m_ix(ix) {}
+    inline bool operator<(const MapPointIndex &idx) const {
       return m_iFrm < idx.m_iFrm || (m_iFrm == idx.m_iFrm && m_idx < idx.m_idx);
     }
     inline void Set(const int iFrm, const int idx, const int ix) {
@@ -60,26 +57,28 @@ class Internal {
       m_idx = idx;
       m_ix = ix;
     }
+
    public:
     int m_iFrm, m_idx, m_ix;
   };
 
  public:
-
-  void* operator new(std::size_t count) {
+  void *operator new(std::size_t count) {
     // [NOTE] : we don't use count here, count is equal to sizeof(Internal)
     return SIMD::Malloc<Internal>();
   }
 
-  void operator delete(void* p) {
-    SIMD::Free<Internal>(static_cast<Internal*>(p));
+  void operator delete(void *p) {
+    SIMD::Free<Internal>(static_cast<Internal *>(p));
   }
 
  protected:
-
-  const LocalBundleAdjustor::InputLocalFrame& PushCurrentFrame(const CurrentFrame &CF);
-  const GlobalMap::InputKeyFrame& PushKeyFrame(const KeyFrame &KF, const Camera *C = NULL);
-  void ConvertFeatureMeasurements(const std::vector<MapPointMeasurement> &zs, FRM::Frame *F);
+  const LocalBundleAdjustor::InputLocalFrame &PushCurrentFrame(
+      const CurrentFrame &CF);
+  const GlobalMap::InputKeyFrame &PushKeyFrame(const KeyFrame &KF,
+                                               const Camera *C = NULL);
+  void ConvertFeatureMeasurements(const std::vector<MapPointMeasurement> &zs,
+                                  FRM::Frame *F);
 #ifdef CFG_GROUND_TRUTH
   void PushDepthMeasurementsGT(const FRM::Frame &F);
 #endif
@@ -91,7 +90,6 @@ class Internal {
   void AssertConsistency();
 
  protected:
-
   friend Solver;
   friend LocalBundleAdjustor;
   friend GlobalBundleAdjustor;
@@ -117,7 +115,7 @@ class Internal {
   std::vector<::Depth::InverseGaussian> m_dsGT;
   AlignedVector<Rotation3D> m_RsGT;
   AlignedVector<LA::AlignedVector3f> m_TsGT;
-  std::vector<std::vector<::Depth::Measurement> > m_zsGT;
+  std::vector<std::vector<::Depth::Measurement>> m_zsGT;
 #endif
 
   Camera::Calibration m_K;
@@ -143,7 +141,6 @@ class Internal {
   AlignedVector<IMU::Measurement> m_us;
   AlignedVector<float> m_work;
 };
-
 }
 
 #endif

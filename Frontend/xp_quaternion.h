@@ -36,8 +36,8 @@ class XpQuaternion : public Eigen::Vector4f {
   template <typename Scalar>
   XpQuaternion(Scalar q0, Scalar q1, Scalar q2, Scalar q3)
       : Base{static_cast<float>(q0), static_cast<float>(q1),
-        static_cast<float>(q2), static_cast<float>(q3)} {
-    Eigen::Vector4f& q = *this;
+             static_cast<float>(q2), static_cast<float>(q3)} {
+    Eigen::Vector4f &q = *this;
     q = q * (1.f / q.norm());
     if (q(3) < 0) {
       q = -q;
@@ -45,16 +45,15 @@ class XpQuaternion : public Eigen::Vector4f {
   }
 
   template <typename OtherDerived>
-  explicit XpQuaternion(
-      const Eigen::QuaternionBase<OtherDerived> &eigen_quat) {
+  explicit XpQuaternion(const Eigen::QuaternionBase<OtherDerived> &eigen_quat) {
     SetFromEigenQuaternionf(eigen_quat);
   }
 
   // from MatrixBase - REQUIRED BY EIGEN
   template <typename OtherDerived>
   XpQuaternion(const MatrixBase<OtherDerived> &other)  // NOLINT
-    : Base{other} {
-    Eigen::Vector4f& q = *this;
+      : Base{other} {
+    Eigen::Vector4f &q = *this;
     q = q * (1.f / q.norm());
     if (q(3) < 0) {
       q = -q;
@@ -65,7 +64,7 @@ class XpQuaternion : public Eigen::Vector4f {
   template <typename OtherDerived>
   XpQuaternion &operator=(const MatrixBase<OtherDerived> &other) {
     Base::operator=(other);
-    Eigen::Vector4f& q = *this;
+    Eigen::Vector4f &q = *this;
     q = q * (1.f / q.norm());
     if (q(3) < 0) {
       q = -q;
@@ -106,7 +105,7 @@ class XpQuaternion : public Eigen::Vector4f {
   // Normalize the quaternion
   void SetFromRotationMatrix(const Eigen::Matrix3f &R);
 
-  void SetFromEulerRadians(const Eigen::Vector3f& euler_rad);
+  void SetFromEulerRadians(const Eigen::Vector3f &euler_rad);
 
   // set from delta theta
   // see page 8 on ref
@@ -114,40 +113,50 @@ class XpQuaternion : public Eigen::Vector4f {
   void SetFromDeltaTheta(Eigen::Vector3f dtheta);
 
   // v_lhs = R(q) * v_rhs
-  void SetFromTwoVectors(const Eigen::Vector3f& v_rhs, const Eigen::Vector3f& v_lhs);
+  void SetFromTwoVectors(const Eigen::Vector3f &v_rhs,
+                         const Eigen::Vector3f &v_lhs);
 
   // Hides Eigen::MatrixBase<>::inverse
   XpQuaternion inverse() const;
-  XpQuaternion mul(const XpQuaternion& rhs) const;
+  XpQuaternion mul(const XpQuaternion &rhs) const;
 };
 
-inline Eigen::Matrix4f XpComposeOmega(const Eigen::Vector3f& w) {
+inline Eigen::Matrix4f XpComposeOmega(const Eigen::Vector3f &w) {
   Eigen::Matrix4f Ohm;
-  Ohm(0, 0) = 0;     Ohm(0, 1) = -w(2);  Ohm(0, 2) = w(1);   Ohm(0, 3) = w(0);
-  Ohm(1, 0) = w(2);  Ohm(1, 1) = 0;      Ohm(1, 2) = -w(0);  Ohm(1, 3) = w(1);
-  Ohm(2, 0) = -w(1); Ohm(2, 1) = w(0);   Ohm(2, 2) = 0;      Ohm(2, 3) = w(2);
-  Ohm(3, 0) = -w(0); Ohm(3, 1) = -w(1);  Ohm(3, 2) = -w(2);  Ohm(3, 3) = 0;
+  Ohm(0, 0) = 0;
+  Ohm(0, 1) = -w(2);
+  Ohm(0, 2) = w(1);
+  Ohm(0, 3) = w(0);
+  Ohm(1, 0) = w(2);
+  Ohm(1, 1) = 0;
+  Ohm(1, 2) = -w(0);
+  Ohm(1, 3) = w(1);
+  Ohm(2, 0) = -w(1);
+  Ohm(2, 1) = w(0);
+  Ohm(2, 2) = 0;
+  Ohm(2, 3) = w(2);
+  Ohm(3, 0) = -w(0);
+  Ohm(3, 1) = -w(1);
+  Ohm(3, 2) = -w(2);
+  Ohm(3, 3) = 0;
   return Ohm;
 }
 
 // page 11
 // Note we use Vector4f to represent quaternion instead of quaternion
 // because it is better do not normalize q during integration
-inline Eigen::Vector4f XpQuaternionDerivative(
-    const Eigen::Vector4f &q,
-    const Eigen::Vector3f &omega) {
+inline Eigen::Vector4f XpQuaternionDerivative(const Eigen::Vector4f &q,
+                                              const Eigen::Vector3f &omega) {
   return -0.5 * XpComposeOmega(omega) * q;
 }
 
-XpQuaternion quat_multiply(const XpQuaternion& lhs, const XpQuaternion& rhs);
+XpQuaternion quat_multiply(const XpQuaternion &lhs, const XpQuaternion &rhs);
 
 // page 11
 void IntegrateQuaternion(const Eigen::Vector3f &omega_begin,
                          const Eigen::Vector3f &omega_end,
-                         const XpQuaternion &q_begin,
-                         const float dt,
-                         XpQuaternion *q_end,
-                         XpQuaternion *q_mid = nullptr,
+                         const XpQuaternion &q_begin, const float dt,
+                         XpQuaternion *q_end, XpQuaternion *q_mid = nullptr,
                          XpQuaternion *q_fourth = nullptr,
                          XpQuaternion *q_eighth = nullptr);
 

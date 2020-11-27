@@ -26,6 +26,7 @@ class ImuData {
   Eigen::Vector3f accel;
   Eigen::Vector3f ang_v;
   float time_stamp;
+
  public:
 #ifndef __ANDROID__
   EIGEN_MAKE_ALIGNED_OPERATOR_NEW

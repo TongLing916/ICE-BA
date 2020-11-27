@@ -15,18 +15,19 @@
  *****************************************************************************/
 #include "param.h"
 #include <glog/logging.h>
-#include <opencv2/core.hpp>
 #include <Eigen/Eigen>
+#include <algorithm>
 #include <fstream>
 #include <list>
-#include <algorithm>
+#include <opencv2/core.hpp>
 
 using std::vector;
 using Eigen::Matrix4f;
 namespace YAML {
-// Define templated helper functions for YAML to encode/decode from custom data type.
+// Define templated helper functions for YAML to encode/decode from custom data
+// type.
 // We need special care for emitters of Vector and Matrix!
-template<>
+template <>
 struct convert<Eigen::Vector3f> {
   static Node encode(const Eigen::Vector3f& rhs) {
     Node node;
@@ -47,12 +48,12 @@ struct convert<Eigen::Vector3f> {
   }
 };
 
-Emitter& operator << (Emitter& out, const Eigen::Vector3f& v) {
+Emitter& operator<<(Emitter& out, const Eigen::Vector3f& v) {
   out << YAML::Flow;
   out << YAML::BeginSeq << v(0) << v(1) << v(2) << YAML::EndSeq;
   return out;
 }
-template<>
+template <>
 struct convert<cv::Size> {
   static Node encode(const cv::Size& rhs) {
     Node node;
@@ -70,43 +71,44 @@ struct convert<cv::Size> {
     return true;
   }
 };
-Emitter& operator << (Emitter& out, const cv::Size& v) {
+Emitter& operator<<(Emitter& out, const cv::Size& v) {
   out << YAML::Flow;
   out << YAML::BeginSeq << v.width << v.height << YAML::EndSeq;
   return out;
 }
-template<int M, int N>
+template <int M, int N>
 struct convert<Eigen::Matrix<float, M, N>> {
-// Encode Matrix3f as three sequences of 3-element sequence (row-major)
-static Node encode(const Eigen::Matrix<float, M, N>& rhs) {
-  Node node;
-  for (int r = 0; r < M; r++) {
-    Node row;
-    for (int c = 0; c < N; c++) {
-      row.push_back(rhs(r, c));
+  // Encode Matrix3f as three sequences of 3-element sequence (row-major)
+  static Node encode(const Eigen::Matrix<float, M, N>& rhs) {
+    Node node;
+    for (int r = 0; r < M; r++) {
+      Node row;
+      for (int c = 0; c < N; c++) {
+        row.push_back(rhs(r, c));
+      }
+      node.push_back(row);
     }
-    node.push_back(row);
+    return node;
   }
-  return node;
-}
 
-static bool decode(const Node& node, Eigen::Matrix<float, M, N>& rhs) {  // NOLINT
-  if (!node.IsSequence() || node.size() != M) {
-    return false;
-  }
-  for (int r = 0; r < M; r++) {
-    if (!node[r].IsSequence() || node[r].size() != N) {
+  static bool decode(const Node& node,
+                     Eigen::Matrix<float, M, N>& rhs) {  // NOLINT
+    if (!node.IsSequence() || node.size() != M) {
       return false;
     }
-    for (int c = 0 ; c < N; c++) {
-      rhs(r, c) = node[r][c].as<float>();
+    for (int r = 0; r < M; r++) {
+      if (!node[r].IsSequence() || node[r].size() != N) {
+        return false;
+      }
+      for (int c = 0; c < N; c++) {
+        rhs(r, c) = node[r][c].as<float>();
+      }
     }
+    return true;
   }
-  return true;
-}
 };
-template<int M, int N>
-Emitter& operator << (Emitter& out, const Eigen::Matrix<float, M, N>& v) {
+template <int M, int N>
+Emitter& operator<<(Emitter& out, const Eigen::Matrix<float, M, N>& v) {
   out << YAML::BeginSeq;
   for (int r = 0; r < M; r++) {
     out << YAML::Flow;
@@ -119,7 +121,7 @@ Emitter& operator << (Emitter& out, const Eigen::Matrix<float, M, N>& v) {
   out << YAML::EndSeq;
   return out;
 }
-template<int M, int N>
+template <int M, int N>
 struct convert<cv::Matx<float, M, N>> {
   static Node encode(const cv::Matx<float, M, N>& rhs) {
     Node node;
@@ -143,14 +145,14 @@ struct convert<cv::Matx<float, M, N>> {
       if (node[r].size() != N) {
         return false;
       }
-      for (int c = 0 ; c < N; c++) {
+      for (int c = 0; c < N; c++) {
         rhs(r, c) = node[r][c].as<float>();
       }
     }
     return true;
   }
 };
-template<>
+template <>
 struct convert<cv::Mat_<float>> {
   static Node encode(const cv::Mat_<float>& rhs) {
     Node node;
@@ -180,7 +182,7 @@ struct convert<cv::Mat_<float>> {
       if (node[r].size() != N) {
         return false;
       }
-      for (int c = 0 ; c < N; c++) {
+      for (int c = 0; c < N; c++) {
         rhs(r, c) = node[r][c].as<float>();
       }
     }
@@ -188,8 +190,8 @@ struct convert<cv::Mat_<float>> {
   }
 };
 
-template<int M, int N>
-Emitter& operator << (Emitter& out, const cv::Matx<float, M, N>& v) {
+template <int M, int N>
+Emitter& operator<<(Emitter& out, const cv::Matx<float, M, N>& v) {
   out << YAML::BeginSeq;
   for (int r = 0; r < M; r++) {
     out << YAML::Flow;
@@ -203,7 +205,7 @@ Emitter& operator << (Emitter& out, const cv::Matx<float, M, N>& v) {
   return out;
 }
 
-template<>
+template <>
 struct convert<XP::AlgorithmParam::FeatDetParam_t> {
   static Node encode(const XP::AlgorithmParam::FeatDetParam_t& rhs) {
     Node node;
@@ -211,13 +213,16 @@ struct convert<XP::AlgorithmParam::FeatDetParam_t> {
     node["pyra_level"] = rhs.pyra_level;
     node["uniform_radius"] = rhs.uniform_radius;
     node["fast_det_thresh"] = rhs.fast_det_thresh;
-    node["min_feature_distance_over_baseline_ratio"] = rhs.min_feature_distance_over_baseline_ratio;
-    node["max_feature_distance_over_baseline_ratio"] = rhs.max_feature_distance_over_baseline_ratio;
+    node["min_feature_distance_over_baseline_ratio"] =
+        rhs.min_feature_distance_over_baseline_ratio;
+    node["max_feature_distance_over_baseline_ratio"] =
+        rhs.max_feature_distance_over_baseline_ratio;
     node["feature_track_length_thresh"] = rhs.feature_track_length_thresh;
     node["feature_track_dropout_rate"] = rhs.feature_track_dropout_rate;
     return node;
   }
-  static bool decode(const Node& node, XP::AlgorithmParam::FeatDetParam_t& rhs) {  // NOLINT
+  static bool decode(const Node& node,
+                     XP::AlgorithmParam::FeatDetParam_t& rhs) {  // NOLINT
     if (!node.IsMap()) {
       return false;
     }
@@ -229,19 +234,21 @@ struct convert<XP::AlgorithmParam::FeatDetParam_t> {
         node["min_feature_distance_over_baseline_ratio"].as<float>();
     rhs.max_feature_distance_over_baseline_ratio =
         node["max_feature_distance_over_baseline_ratio"].as<float>();
-    rhs.feature_track_length_thresh = node["feature_track_length_thresh"].as<int>();
-    rhs.feature_track_dropout_rate = node["feature_track_dropout_rate"].as<float>();
+    rhs.feature_track_length_thresh =
+        node["feature_track_length_thresh"].as<int>();
+    rhs.feature_track_dropout_rate =
+        node["feature_track_dropout_rate"].as<float>();
     return true;
   }
 };
 
-Emitter& operator << (Emitter& out, const XP::AlgorithmParam::FeatDetParam_t& v) {
+Emitter& operator<<(Emitter& out, const XP::AlgorithmParam::FeatDetParam_t& v) {
   Node node;
   node = v;
   out << node;
   return out;
 }
-template<>
+template <>
 struct convert<XP::AlgorithmParam::Tracking_t> {
   static Node encode(const XP::AlgorithmParam::Tracking_t& rhs) {
     Node node;
@@ -252,14 +259,16 @@ struct convert<XP::AlgorithmParam::Tracking_t> {
     return node;
   }
 
-  static bool decode(const Node& node, XP::AlgorithmParam::Tracking_t& rhs) {  // NOLINT
+  static bool decode(const Node& node,
+                     XP::AlgorithmParam::Tracking_t& rhs) {  // NOLINT
     if (!node.IsMap()) {
       return false;
     }
     rhs.feature_uncertainty = node["feature_uncertainty"].as<float>();
     rhs.use_of_id = node["use_of_id"].as<bool>();
     rhs.slave_det = node["slave_det"].as<std::string>();
-    if (rhs.slave_det != "epi" && rhs.slave_det != "OF" && rhs.slave_det != "direct") {
+    if (rhs.slave_det != "epi" && rhs.slave_det != "OF" &&
+        rhs.slave_det != "direct") {
       LOG(ERROR) << "slave_det mode " << rhs.slave_det << " not supported";
       return false;
     }
@@ -273,15 +282,14 @@ struct convert<XP::AlgorithmParam::Tracking_t> {
   }
 };
 
-Emitter& operator << (Emitter& out, const XP::AlgorithmParam::Tracking_t& v) {
+Emitter& operator<<(Emitter& out, const XP::AlgorithmParam::Tracking_t& v) {
   Node node;
   node = v;
   out << node;
   return out;
 }
 
-
-template<>
+template <>
 struct convert<XP::DuoCalibParam::Imu_t> {
   static Node encode(const XP::DuoCalibParam::Imu_t& rhs) {
     Node node;
@@ -294,7 +302,8 @@ struct convert<XP::DuoCalibParam::Imu_t> {
     node["D_T_I"] = rhs.D_T_I;
     return node;
   }
-  static bool decode(const Node& node, XP::DuoCalibParam::Imu_t& rhs) {  // NOLINT
+  static bool decode(const Node& node,
+                     XP::DuoCalibParam::Imu_t& rhs) {  // NOLINT
     if (!node.IsMap()) {
       return false;
     }
@@ -315,27 +324,20 @@ struct convert<XP::DuoCalibParam::Imu_t> {
 };
 
 // Imu_t need special care because of the formatting of Matrix and Vector
-Emitter& operator << (Emitter& out, const XP::DuoCalibParam::Imu_t& v) {
+Emitter& operator<<(Emitter& out, const XP::DuoCalibParam::Imu_t& v) {
   out << YAML::BeginMap;
-  out << YAML::Key << "accel_TK"
-      << YAML::Value << v.accel_TK;
-  out << YAML::Key << "accel_bias"
-      << YAML::Value << v.accel_bias;
-  out << YAML::Key << "gyro_TK"
-      << YAML::Value << v.gyro_TK;
-  out << YAML::Key << "gyro_bias"
-      << YAML::Value << v.gyro_bias;
-  out << YAML::Key << "accel_noise_var"
-      << YAML::Value << v.accel_noise_var;
-  out << YAML::Key << "angv_noise_var"
-      << YAML::Value << v.angv_noise_var;
-  out << YAML::Key << "D_T_I"
-      << YAML::Value << v.D_T_I;
+  out << YAML::Key << "accel_TK" << YAML::Value << v.accel_TK;
+  out << YAML::Key << "accel_bias" << YAML::Value << v.accel_bias;
+  out << YAML::Key << "gyro_TK" << YAML::Value << v.gyro_TK;
+  out << YAML::Key << "gyro_bias" << YAML::Value << v.gyro_bias;
+  out << YAML::Key << "accel_noise_var" << YAML::Value << v.accel_noise_var;
+  out << YAML::Key << "angv_noise_var" << YAML::Value << v.angv_noise_var;
+  out << YAML::Key << "D_T_I" << YAML::Value << v.D_T_I;
   out << YAML::EndMap;
   return out;
 }
 
-template<>
+template <>
 struct convert<XP::DuoCalibParam::Camera_t> {
   static Node encode(const XP::DuoCalibParam::Camera_t& rhs) {
     Node node;
@@ -349,7 +351,8 @@ struct convert<XP::DuoCalibParam::Camera_t> {
     return node;
   }
 
-  static bool decode(const Node& node, XP::DuoCalibParam::Camera_t& rhs) {  // NOLINT
+  static bool decode(const Node& node,
+                     XP::DuoCalibParam::Camera_t& rhs) {  // NOLINT
     if (!node.IsMap()) {
       return false;
     }
@@ -365,9 +368,8 @@ struct convert<XP::DuoCalibParam::Camera_t> {
     rhs.cv_dist_coeff_lr.resize(2);
     cv::Matx<float, 8, 1> dist_l =
         node["dist_coeff_l"].as<cv::Matx<float, 8, 1>>();
-    if (dist_l(7) < 1e-7 && dist_l(7) > -1e-7 &&
-        dist_l(6) < 1e-7 && dist_l(6) > -1e-7 &&
-        dist_l(5) < 1e-7 && dist_l(5) > -1e-7) {
+    if (dist_l(7) < 1e-7 && dist_l(7) > -1e-7 && dist_l(6) < 1e-7 &&
+        dist_l(6) > -1e-7 && dist_l(5) < 1e-7 && dist_l(5) > -1e-7) {
       if (dist_l(4) < 1e-7 && dist_l(4) > -1e-7) {
         rhs.cv_dist_coeff_lr[0].create(4, 1);
       } else {
@@ -381,9 +383,8 @@ struct convert<XP::DuoCalibParam::Camera_t> {
     }
     cv::Matx<float, 8, 1> dist_r =
         node["dist_coeff_r"].as<cv::Matx<float, 8, 1>>();
-    if (dist_r(7) < 1e-7 && dist_r(7) > -1e-7 &&
-        dist_r(6) < 1e-7 && dist_r(6) > -1e-7 &&
-        dist_r(5) < 1e-7 && dist_r(5) > -1e-7) {
+    if (dist_r(7) < 1e-7 && dist_r(7) > -1e-7 && dist_r(6) < 1e-7 &&
+        dist_r(6) > -1e-7 && dist_r(5) < 1e-7 && dist_r(5) > -1e-7) {
       if (dist_r(4) < 1e-7 && dist_r(4) > -1e-7) {
         rhs.cv_dist_coeff_lr[1].create(4, 1);
       } else {
@@ -398,7 +399,7 @@ struct convert<XP::DuoCalibParam::Camera_t> {
     if (node["img_size"]) {
       rhs.img_size = node["img_size"].as<cv::Size>();
     } else {
-      rhs.img_size.width = 752;  // default param
+      rhs.img_size.width = 752;   // default param
       rhs.img_size.height = 480;  // default param
       std::cout << "no img_size is found in calib file. Using default value "
                 << rhs.img_size << std::endl;
@@ -407,12 +408,10 @@ struct convert<XP::DuoCalibParam::Camera_t> {
   }
 };
 // Imu_t need special care because of the formatting of Matrix and Vector
-Emitter& operator << (Emitter& out, const XP::DuoCalibParam::Camera_t& v) {
+Emitter& operator<<(Emitter& out, const XP::DuoCalibParam::Camera_t& v) {
   out << YAML::BeginMap;
-  out << YAML::Key << "D_T_C_l"
-      << YAML::Value << v.D_T_C_lr[0];
-  out << YAML::Key << "D_T_C_r"
-      << YAML::Value << v.D_T_C_lr[1];
+  out << YAML::Key << "D_T_C_l" << YAML::Value << v.D_T_C_lr[0];
+  out << YAML::Key << "D_T_C_r" << YAML::Value << v.D_T_C_lr[1];
   out << YAML::Key << "cameraK_l" << YAML::Value << v.cameraK_lr[0];
   out << YAML::Key << "cameraK_r" << YAML::Value << v.cameraK_lr[1];
   cv::Matx<float, 8, 1> dist_l = cv::Matx<float, 8, 1>::zeros();
@@ -435,7 +434,6 @@ Emitter& operator << (Emitter& out, const XP::DuoCalibParam::Camera_t& v) {
 
 }  // namespace YAML
 
-
 namespace XP {
 
 YAML::Node ParamBase::deserialize(const std::string& filename) {
@@ -446,7 +444,8 @@ YAML::Node ParamBase::deserialize(const std::string& filename) {
   return node;
 }
 
-void ParamBase::serialize(const std::string& filename, const YAML::Emitter& emitter) {
+void ParamBase::serialize(const std::string& filename,
+                          const YAML::Emitter& emitter) {
   std::ofstream fout(filename);
   fout << emitter.c_str();
 }
@@ -466,10 +465,8 @@ bool AlgorithmParam::LoadFromCvYaml(const std::string& filename) {
 bool AlgorithmParam::WriteToYaml(const std::string& filename) {
   YAML::Emitter emitter;
   emitter << YAML::BeginMap;
-  emitter << YAML::Key << "FeatDetParam"
-          << YAML::Value << FeatDetParam;
-  emitter << YAML::Key << "Tracking"
-          << YAML::Value << Tracking;
+  emitter << YAML::Key << "FeatDetParam" << YAML::Value << FeatDetParam;
+  emitter << YAML::Key << "Tracking" << YAML::Value << Tracking;
   emitter << YAML::EndMap;
 
   serialize(filename, emitter);
@@ -481,11 +478,11 @@ bool AlgorithmParam::WriteToCvYaml(const std::string& filename) {
   return false;
 }
 
-DuoCalibParam::DuoCalibParam() :
-    C_R_B(Eigen::Matrix3f::Identity()),
-    C_p_B(Eigen::Vector3f::Zero()),
-    device_id("n/a"),
-    sensor_type(SensorType::UNKNOWN) {
+DuoCalibParam::DuoCalibParam()
+    : C_R_B(Eigen::Matrix3f::Identity()),
+      C_p_B(Eigen::Vector3f::Zero()),
+      device_id("n/a"),
+      sensor_type(SensorType::UNKNOWN) {
   this->Camera.D_T_C_lr.resize(2, Eigen::Matrix4f::Identity());
   this->Camera.cameraK_lr.resize(2, Eigen::Matrix3f::Identity());
   this->Camera.cv_camK_lr.resize(2, cv::Matx33f::eye());
@@ -497,7 +494,8 @@ DuoCalibParam::DuoCalibParam() :
   this->Imu.gyro_bias.setZero();
   this->Imu.accel_noise_var.setConstant(0.04 * 0.04);
   this->Imu.angv_noise_var.setConstant(0.01 * 0.01);
-  this->Imu.D_T_I = Eigen::Matrix4f::Identity();;
+  this->Imu.D_T_I = Eigen::Matrix4f::Identity();
+  ;
 }
 
 bool DuoCalibParam::LoadFromCvYaml(const std::string& filename) {
@@ -615,7 +613,7 @@ bool DuoCalibParam::LoadFromCvYaml(const std::string& filename) {
 
 bool DuoCalibParam::LoadFromYaml(const std::string& filename) {
   return (this->LoadImuCalibFromYaml(filename) &&
-      this->LoadCamCalibFromYaml(filename));
+          this->LoadCamCalibFromYaml(filename));
 }
 
 bool DuoCalibParam::LoadImuCalibFromYaml(const std::string& filename) {
@@ -661,7 +659,8 @@ bool DuoCalibParam::LoadCamCalibFromYaml(const std::string& filename) {
 }
 
 bool DuoCalibParam::WriteToCvYaml(const std::string& filename) {
-  cv::FileStorage cvfs(filename, cv::FileStorage::WRITE | cv::FileStorage::FORMAT_YAML);
+  cv::FileStorage cvfs(filename,
+                       cv::FileStorage::WRITE | cv::FileStorage::FORMAT_YAML);
   if (!cvfs.isOpened()) {
     LOG(ERROR) << "Can't open file: " << filename;
     return false;
@@ -671,15 +670,25 @@ bool DuoCalibParam::WriteToCvYaml(const std::string& filename) {
   // sensor type
   switch (sensor_type) {
     case XP::DuoCalibParam::SensorType::UNKNOWN:
-      cvfs << "SensorType" << "UNKNOWN"; break;
+      cvfs << "SensorType"
+           << "UNKNOWN";
+      break;
     case XP::DuoCalibParam::SensorType::LI:
-      cvfs << "SensorType" << "LI"; break;
+      cvfs << "SensorType"
+           << "LI";
+      break;
     case XP::DuoCalibParam::SensorType::XP:
-      cvfs << "SensorType" << "XP"; break;
+      cvfs << "SensorType"
+           << "XP";
+      break;
     case XP::DuoCalibParam::SensorType::XP2:
-      cvfs << "SensorType" << "XP2"; break;
+      cvfs << "SensorType"
+           << "XP2";
+      break;
     case XP::DuoCalibParam::SensorType::XP3:
-      cvfs << "SensorType" << "XP3"; break;
+      cvfs << "SensorType"
+           << "XP3";
+      break;
     default:
       LOG(ERROR) << "sensor type invalid";
       return -1;
@@ -719,7 +728,8 @@ bool DuoCalibParam::WriteToCvYaml(const std::string& filename) {
   cvfs << "gyro_bias" << gyro_bias;
 
   // accel_noise_var
-  cv::Mat accel_noise_var(3, 1, CV_64FC1, reinterpret_cast<void*>(param_buffer));
+  cv::Mat accel_noise_var(3, 1, CV_64FC1,
+                          reinterpret_cast<void*>(param_buffer));
   tmp_ptr = Imu.accel_noise_var.data();
   for (int i = 0; i < 3; ++i) {
     param_buffer[i] = static_cast<double>(*tmp_ptr++);
@@ -797,32 +807,24 @@ bool DuoCalibParam::WriteToCvYaml(const std::string& filename) {
 bool DuoCalibParam::WriteToYaml(const std::string& filename) {
   YAML::Emitter emitter;
   emitter << YAML::BeginMap;
-  emitter << YAML::Key << "DeviceId"
-          << YAML::Value << this->device_id;
+  emitter << YAML::Key << "DeviceId" << YAML::Value << this->device_id;
   if (this->sensor_type == SensorType::UNKNOWN) {
-    emitter << YAML::Key << "SensorType"
-            << YAML::Value << "UNKNOWN";
+    emitter << YAML::Key << "SensorType" << YAML::Value << "UNKNOWN";
   } else if (this->sensor_type == SensorType::LI) {
-    emitter << YAML::Key << "SensorType"
-            << YAML::Value << "LI";
+    emitter << YAML::Key << "SensorType" << YAML::Value << "LI";
   } else if (this->sensor_type == SensorType::XP) {
-    emitter << YAML::Key << "SensorType"
-            << YAML::Value << "XP";
+    emitter << YAML::Key << "SensorType" << YAML::Value << "XP";
   } else if (this->sensor_type == SensorType::XP2) {
-    emitter << YAML::Key << "SensorType"
-            << YAML::Value << "XP2";
+    emitter << YAML::Key << "SensorType" << YAML::Value << "XP2";
   } else if (this->sensor_type == SensorType::XP3) {
-    emitter << YAML::Key << "SensorType"
-            << YAML::Value << "XP3";
+    emitter << YAML::Key << "SensorType" << YAML::Value << "XP3";
   } else {
-    LOG(ERROR) << "this->sensor_type == "
-               << this->sensor_type << " not supported";
+    LOG(ERROR) << "this->sensor_type == " << this->sensor_type
+               << " not supported";
     return false;
   }
-  emitter << YAML::Key << "Imu"
-          << YAML::Value << this->Imu;
-  emitter << YAML::Key << "Camera"
-          << YAML::Value << this->Camera;
+  emitter << YAML::Key << "Imu" << YAML::Value << this->Imu;
+  emitter << YAML::Key << "Camera" << YAML::Value << this->Camera;
   emitter << YAML::EndMap;
   serialize(filename, emitter);
   return true;
@@ -843,8 +845,7 @@ bool DuoCalibParam::initUndistortMap(const cv::Size& new_img_size) {
     lurd[3].x = this->Camera.img_size.width / 2;
     lurd[3].y = this->Camera.img_size.height;
     std::vector<cv::Point2f> lurd_undistort(4);
-    cv::undistortPoints(lurd, lurd_undistort,
-                        this->Camera.cv_camK_lr[lr],
+    cv::undistortPoints(lurd, lurd_undistort, this->Camera.cv_camK_lr[lr],
                         this->Camera.cv_dist_coeff_lr[lr]);
     this->Camera.lurd_lr[lr][0] = lurd_undistort[0].x;
     this->Camera.lurd_lr[lr][1] = lurd_undistort[1].y;
@@ -855,7 +856,8 @@ bool DuoCalibParam::initUndistortMap(const cv::Size& new_img_size) {
   this->Camera.undistort_map_op2_lr.resize(2);
   vector<cv::Mat> R(2);
   vector<cv::Mat> P(2);
-  Matrix4f C0_T_C1 = this->Camera.D_T_C_lr[0].inverse() * this->Camera.D_T_C_lr[1];
+  Matrix4f C0_T_C1 =
+      this->Camera.D_T_C_lr[0].inverse() * this->Camera.D_T_C_lr[1];
   Matrix4f C1_T_C0 = C0_T_C1.inverse();
   cv::Mat C0_R_C1(3, 3, CV_64F);
   cv::Mat C1_R_C0(3, 3, CV_64F);
@@ -870,15 +872,11 @@ bool DuoCalibParam::initUndistortMap(const cv::Size& new_img_size) {
     C1_t_C0.at<double>(i, 0) = C1_T_C0(i, 3);
   }
   cv::Matx44d Q;
-  cv::stereoRectify(this->Camera.cv_camK_lr[0],
-                    this->Camera.cv_dist_coeff_lr[0],
-                    this->Camera.cv_camK_lr[1],
-                    this->Camera.cv_dist_coeff_lr[1],
-                    this->Camera.img_size,
-                    C1_R_C0, C1_t_C0,
-                    R[0], R[1],
-                    P[0], P[1],
-                    Q, cv::CALIB_ZERO_DISPARITY, 0, new_img_size);
+  cv::stereoRectify(
+      this->Camera.cv_camK_lr[0], this->Camera.cv_dist_coeff_lr[0],
+      this->Camera.cv_camK_lr[1], this->Camera.cv_dist_coeff_lr[1],
+      this->Camera.img_size, C1_R_C0, C1_t_C0, R[0], R[1], P[0], P[1], Q,
+      cv::CALIB_ZERO_DISPARITY, 0, new_img_size);
   this->Camera.Q = cv::Matx44f(Q);
   this->Camera.cv_undist_K_lr.resize(2);
   this->Camera.undist_D_T_C_lr.resize(2);
@@ -890,14 +888,11 @@ bool DuoCalibParam::initUndistortMap(const cv::Size& new_img_size) {
         newK.at<float>(i, j) = P[lr].at<double>(i, j);
       }
     }
-    cv::initUndistortRectifyMap(this->Camera.cv_camK_lr[lr],
-                                this->Camera.cv_dist_coeff_lr[lr],
-                                R[lr],
-                                newK,  // this->Camera.cv_camK_lr[lr],  // newK
-                                new_img_size,
-                                CV_32FC1,
-                                this->Camera.undistort_map_op1_lr[lr],
-                                this->Camera.undistort_map_op2_lr[lr]);
+    cv::initUndistortRectifyMap(
+        this->Camera.cv_camK_lr[lr], this->Camera.cv_dist_coeff_lr[lr], R[lr],
+        newK,  // this->Camera.cv_camK_lr[lr],  // newK
+        new_img_size, CV_32FC1, this->Camera.undistort_map_op1_lr[lr],
+        this->Camera.undistort_map_op2_lr[lr]);
     this->Camera.cv_undist_K_lr[lr] = cv::Matx33f(newK);
     this->Camera.undist_D_T_C_lr[lr].setIdentity();
   }
@@ -924,7 +919,8 @@ bool get_calib_file_from_device_id(const std::string& device_id,
   CHECK_NOTNULL(calib_file_ptr);
   // todo: auto-parse device_id from string...
   std::list<std::string> known_device_ids;
-  known_device_ids.push_back(std::string("93312E057D22"));  // this one has an IR pass filter
+  known_device_ids.push_back(
+      std::string("93312E057D22"));  // this one has an IR pass filter
   known_device_ids.push_back(std::string("8219C930E5FC"));
   known_device_ids.push_back(std::string("DFCDC2D10CD9"));
   known_device_ids.push_back(std::string("BAAFF337329A"));
@@ -1028,7 +1024,8 @@ bool load_camera_calib_param(const std::string& calib_file,
   CHECK_NEAR(duo_calib_param.Camera.D_T_C_lr[1](3, 1), 0, 1e-5);
   CHECK_NEAR(duo_calib_param.Camera.D_T_C_lr[1](3, 2), 0, 1e-5);
   CHECK_NEAR(duo_calib_param.Camera.D_T_C_lr[1](3, 3), 1, 1e-5);
-  VLOG(1) << "duo_calib_param.Camera.D_T_C_lr[1] " << duo_calib_param.Camera.D_T_C_lr[1];
+  VLOG(1) << "duo_calib_param.Camera.D_T_C_lr[1] "
+          << duo_calib_param.Camera.D_T_C_lr[1];
   // load size
   if (calib_fs["img_size"].isNone()) {
     duo_calib_param.Camera.img_size = cv::Size(752, 480);  // default param

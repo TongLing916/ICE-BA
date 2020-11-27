@@ -46,23 +46,23 @@ typedef float PCG_TYPE;
 #endif
 //#define CFG_DEBUG_MT
 
-#include <stdio.h>
-#include <stdlib.h>
 #include <assert.h>
 #include <math.h>
+#include <stdio.h>
+#include <stdlib.h>
 #include <cmath>
 #ifdef WIN32
+#include <io.h>
 #include <tchar.h>
 #include <windows.h>
-#include <io.h>
 #endif
 #include <float.h>
-#include <vector>
-#include <list>
-#include <string>
-#include <queue>
 #include <algorithm>
 #include <fstream>
+#include <list>
+#include <queue>
+#include <string>
+#include <vector>
 
 typedef unsigned char ubyte;
 typedef unsigned short ushort;  // NOLINT

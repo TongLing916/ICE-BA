@@ -13,20 +13,20 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  *****************************************************************************/
-#include "rotation.h"
 #include "xp_quaternion.h"
 #include <glog/logging.h>
 #include <iostream>
+#include "rotation.h"
 namespace XP {
 
 // Quaternion multiplication
-XpQuaternion quat_multiply(const XpQuaternion& lhs,
-                           const XpQuaternion& rhs) {
+XpQuaternion quat_multiply(const XpQuaternion &lhs, const XpQuaternion &rhs) {
   XpQuaternion result;
-  result << lhs(0) * rhs(3) + lhs(1) * rhs(2) - lhs(2) * rhs(1) + lhs(3) * rhs(0),
-           -lhs(0) * rhs(2) + lhs(1) * rhs(3) + lhs(2) * rhs(0) + lhs(3) * rhs(1),
-            lhs(0) * rhs(1) - lhs(1) * rhs(0) + lhs(2) * rhs(3) + lhs(3) * rhs(2),
-           -lhs(0) * rhs(0) - lhs(1) * rhs(1) - lhs(2) * rhs(2) + lhs(3) * rhs(3);
+  result << lhs(0) * rhs(3) + lhs(1) * rhs(2) - lhs(2) * rhs(1) +
+                lhs(3) * rhs(0),
+      -lhs(0) * rhs(2) + lhs(1) * rhs(3) + lhs(2) * rhs(0) + lhs(3) * rhs(1),
+      lhs(0) * rhs(1) - lhs(1) * rhs(0) + lhs(2) * rhs(3) + lhs(3) * rhs(2),
+      -lhs(0) * rhs(0) - lhs(1) * rhs(1) - lhs(2) * rhs(2) + lhs(3) * rhs(3);
   result.normalize();
 
   // keep scalar value non-negative
@@ -39,30 +39,21 @@ XpQuaternion quat_multiply(const XpQuaternion& lhs,
 /*
  * XpQuaternion
  */
-XpQuaternion::XpQuaternion() {
-  *this = Eigen::Vector4f(0, 0, 0, 1);
-}
+XpQuaternion::XpQuaternion() { *this = Eigen::Vector4f(0, 0, 0, 1); }
 
 // Hamiltonian representaiton
 Eigen::Quaternionf XpQuaternion::ToEigenQuaternionf() const {
-  return Eigen::Quaternionf{(*this)(3),
-                            (*this)(0),
-                            (*this)(1),
-                            (*this)(2)};
+  return Eigen::Quaternionf{(*this)(3), (*this)(0), (*this)(1), (*this)(2)};
 }
 
 Eigen::Matrix3f XpQuaternion::ToRotationMatrix() const {
   const XpQuaternion &q = *this;
   Eigen::Matrix3f R;
-  R << 1 - 2 * (q(1)*q(1) + q(2)*q(2)),
-       2 * (q(0)*q(1) - q(2)*q(3)),
-       2 * (q(0)*q(2) + q(1)*q(3)),
-       2 * (q(0)*q(1) + q(2)*q(3)),
-       1 - 2 * (q(0)*q(0) + q(2)*q(2)),
-       2 * (q(1)*q(2) - q(0)*q(3)),
-       2 * (q(0)*q(2) - q(1)*q(3)),
-       2 * (q(1)*q(2) + q(0)*q(3)),
-       1 - 2 * (q(0)*q(0) + q(1)*q(1));
+  R << 1 - 2 * (q(1) * q(1) + q(2) * q(2)), 2 * (q(0) * q(1) - q(2) * q(3)),
+      2 * (q(0) * q(2) + q(1) * q(3)), 2 * (q(0) * q(1) + q(2) * q(3)),
+      1 - 2 * (q(0) * q(0) + q(2) * q(2)), 2 * (q(1) * q(2) - q(0) * q(3)),
+      2 * (q(0) * q(2) - q(1) * q(3)), 2 * (q(1) * q(2) + q(0) * q(3)),
+      1 - 2 * (q(0) * q(0) + q(1) * q(1));
   return R;
 }
 
@@ -82,15 +73,15 @@ void XpQuaternion::SetFromDeltaTheta(Eigen::Vector3f dtheta) {
 
 void XpQuaternion::SetFromRotationMatrix(const Eigen::Matrix3f &R) {
   float trace = R(0, 0) + R(1, 1) + R(2, 2);
-  if ( trace > 0 ) {
+  if (trace > 0) {
     float s = 2.0 * std::sqrt(trace + 1.0);
-    (*this)(0) = ( R(2, 1) - R(1, 2) ) / s;
-    (*this)(1) = ( R(0, 2) - R(2, 0) ) / s;
-    (*this)(2) = ( R(1, 0) - R(0, 1) ) / s;
+    (*this)(0) = (R(2, 1) - R(1, 2)) / s;
+    (*this)(1) = (R(0, 2) - R(2, 0)) / s;
+    (*this)(2) = (R(1, 0) - R(0, 1)) / s;
     (*this)(3) = 0.25 * s;
   } else {
     // find the biggest diagonal element
-    if ( R(0, 0) >= R(1, 1) && R(0, 0) >= R(2, 2) ) {
+    if (R(0, 0) >= R(1, 1) && R(0, 0) >= R(2, 2)) {
       float s = 2.0 * std::sqrt(1.0 + R(0, 0) - R(1, 1) - R(2, 2));
       (*this)(0) = 0.25 * s;
       (*this)(1) = (R(1, 0) + R(0, 1)) / s;
@@ -123,8 +114,8 @@ void XpQuaternion::SetFromEulerRadians(const Eigen::Vector3f &euler_rad) {
 }
 
 // v_lhs = R(q) * v_rhs
-void XpQuaternion::SetFromTwoVectors(
-    const Eigen::Vector3f& v_rhs, const Eigen::Vector3f& v_lhs) {
+void XpQuaternion::SetFromTwoVectors(const Eigen::Vector3f &v_rhs,
+                                     const Eigen::Vector3f &v_lhs) {
   Eigen::Vector3f v_rhs_unit = v_rhs / v_rhs.norm();
   Eigen::Vector3f v_lhs_unit = v_lhs / v_lhs.norm();
   this->topRows<3>() = v_lhs_unit.cross(v_rhs_unit);
@@ -143,17 +134,15 @@ void XpQuaternion::SetFromTwoVectors(
 XpQuaternion XpQuaternion::inverse() const {
   return XpQuaternion{-(*this)(0), -(*this)(1), -(*this)(2), (*this)(3)};
 }
-XpQuaternion XpQuaternion::mul(const XpQuaternion& rhs) const {
+XpQuaternion XpQuaternion::mul(const XpQuaternion &rhs) const {
   return quat_multiply(*this, rhs);
 }
 
-void IntegrateQuaternion(
-    const Eigen::Vector3f &omega_begin, const Eigen::Vector3f &omega_end,
-    const XpQuaternion &q_begin, const float dt,
-    XpQuaternion *q_end,
-    XpQuaternion *q_mid,
-    XpQuaternion *q_fourth,
-    XpQuaternion *q_eighth) {
+void IntegrateQuaternion(const Eigen::Vector3f &omega_begin,
+                         const Eigen::Vector3f &omega_end,
+                         const XpQuaternion &q_begin, const float dt,
+                         XpQuaternion *q_end, XpQuaternion *q_mid,
+                         XpQuaternion *q_fourth, XpQuaternion *q_eighth) {
   CHECK_NOTNULL(q_end);
   XpQuaternion q_0 = q_begin;
 
@@ -169,11 +158,14 @@ void IntegrateQuaternion(
   for (int i = 0; i < num_segment; ++i) {
     // integrate in the region: [i/num_segment, (i+1)/num_segment]
 
-    Eigen::Vector3f omega_tmp = omega_begin + (i * inv_num_segment) * delta_omega;
+    Eigen::Vector3f omega_tmp =
+        omega_begin + (i * inv_num_segment) * delta_omega;
     Eigen::Vector4f k1 = XpQuaternionDerivative(q_0, omega_tmp);
     omega_tmp = omega_begin + 0.5 * (2 * i + 1) * inv_num_segment * delta_omega;
-    Eigen::Vector4f k2 = XpQuaternionDerivative(q_0 + 0.5 * k1 * dt_seg, omega_tmp);
-    Eigen::Vector4f k3 = XpQuaternionDerivative(q_0 + 0.5 * k2 * dt_seg, omega_tmp);
+    Eigen::Vector4f k2 =
+        XpQuaternionDerivative(q_0 + 0.5 * k1 * dt_seg, omega_tmp);
+    Eigen::Vector4f k3 =
+        XpQuaternionDerivative(q_0 + 0.5 * k2 * dt_seg, omega_tmp);
     omega_tmp = omega_begin + (i + 1) * inv_num_segment * delta_omega;
     Eigen::Vector4f k4 = XpQuaternionDerivative(q_0 + k3 * dt_seg, omega_tmp);
     (*q_end) = q_0 + (dt_seg / 6.0) * (k1 + 2 * k2 + 2 * k3 + k4);

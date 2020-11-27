@@ -19,14 +19,16 @@
 //#define CFG_DEBUG
 //#endif
 
-#include "IBA.h"
-#include "Configurator.h"
-#include "IMU.h"
 #include "CameraTrajectory.h"
+#include "Configurator.h"
 #include "Depth.h"
+#include "IBA.h"
+#include "IMU.h"
 
-// IBA_WITH_CVD is automatically detected and defined by the top level CMakeLists.
-// For Windows, we simply assume IBA runs with CVD and manually define IBA_WITH_CVD
+// IBA_WITH_CVD is automatically detected and defined by the top level
+// CMakeLists.
+// For Windows, we simply assume IBA runs with CVD and manually define
+// IBA_WITH_CVD
 #ifdef WIN32
 #ifndef IBA_WITH_CVD
 #define IBA_WITH_CVD
@@ -40,11 +42,16 @@ class InputSequence {
  public:
   inline InputSequence(const Configurator &cfgor) {
     m_dir = cfgor.GetArgument("input_directory");
-    const std::string fileImg = m_dir + cfgor.GetArgument("input_image", "l/*.png");
-    const std::string fileFtr = m_dir + cfgor.GetArgument("input_feature", "l_det/*.yml");
-    const std::string fileDKF = m_dir + cfgor.GetArgument("input_delete_keyframe", "kf_del/*.txt");
-    const std::string fileDMP = m_dir + cfgor.GetArgument("input_delete_map_point", "mp_del/*.txt");
-    const std::string fileUpd = m_dir + cfgor.GetArgument("input_update_camera", "kf_upd/*.txt");
+    const std::string fileImg =
+        m_dir + cfgor.GetArgument("input_image", "l/*.png");
+    const std::string fileFtr =
+        m_dir + cfgor.GetArgument("input_feature", "l_det/*.yml");
+    const std::string fileDKF =
+        m_dir + cfgor.GetArgument("input_delete_keyframe", "kf_del/*.txt");
+    const std::string fileDMP =
+        m_dir + cfgor.GetArgument("input_delete_map_point", "mp_del/*.txt");
+    const std::string fileUpd =
+        m_dir + cfgor.GetArgument("input_update_camera", "kf_upd/*.txt");
     const int iStart = cfgor.GetArgument("input_start", 0);
     const int iStep = cfgor.GetArgument("input_step", 1);
     const int iEnd = cfgor.GetArgument("input_end", INT_MAX);
@@ -77,24 +84,27 @@ class InputSequence {
     }
     m_binary = extFtr == "dat";
 #ifdef CFG_STEREO
-    const std::string fileImgRight = m_dir + cfgor.GetArgument("input_image_right", "r/*.png");
+    const std::string fileImgRight =
+        m_dir + cfgor.GetArgument("input_image_right", "r/*.png");
     m_filesImgRight = UT::FilesSearch(fileImgRight, iStart, iStep, iEnd);
     if (m_binary) {
       m_filesFtrRight.assign(m_filesFtr.size(), "");
       if (m_filesImgRight.size() != m_filesFtr.size()) {
-        m_filesImgRight = UT::FilesSearch(m_filesFtr, UT::FileNameExtractDirectory(fileImgRight),
-                                          extImg);
+        m_filesImgRight = UT::FilesSearch(
+            m_filesFtr, UT::FileNameExtractDirectory(fileImgRight), extImg);
       }
     } else {
-      const std::string fileFtrRight = m_dir + cfgor.GetArgument("input_feature_right", "r_det/*.yml");
+      const std::string fileFtrRight =
+          m_dir + cfgor.GetArgument("input_feature_right", "r_det/*.yml");
       m_filesFtrRight = UT::FilesSearch(fileFtrRight, iStart, iStep, iEnd);
       if (m_filesFtrRight.size() != m_filesFtr.size()) {
-        m_filesFtrRight = UT::FilesSearch(m_filesFtr, UT::FileNameExtractDirectory(fileFtrRight),
-                                          extFtr);
+        m_filesFtrRight = UT::FilesSearch(
+            m_filesFtr, UT::FileNameExtractDirectory(fileFtrRight), extFtr);
       }
       if (m_filesImgRight.size() != m_filesFtrRight.size()) {
-        m_filesImgRight = UT::FilesSearch(m_filesFtrRight, UT::FileNameExtractDirectory(fileImgRight),
-                                          extImg);
+        m_filesImgRight =
+            UT::FilesSearch(m_filesFtrRight,
+                            UT::FileNameExtractDirectory(fileImgRight), extImg);
       }
 #ifdef CFG_DEBUG
       UT_ASSERT(m_filesFtrRight.size() == m_filesFtr.size());
@@ -104,7 +114,7 @@ class InputSequence {
     const double fps = cfgor.GetArgument("input_fps", 30.0);
     const bool tReset = cfgor.GetArgument("input_time_reset", 0) != 0;
     const double tFactor = cfgor.GetArgument("input_time_factor", 1.0e-4);
-    //m_tFirst = cfgor.GetArgument("input_time_first", DBL_MAX);
+    // m_tFirst = cfgor.GetArgument("input_time_first", DBL_MAX);
     m_tFirst = cfgor.GetArgument("input_time_first", 0.0);
     m_dt = 1.0 / fps;
 
@@ -130,7 +140,8 @@ class InputSequence {
 #endif
     }
     if (iStart != 0 || iStep != 1) {
-      const int nFrms2 = static_cast<int>(m_ts.size()), nFrms1 = iStart + iStep * nFrms2;
+      const int nFrms2 = static_cast<int>(m_ts.size()),
+                nFrms1 = iStart + iStep * nFrms2;
       m_iFrms.assign(nFrms1, -1);
       for (int iFrm2 = 0; iFrm2 < nFrms2; ++iFrm2) {
         const int iFrm1 = iStart + iStep * iFrm2;
@@ -142,9 +153,12 @@ class InputSequence {
 
     m_us.Resize(0);
     m_ius.resize(0);
-    const std::string fileIMU = m_dir + cfgor.GetArgument("input_imu", "imu_data.txt");
-    const double tFactorIMU = cfgor.GetArgument("input_imu_time_factor", tFactor);
-    const double tFirstIMU = cfgor.GetArgument("input_imu_time_first", m_tFirst);
+    const std::string fileIMU =
+        m_dir + cfgor.GetArgument("input_imu", "imu_data.txt");
+    const double tFactorIMU =
+        cfgor.GetArgument("input_imu_time_factor", tFactor);
+    const double tFirstIMU =
+        cfgor.GetArgument("input_imu_time_first", m_tFirst);
     FILE *fp = fopen(fileIMU.c_str(), "r");
     if (fp) {
       int iFrm = -1;
@@ -154,12 +168,15 @@ class InputSequence {
       std::vector<int> Nus(nFrms, 0);
       const bool csv = UT::FileNameExtractExtension(fileIMU) == "csv";
       const bool na = cfgor.GetArgument("input_imu_minus_acceleration", 0) != 0;
-      //while (UT::Load<double>(t, fp) && UT::Load<float>(u.m_a, 3, fp) && UT::Load<float>(u.m_w, 4, fp)) {
+      // while (UT::Load<double>(t, fp) && UT::Load<float>(u.m_a, 3, fp) &&
+      // UT::Load<float>(u.m_w, 4, fp)) {
       while (fgets(line, UT_STRING_WIDTH_MAX, fp)) {
-        if (csv && sscanf(line, "%lf,%f,%f,%f,%f,%f,%f", &t, &u.m_w[0], &u.m_w[1], &u.m_w[2],
-                                                             &u.m_a[0], &u.m_a[1], &u.m_a[2]) != 7 ||
-           !csv && sscanf(line, "%lf %f %f %f %f %f %f", &t, &u.m_a[0], &u.m_a[1], &u.m_a[2],
-                                                             &u.m_w[0], &u.m_w[1], &u.m_w[2]) != 7) {
+        if (csv &&
+                sscanf(line, "%lf,%f,%f,%f,%f,%f,%f", &t, &u.m_w[0], &u.m_w[1],
+                       &u.m_w[2], &u.m_a[0], &u.m_a[1], &u.m_a[2]) != 7 ||
+            !csv &&
+                sscanf(line, "%lf %f %f %f %f %f %f", &t, &u.m_a[0], &u.m_a[1],
+                       &u.m_a[2], &u.m_w[0], &u.m_w[1], &u.m_w[2]) != 7) {
           break;
         }
         u.t() = float(t * tFactorIMU - tFirstIMU);
@@ -185,8 +202,8 @@ class InputSequence {
       }
       UT::PrintLoaded(fileIMU);
     }
-    const std::string fileCalib = m_dir + cfgor.GetArgument("input_calibration_file",
-                                                            "calibration.txt");
+    const std::string fileCalib =
+        m_dir + cfgor.GetArgument("input_calibration_file", "calibration.txt");
     if (UT::FileNameExtractExtension(fileCalib) == "dat") {
       IBA::LoadCalibration(fileCalib, &m_K);
     } else {
@@ -204,13 +221,18 @@ class InputSequence {
         m_K.h = 480;
       }
       m_K.fishEye = cfgor.GetArgument("input_calibration_fish_eye", 0) != 0;
-      if (!IBA::LoadCalibration(fileCalib, m_K.Tu, &m_K.K, m_K.ba, m_K.bw/*, m_K.sa*/)) {
-        if ((m_K.K.fx = cfgor.GetArgument("input_camera_focal_x", 0.0f)) == 0.0f &&
-            (m_K.K.fx = cfgor.GetArgument("input_camera_fov_x", 0.0f)) != 0.0f) {
+      if (!IBA::LoadCalibration(fileCalib, m_K.Tu, &m_K.K, m_K.ba,
+                                m_K.bw /*, m_K.sa*/)) {
+        if ((m_K.K.fx = cfgor.GetArgument("input_camera_focal_x", 0.0f)) ==
+                0.0f &&
+            (m_K.K.fx = cfgor.GetArgument("input_camera_fov_x", 0.0f)) !=
+                0.0f) {
           m_K.K.fx = Intrinsic::FovToFocal(m_K.w, m_K.K.fx);
         }
-        if ((m_K.K.fy = cfgor.GetArgument("input_camera_focal_y", 0.0f)) == 0.0f &&
-            (m_K.K.fy = cfgor.GetArgument("input_camera_fov_y", 0.0f)) != 0.0f) {
+        if ((m_K.K.fy = cfgor.GetArgument("input_camera_focal_y", 0.0f)) ==
+                0.0f &&
+            (m_K.K.fy = cfgor.GetArgument("input_camera_fov_y", 0.0f)) !=
+                0.0f) {
           m_K.K.fy = Intrinsic::FovToFocal(m_K.h, m_K.K.fy);
         }
         if (m_K.K.fx == 0.0f && m_K.K.fy == 0.0f) {
@@ -220,10 +242,12 @@ class InputSequence {
         } else if (m_K.K.fx != 0.0f && m_K.K.fy == 0.0f) {
           m_K.K.fy = m_K.K.fx;
         }
-        if ((m_K.K.cx = cfgor.GetArgument("input_camera_center_x", 0.0f)) == 0.0f) {
+        if ((m_K.K.cx = cfgor.GetArgument("input_camera_center_x", 0.0f)) ==
+            0.0f) {
           m_K.K.cx = (m_K.w - 1) * 0.5f;
         }
-        if ((m_K.K.cy = cfgor.GetArgument("input_camera_center_y", 0.0f)) == 0.0f) {
+        if ((m_K.K.cy = cfgor.GetArgument("input_camera_center_y", 0.0f)) ==
+            0.0f) {
           m_K.K.cy = (m_K.h - 1) * 0.5f;
         }
         memset(m_K.K.ds, 0, sizeof(m_K.K.ds));
@@ -254,13 +278,18 @@ class InputSequence {
         m_K.Tu[2][3] = cfgor.GetArgument("input_imu_position_z", 0.0f);
       }
 #ifdef CFG_STEREO
-      const std::string fileCalibRight = m_dir + cfgor.GetArgument("input_calibration_file_right",
-                                                                   "calibration_right.txt");
+      const std::string fileCalibRight =
+          m_dir +
+          cfgor.GetArgument("input_calibration_file_right",
+                            "calibration_right.txt");
       if (!IBA::LoadCalibration(fileCalibRight, m_K.Tr, &m_K.Kr)) {
         m_K.Tr[0][0] = FLT_MAX;
-        m_K.Tr[0][3] = cfgor.GetArgument("input_calibration_right_position_x", 0.0f);
-        m_K.Tr[1][3] = cfgor.GetArgument("input_calibration_right_position_y", 0.0f);
-        m_K.Tr[2][3] = cfgor.GetArgument("input_calibration_right_position_z", 0.0f);
+        m_K.Tr[0][3] =
+            cfgor.GetArgument("input_calibration_right_position_x", 0.0f);
+        m_K.Tr[1][3] =
+            cfgor.GetArgument("input_calibration_right_position_y", 0.0f);
+        m_K.Tr[2][3] =
+            cfgor.GetArgument("input_calibration_right_position_z", 0.0f);
       }
 #endif
     }
@@ -271,23 +300,37 @@ class InputSequence {
     Rigid3D Tu;
     Tu.Set(m_K.Tu);
     if (cfgor.GetArgument("tune_imu_calibration", 0)) {
-      const float rx = cfgor.GetArgument("tune_imu_calibration_rotation_x", 0.0f);
-      const float ry = cfgor.GetArgument("tune_imu_calibration_rotation_y", 0.0f);
-      const float rz = cfgor.GetArgument("tune_imu_calibration_rotation_z", 0.0f);
-      const float px = cfgor.GetArgument("tune_imu_calibration_position_x", 0.0f);
-      const float py = cfgor.GetArgument("tune_imu_calibration_position_y", 0.0f);
-      const float pz = cfgor.GetArgument("tune_imu_calibration_position_z", 0.0f);
-      const float bax = cfgor.GetArgument("tune_imu_calibration_bias_acceleration_x", 0.0f);
-      const float bay = cfgor.GetArgument("tune_imu_calibration_bias_acceleration_y", 0.0f);
-      const float baz = cfgor.GetArgument("tune_imu_calibration_bias_acceleration_z", 0.0f);
-      const float bwx = cfgor.GetArgument("tune_imu_calibration_bias_gyroscope_x", 0.0f);
-      const float bwy = cfgor.GetArgument("tune_imu_calibration_bias_gyroscope_y", 0.0f);
-      const float bwz = cfgor.GetArgument("tune_imu_calibration_bias_gyroscope_z", 0.0f);
+      const float rx =
+          cfgor.GetArgument("tune_imu_calibration_rotation_x", 0.0f);
+      const float ry =
+          cfgor.GetArgument("tune_imu_calibration_rotation_y", 0.0f);
+      const float rz =
+          cfgor.GetArgument("tune_imu_calibration_rotation_z", 0.0f);
+      const float px =
+          cfgor.GetArgument("tune_imu_calibration_position_x", 0.0f);
+      const float py =
+          cfgor.GetArgument("tune_imu_calibration_position_y", 0.0f);
+      const float pz =
+          cfgor.GetArgument("tune_imu_calibration_position_z", 0.0f);
+      const float bax =
+          cfgor.GetArgument("tune_imu_calibration_bias_acceleration_x", 0.0f);
+      const float bay =
+          cfgor.GetArgument("tune_imu_calibration_bias_acceleration_y", 0.0f);
+      const float baz =
+          cfgor.GetArgument("tune_imu_calibration_bias_acceleration_z", 0.0f);
+      const float bwx =
+          cfgor.GetArgument("tune_imu_calibration_bias_gyroscope_x", 0.0f);
+      const float bwy =
+          cfgor.GetArgument("tune_imu_calibration_bias_gyroscope_y", 0.0f);
+      const float bwz =
+          cfgor.GetArgument("tune_imu_calibration_bias_gyroscope_z", 0.0f);
       Rotation3D dR;
-      const LA::AlignedVector3f dr = LA::AlignedVector3f(rx, ry, rz) * UT_FACTOR_DEG_TO_RAD;
+      const LA::AlignedVector3f dr =
+          LA::AlignedVector3f(rx, ry, rz) * UT_FACTOR_DEG_TO_RAD;
       dR.SetRodrigues(dr, BA_ANGLE_EPSILON);
       const Rotation3D R = Rotation3D(Tu) / dR;
-      const LA::AlignedVector3f t = Tu.GetTranslation() + LA::AlignedVector3f(px, py, pz);
+      const LA::AlignedVector3f t =
+          Tu.GetTranslation() + LA::AlignedVector3f(px, py, pz);
       Tu.Set(R, t);
       Tu.Get(m_K.Tu);
       m_K.ba[0] += bax;
@@ -297,31 +340,42 @@ class InputSequence {
       m_K.bw[1] += bwy * UT_FACTOR_DEG_TO_RAD;
       m_K.bw[2] += bwz * UT_FACTOR_DEG_TO_RAD;
     }
-    
+
     const Rotation3D *Ru = Tu.Valid() ? &Tu : NULL;
-    const std::string fileGT = m_dir + cfgor.GetArgument("input_ground_truth", "est_gt.csv");
-    const std::string fileGTMot = m_dir + cfgor.GetArgument("input_ground_truth_motion");
-    const std::string fileGTDep = m_dir + cfgor.GetArgument("input_ground_truth_depth");
-    const double tFactorGT = cfgor.GetArgument("input_ground_truth_time_factor", tFactor);
-    const double tFirstGT = cfgor.GetArgument("input_ground_truth_time_first", m_tFirst);
-    //const float dtMaxGT = cfgor.GetArgument("input_ground_truth_max_time_difference", FLT_MAX);
-    const float dtMaxGT = cfgor.GetArgument("input_ground_truth_max_time_difference", 1.0e-2f);
-    const bool inverse = cfgor.GetArgument("input_ground_truth_inverse", 0) != 0;
+    const std::string fileGT =
+        m_dir + cfgor.GetArgument("input_ground_truth", "est_gt.csv");
+    const std::string fileGTMot =
+        m_dir + cfgor.GetArgument("input_ground_truth_motion");
+    const std::string fileGTDep =
+        m_dir + cfgor.GetArgument("input_ground_truth_depth");
+    const double tFactorGT =
+        cfgor.GetArgument("input_ground_truth_time_factor", tFactor);
+    const double tFirstGT =
+        cfgor.GetArgument("input_ground_truth_time_first", m_tFirst);
+    // const float dtMaxGT =
+    // cfgor.GetArgument("input_ground_truth_max_time_difference", FLT_MAX);
+    const float dtMaxGT =
+        cfgor.GetArgument("input_ground_truth_max_time_difference", 1.0e-2f);
+    const bool inverse =
+        cfgor.GetArgument("input_ground_truth_inverse", 0) != 0;
     const bool left = cfgor.GetArgument("input_ground_truth_left_hand", 0) != 0;
     const bool xyzw = cfgor.GetArgument("input_ground_truth_xyzw", 0) != 0;
     const bool babw = cfgor.GetArgument("input_ground_truth_babw", 0) != 0;
     const bool origin = cfgor.GetArgument("input_ground_truth_origin", 1) != 0;
-    const bool gravity = cfgor.GetArgument("input_ground_truth_origin_gravity", 1) != 0;
-    const int flag = (inverse ? CT_FLAG_INVERSE : CT_FLAG_DEFAULT)
-                   | (left ? CT_FLAG_LEFT_HAND : CT_FLAG_DEFAULT)
-                   | (xyzw ? CT_FLAG_XYZW : CT_FLAG_DEFAULT)
-                   | (babw ? CT_FLAG_MOTION_BABW : CT_FLAG_DEFAULT)
-                   | (origin ? CT_FLAG_ORIGIN : CT_FLAG_DEFAULT)
-                   | (gravity? CT_FLAG_ORIGIN_GRAVITY: CT_FLAG_DEFAULT)
-                   | (tReset ? CT_FLAG_TIME_RESET : CT_FLAG_DEFAULT);
+    const bool gravity =
+        cfgor.GetArgument("input_ground_truth_origin_gravity", 1) != 0;
+    const int flag = (inverse ? CT_FLAG_INVERSE : CT_FLAG_DEFAULT) |
+                     (left ? CT_FLAG_LEFT_HAND : CT_FLAG_DEFAULT) |
+                     (xyzw ? CT_FLAG_XYZW : CT_FLAG_DEFAULT) |
+                     (babw ? CT_FLAG_MOTION_BABW : CT_FLAG_DEFAULT) |
+                     (origin ? CT_FLAG_ORIGIN : CT_FLAG_DEFAULT) |
+                     (gravity ? CT_FLAG_ORIGIN_GRAVITY : CT_FLAG_DEFAULT) |
+                     (tReset ? CT_FLAG_TIME_RESET : CT_FLAG_DEFAULT);
     Rigid3D Ts;
-    const std::string fileSensor = m_dir + cfgor.GetArgument("input_ground_truth_sensor",
-                                                             "calibration_sensor.txt");
+    const std::string fileSensor =
+        m_dir +
+        cfgor.GetArgument("input_ground_truth_sensor",
+                          "calibration_sensor.txt");
     if (!Ts.Load(fileSensor)) {
       Ts.MakeIdentity();
     }
@@ -334,17 +388,19 @@ class InputSequence {
       UT_ASSERT(m_XsGT.size() == m_ts.size());
 #endif
       ConvertCameras(m_XsGT, &m_CTGT.m_Cs, &m_CTGT.m_ba, &m_CTGT.m_bw);
-      //CameraTrajectory::TransformPose(Ts, m_CTGT.m_Cs);
+      // CameraTrajectory::TransformPose(Ts, m_CTGT.m_Cs);
       if (Ru) {
-        CameraTrajectory::TransformBias(*Ru, m_CTGT.m_Cs, m_CTGT.m_ba, m_CTGT.m_bw);
+        CameraTrajectory::TransformBias(*Ru, m_CTGT.m_Cs, m_CTGT.m_ba,
+                                        m_CTGT.m_bw);
       }
       if (origin) {
         CameraTrajectory::AlignToOrigin(m_CTGT.m_Cs, gravity);
       }
       ConvertCameras(m_CTGT.m_Cs, &m_XsGT);
       m_CTGT.m_ts = m_ts;
-    } else if (m_CTGT.Load(fileGT, tFactorGT, tFirstGT, &m_ts, dtMaxGT, flag, &Ts, Ru)) {
-      //if (dtMaxGT != FLT_MAX) {
+    } else if (m_CTGT.Load(fileGT, tFactorGT, tFirstGT, &m_ts, dtMaxGT, flag,
+                           &Ts, Ru)) {
+      // if (dtMaxGT != FLT_MAX) {
       if (dtMaxGT >= 0.0f && dtMaxGT != FLT_MAX) {
         CameraTrajectory CTGT;
         std::vector<int> iFrms;
@@ -417,7 +473,8 @@ class InputSequence {
       for (int iFrm = 0; iFrm < nFrms; ++iFrm) {
         LoadCurrentFrame(iFrm, &CF, &KF, &solver);
         solver.PushIMUMeasurementsGT(CF);
-        UT::Print("\r%d / %d = %f%%", iFrm + 1, nFrms, UT::Percentage(iFrm + 1, nFrms));
+        UT::Print("\r%d / %d = %f%%", iFrm + 1, nFrms,
+                  UT::Percentage(iFrm + 1, nFrms));
       }
       UT::Print("\n");
       solver.EstimateMotionGT(&m_XsGT);
@@ -426,14 +483,16 @@ class InputSequence {
       IBA::SaveGroundTruth(fileGTMot, m_XsGT);
 #endif
     }
-    const std::string fileKF = m_dir + cfgor.GetArgument("input_keyframe",
-                                                         "keyframe_decisions.txt");
-    const float dtMaxKF = cfgor.GetArgument("input_keyframe_max_time_difference", 1.0e-2f);
+    const std::string fileKF =
+        m_dir + cfgor.GetArgument("input_keyframe", "keyframe_decisions.txt");
+    const float dtMaxKF =
+        cfgor.GetArgument("input_keyframe_max_time_difference", 1.0e-2f);
     IBA::LoadKeyFrames(fileKF, m_ts, &m_kfs, dtMaxKF);
 
-    if (fileGTDep != m_dir && !IBA::LoadGroundTruth(fileGTDep, &m_dsGT) && !m_XsGT.empty()) {
-      const bool keyframeOnly = cfgor.GetArgument("input_ground_truth_depth_keyframe_only",
-                                                  0) != 0;
+    if (fileGTDep != m_dir && !IBA::LoadGroundTruth(fileGTDep, &m_dsGT) &&
+        !m_XsGT.empty()) {
+      const bool keyframeOnly =
+          cfgor.GetArgument("input_ground_truth_depth_keyframe_only", 0) != 0;
 #ifdef CFG_GROUND_TRUTH
       IBA::Solver solver;
       IBA::CurrentFrame CF;
@@ -444,8 +503,10 @@ class InputSequence {
       const int nFrms = Size();
       for (int iFrm = 0; iFrm < nFrms; ++iFrm) {
         LoadCurrentFrame(iFrm, &CF, &KF, &solver);
-        solver.PushDepthMeasurementsGT(CF, KF.iFrm == -1 ? NULL : &KF, keyframeOnly);
-        UT::Print("\r%d / %d = %f%%", iFrm + 1, nFrms, UT::Percentage(iFrm + 1, nFrms));
+        solver.PushDepthMeasurementsGT(CF, KF.iFrm == -1 ? NULL : &KF,
+                                       keyframeOnly);
+        UT::Print("\r%d / %d = %f%%", iFrm + 1, nFrms,
+                  UT::Percentage(iFrm + 1, nFrms));
       }
       UT::Print("\n");
       solver.TriangulateDepthsGT(&m_dsGT);
@@ -455,8 +516,9 @@ class InputSequence {
 #endif
     }
 
-    const std::string fileZp = m_dir + cfgor.GetArgument("input_relative_constraint",
-                                                          "relative_constraints.txt");
+    const std::string fileZp = m_dir +
+                               cfgor.GetArgument("input_relative_constraint",
+                                                 "relative_constraints.txt");
     if (IBA::LoadRelativeConstraints(fileZp, m_ts, &m_Zs, dtMaxKF)) {
       if (m_kfs.empty()) {
         m_kfs.assign(m_ts.size(), 0);
@@ -470,21 +532,22 @@ class InputSequence {
         } else {
           m_iFrm2Z[Z.iFrm2] = iZ;
 #ifdef CFG_DEBUG
-//#if 0
+          //#if 0
           UT_ASSERT(m_kfs[Z.iFrm1] != 0 && m_kfs[Z.iFrm2] != 0);
 #endif
           m_kfs[Z.iFrm1] = m_kfs[Z.iFrm2] = 2;
         }
       }
     }
-    //return true;
+    // return true;
   }
 
   inline int Size() const { return static_cast<int>(m_filesImg.size()); }
 
   inline int Search(const float t, const float dtMax = 0.0f) const {
     const int N = static_cast<int>(m_ts.size());
-    const int i2 = static_cast<int>(std::lower_bound(m_ts.begin(), m_ts.end(), t) - m_ts.begin());
+    const int i2 = static_cast<int>(
+        std::lower_bound(m_ts.begin(), m_ts.end(), t) - m_ts.begin());
     const int i1 = i2 - 1;
     const float dt1 = i1 >= 0 && i1 < N ? fabs(m_ts[i1] - t) : FLT_MAX;
     const float dt2 = i2 >= 0 && i2 < N ? fabs(m_ts[i2] - t) : FLT_MAX;
@@ -497,8 +560,8 @@ class InputSequence {
     }
   }
 
-  inline bool LoadCurrentFrame(const int iFrm, IBA::CurrentFrame *CF, IBA::KeyFrame *KF,
-                               IBA::Solver *solver) const {
+  inline bool LoadCurrentFrame(const int iFrm, IBA::CurrentFrame *CF,
+                               IBA::KeyFrame *KF, IBA::Solver *solver) const {
     if (m_binary) {
       if (!IBA::LoadCurrentFrame(m_filesFtr[iFrm], CF, KF)) {
         return false;
@@ -512,7 +575,8 @@ class InputSequence {
 #endif
       if (KF->iFrm == -1) {
         if (iFrm < KF_FIRST_LOCAL_FRAMES && KF_MIN_FRAME_STEP > 0 &&
-            iFrm - solver->GetKeyFrameIndex(solver->GetKeyFrames() - 1) == KF_MIN_FRAME_STEP) {
+            iFrm - solver->GetKeyFrameIndex(solver->GetKeyFrames() - 1) ==
+                KF_MIN_FRAME_STEP) {
           KF->iFrm = CF->iFrm;
           KF->C = CF->C.C;
           KF->zs = CF->zs;
@@ -597,8 +661,9 @@ class InputSequence {
     }
     CF->iFrm = iFrm;
     CF->C.C.R[0][0] = FLT_MAX;
-    std::vector<IBA::MapPoint> *Xs = KF_MIN_FRAME_STEP == -1 && !m_kfs.empty() && !m_kfs[iFrm] ?
-                                     NULL : &KF->Xs;
+    std::vector<IBA::MapPoint> *Xs =
+        KF_MIN_FRAME_STEP == -1 && !m_kfs.empty() && !m_kfs[iFrm] ? NULL
+                                                                  : &KF->Xs;
     const std::vector<int> *iFrms = m_iFrms.empty() ? NULL : &m_iFrms;
     solver->LoadFeatures(m_filesFtr[iFrm], iFrm, &CF->zs, Xs, iFrms);
     //////////////////////////////////////////////////////////////////////////
@@ -606,7 +671,7 @@ class InputSequence {
                                CF->zs.size() >= KF_MIN_FEATURE_MEASUREMENTS))) {
       Xs = NULL;
     }
-    //////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////
 #ifdef CFG_STEREO
     solver->LoadFeatures(m_filesFtrRight[iFrm], iFrm, &CF->zs, Xs, iFrms, 1);
 #endif
@@ -628,8 +693,11 @@ class InputSequence {
     CF->fileNameRight = m_filesImgRight[iFrm];
 #endif
     if (Xs || iFrm < KF_FIRST_LOCAL_FRAMES ||
-       (KF_MIN_FRAME_STEP > 0 && iFrm - solver->GetKeyFrameIndex(solver->GetKeyFrames() - 1) == KF_MIN_FRAME_STEP) ||
-       (!m_kfs.empty() && (m_kfs[iFrm] == 2 || m_kfs[iFrm] == 1 && KF_MIN_FRAME_STEP == -1))) {
+        (KF_MIN_FRAME_STEP > 0 &&
+         iFrm - solver->GetKeyFrameIndex(solver->GetKeyFrames() - 1) ==
+             KF_MIN_FRAME_STEP) ||
+        (!m_kfs.empty() &&
+         (m_kfs[iFrm] == 2 || m_kfs[iFrm] == 1 && KF_MIN_FRAME_STEP == -1))) {
       KF->iFrm = CF->iFrm;
       KF->C = CF->C.C;
       KF->zs = CF->zs;
@@ -644,7 +712,8 @@ class InputSequence {
     }
     return true;
   }
-  inline bool LoadRelativeConstraint(const int iFrm, IBA::RelativeConstraint *Z) const {
+  inline bool LoadRelativeConstraint(const int iFrm,
+                                     IBA::RelativeConstraint *Z) const {
     if (m_iFrm2Z.empty() || m_iFrm2Z[iFrm] == -1) {
       Z->iFrm1 = Z->iFrm2 = -1;
       return false;
@@ -656,10 +725,12 @@ class InputSequence {
       return true;
     }
   }
-  inline bool LoadDeleteKeyFrames(const int iFrm, std::vector<int> *iFrms) const {
+  inline bool LoadDeleteKeyFrames(const int iFrm,
+                                  std::vector<int> *iFrms) const {
     return IBA::LoadKeyFrames(m_filesDKF[iFrm], iFrms);
   }
-  inline bool LoadDeleteMapPoints(const int iFrm, std::vector<int> *idxs) const {
+  inline bool LoadDeleteMapPoints(const int iFrm,
+                                  std::vector<int> *idxs) const {
     return IBA::LoadMapPoints(m_filesDMP[iFrm], idxs);
   }
   inline bool LoadUpdateCameras(const int iFrm, std::vector<int> *iFrms,
@@ -715,7 +786,6 @@ class InputSequence {
   }
 
  public:
-
   IBA::Calibration m_K;
 
   ubyte m_binary;
@@ -723,7 +793,8 @@ class InputSequence {
   double m_dt, m_tFirst;
   std::vector<float> m_ts;
   std::string m_dir;
-  std::vector<std::string> m_filesImg, m_filesFtr, m_filesDKF, m_filesDMP, m_filesUpd;
+  std::vector<std::string> m_filesImg, m_filesFtr, m_filesDKF, m_filesDMP,
+      m_filesUpd;
 #ifdef CFG_STEREO
   std::vector<std::string> m_filesImgRight, m_filesFtrRight;
 #endif
@@ -736,6 +807,5 @@ class InputSequence {
   std::vector<ubyte> m_kfs;
   std::vector<int> m_iFrm2Z;
   std::vector<IBA::RelativeConstraint> m_Zs;
-
 };
 #endif

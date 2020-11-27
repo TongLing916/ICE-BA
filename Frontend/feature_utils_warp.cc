@@ -25,31 +25,32 @@ using Eigen::Matrix2f;
 using Eigen::Matrix3f;
 
 // Compute affine warp matrix A_ref_cur
-// The warping matrix is warping the ref patch (at level_ref) to the current frame (at pyr 0)
+// The warping matrix is warping the ref patch (at level_ref) to the current
+// frame (at pyr 0)
 bool getWarpMatrixAffine(const vio::cameras::CameraBase& cam_ref,
                          const vio::cameras::CameraBase& cam_cur,
                          const Vector2f& px_ref,  // distorted pixel at pyr0
                          const Vector3f& f_ref,   // undist ray in unit plane
-                         const float depth_ref,
-                         const Matrix3f& R_cur_ref,
-                         const Vector3f& t_cur_ref,
-                         const int level_ref,
+                         const float depth_ref, const Matrix3f& R_cur_ref,
+                         const Vector3f& t_cur_ref, const int level_ref,
                          Eigen::Matrix2f* A_cur_ref) {
   CHECK_NOTNULL(A_cur_ref);
-  // TODO(mingyu): tune the *d_unit* size in pixel for different 1st order approximation
+  // TODO(mingyu): tune the *d_unit* size in pixel for different 1st order
+  // approximation
   const int halfpatch_size = 5;
   const Vector3f xyz_ref(f_ref * depth_ref);
   float d_unit = halfpatch_size * (1 << level_ref);
   Vector2f du_ref(px_ref + Vector2f(d_unit, 0));
   Vector2f dv_ref(px_ref + Vector2f(0, d_unit));
   Vector3f xyz_du_ref, xyz_dv_ref;
-  if (cam_ref.backProject(du_ref, &xyz_du_ref) && cam_ref.backProject(dv_ref, &xyz_dv_ref)) {
+  if (cam_ref.backProject(du_ref, &xyz_du_ref) &&
+      cam_ref.backProject(dv_ref, &xyz_dv_ref)) {
     // Make sure the back project succeed for both du_ref & dv_ref
     xyz_du_ref *= xyz_ref[2] / xyz_du_ref[2];
     xyz_dv_ref *= xyz_ref[2] / xyz_dv_ref[2];
     Vector2f px_cur, du_cur, dv_cur;
     if (vio::cameras::CameraBase::ProjectionStatus::Successful ==
-        cam_cur.project(R_cur_ref * xyz_ref + t_cur_ref, &px_cur) &&
+            cam_cur.project(R_cur_ref * xyz_ref + t_cur_ref, &px_cur) &&
         vio::cameras::CameraBase::ProjectionStatus::Successful ==
             cam_cur.project(R_cur_ref * xyz_du_ref + t_cur_ref, &du_cur) &&
         vio::cameras::CameraBase::ProjectionStatus::Successful ==
@@ -64,8 +65,7 @@ bool getWarpMatrixAffine(const vio::cameras::CameraBase& cam_ref,
 }
 
 // Compute patch level in other image (based on pyramid level 0)
-int getBestSearchLevel(const Eigen::Matrix2f& A_cur_ref,
-                       const int max_level) {
+int getBestSearchLevel(const Eigen::Matrix2f& A_cur_ref, const int max_level) {
   int search_level = 0;
   float D = A_cur_ref.determinant();
   while (D > 3.f && search_level < max_level) {
@@ -92,7 +92,8 @@ inline float interpolateMat_8u(const cv::Mat& mat, float u, float v) {
 
   const int stride = mat.step.p[0];
   uint8_t* ptr = mat.data + y * stride + x;
-  return w00 * ptr[0] + w01 * ptr[stride] + w10 * ptr[1] + w11 * ptr[stride+1];
+  return w00 * ptr[0] + w01 * ptr[stride] + w10 * ptr[1] +
+         w11 * ptr[stride + 1];
 }
 }  // namespace
 
@@ -100,10 +101,8 @@ inline float interpolateMat_8u(const cv::Mat& mat, float u, float v) {
 bool warpAffine(const Eigen::Matrix2f& A_cur_ref,
                 const cv::Mat& img_ref,         // at pyramid level_ref
                 const Eigen::Vector2f& px_ref,  // at pyramid 0
-                const int level_ref,
-                const int level_cur,
-                const int halfpatch_size,
-                uint8_t* patch) {
+                const int level_ref, const int level_cur,
+                const int halfpatch_size, uint8_t* patch) {
   const int patch_size = halfpatch_size * 2;
   const Matrix2f A_ref_cur = A_cur_ref.inverse();
   if (std::isnan(A_ref_cur(0, 0))) {
@@ -116,13 +115,16 @@ bool warpAffine(const Eigen::Matrix2f& A_cur_ref,
   // px_ref is at pyr0, img_ref is at level_ref pyr already
   CHECK_NOTNULL(patch);
   uint8_t* patch_ptr = patch;
-  const Vector2f px_ref_pyr = px_ref / (1<< level_ref);  // pixel at pyramid level_ref
+  const Vector2f px_ref_pyr =
+      px_ref / (1 << level_ref);  // pixel at pyramid level_ref
   for (int y = 0; y < patch_size; ++y) {
     for (int x = 0; x < patch_size; ++x, ++patch_ptr) {
       Vector2f px_patch(x - halfpatch_size, y - halfpatch_size);
       px_patch *= (1 << level_cur);
-      const Vector2f px(A_ref_cur * px_patch + px_ref_pyr);  // pixel at pyramid level_ref
-      if (px[0] < 0 || px[1] < 0 || px[0] >= img_ref.cols - 1 || px[1] >= img_ref.rows - 1) {
+      const Vector2f px(A_ref_cur * px_patch +
+                        px_ref_pyr);  // pixel at pyramid level_ref
+      if (px[0] < 0 || px[1] < 0 || px[0] >= img_ref.cols - 1 ||
+          px[1] >= img_ref.rows - 1) {
         *patch_ptr = 0;
       } else {
         *patch_ptr = interpolateMat_8u(img_ref, px[0], px[1]);

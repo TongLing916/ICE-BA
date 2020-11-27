@@ -25,16 +25,17 @@
 #include <opencv2/viz.hpp>
 #endif
 // Stl used in this sample
-#include <list>
-#include <vector>
-#include <atomic>
-#include <string>
 #include <algorithm>
-#include <mutex>
+#include <atomic>
+#include <list>
 #include <memory>  // unique_ptr
+#include <mutex>
+#include <string>
+#include <vector>
 class PoseDrawer2D {
  public:
-  constexpr static const int imageSize = 480;  // the same as camera image height
+  constexpr static const int imageSize =
+      480;  // the same as camera image height
   PoseDrawer2D();
   /**
    * Add a new pose for drawing
@@ -46,7 +47,7 @@ class PoseDrawer2D {
   bool drawTo(cv::Mat* img_ptr);
 
  private:
-  cv::Point2f convertToImageCoordinates(const cv::Point2f & pointInMeters);
+  cv::Point2f convertToImageCoordinates(const cv::Point2f& pointInMeters);
   void drawPath(cv::Mat* img_ptr);
   std::mutex data_io_mutex_;
   std::list<cv::Point2f> paths_;
@@ -70,19 +71,19 @@ class PoseDrawer3D {
    * Create a bunch of widgets
    * \param viz_window pointer of the Viz3d window
    */
-  explicit PoseDrawer3D(float viz_cam_height,
-                        const cv::Matx33f& cam_K);
+  explicit PoseDrawer3D(float viz_cam_height, const cv::Matx33f& cam_K);
   /** \brief Render 3d widgets once
    *
    * \param viz_window pointer of the Viz3d window
    * \param viz_cam_height the height of the observing camera.
-   *                       The larger the scene, the bigger this value ideally is.
+   *                       The larger the scene, the bigger this value ideally
+   * is.
    *                       This value is re-computed by this function.
    */
-  void viz3d_once(const cv::Affine3f& W_T_D,
-                  const cv::Mat& img = cv::Mat(),
-                  const cv::Mat& rig_xyz_mat = cv::Mat(),
-                  const cv::Mat_<cv::Vec3f>& depth_result_img = cv::Mat_<cv::Vec3f>());
+  void viz3d_once(
+      const cv::Affine3f& W_T_D, const cv::Mat& img = cv::Mat(),
+      const cv::Mat& rig_xyz_mat = cv::Mat(),
+      const cv::Mat_<cv::Vec3f>& depth_result_img = cv::Mat_<cv::Vec3f>());
   uchar key_pressed() const;
 
  protected:

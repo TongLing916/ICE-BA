@@ -19,7 +19,8 @@
 namespace LA {
 namespace LS {
 
-template<typename TYPE> inline bool DecomposeLDL(const int N, TYPE **A, const TYPE *eps = NULL) {
+template <typename TYPE>
+inline bool DecomposeLDL(const int N, TYPE **A, const TYPE *eps = NULL) {
   TYPE *at = A[N - 1];
   for (int i = 0; i < N; ++i) {
     TYPE *ai = A[i];
@@ -45,9 +46,9 @@ template<typename TYPE> inline bool DecomposeLDL(const int N, TYPE **A, const TY
   return true;
 }
 
-template<typename TYPE> inline bool MarginalizeLDL(const int N, TYPE **A, TYPE *b,
-                                                   const int im, const int Nm,
-                                                   TYPE *work, const TYPE *eps = NULL) {
+template <typename TYPE>
+inline bool MarginalizeLDL(const int N, TYPE **A, TYPE *b, const int im,
+                           const int Nm, TYPE *work, const TYPE *eps = NULL) {
   TYPE *at1 = work, *at2 = at1 + im;
   const int _im = im + Nm;
   bool scc = true;
@@ -57,7 +58,7 @@ template<typename TYPE> inline bool MarginalizeLDL(const int N, TYPE **A, TYPE *
     if ((eps && aii <= eps[i - im]) || (!eps && aii <= 0)) {
       memset(ai + i, 0, sizeof(TYPE) * (N - i));
       b[i] = 0;
-      //return false;
+      // return false;
       scc = false;
       continue;
     }
@@ -66,7 +67,7 @@ template<typename TYPE> inline bool MarginalizeLDL(const int N, TYPE **A, TYPE *
       at1[j] = A[j][i];
       A[j][i] *= mii;
     }
-    //ai[i] = mii;
+    // ai[i] = mii;
     ai[i] = 1;
     memcpy(at2, ai + i + 1, sizeof(TYPE) * (N - i - 1));
     for (int k = i + 1; k < N; ++k) {
@@ -94,13 +95,14 @@ template<typename TYPE> inline bool MarginalizeLDL(const int N, TYPE **A, TYPE *
       b[j] -= aij * bi;
     }
   }
-  //return true;
+  // return true;
   return scc;
 }
 
-template<typename TYPE> inline int RankLDL(const int N, TYPE **A, TYPE *work,
-                                           const TYPE *eps/* = NULL*/) {
-  //TYPE *at = A[N - 1];
+template <typename TYPE>
+inline int RankLDL(const int N, TYPE **A, TYPE *work,
+                   const TYPE *eps /* = NULL*/) {
+  // TYPE *at = A[N - 1];
   TYPE *at = work;
   for (int i = 0; i < N; ++i) {
     TYPE *ai = A[i];
@@ -125,9 +127,9 @@ template<typename TYPE> inline int RankLDL(const int N, TYPE **A, TYPE *work,
   return N;
 }
 
-template<typename TYPE> inline bool SolveLDL(const int N, TYPE **A, TYPE *b,
-                                             const TYPE *eps = NULL,
-                                             const bool decomposed = false) {
+template <typename TYPE>
+inline bool SolveLDL(const int N, TYPE **A, TYPE *b, const TYPE *eps = NULL,
+                     const bool decomposed = false) {
   if (!decomposed && !DecomposeLDL<TYPE>(N, A, eps)) {
     return false;
   }
@@ -150,8 +152,9 @@ template<typename TYPE> inline bool SolveLDL(const int N, TYPE **A, TYPE *b,
   return true;
 }
 
-template<typename TYPE> inline bool InverseLDL(const int N, TYPE **A, const TYPE *eps = NULL,
-                                               const bool decomposed = false) {
+template <typename TYPE>
+inline bool InverseLDL(const int N, TYPE **A, const TYPE *eps = NULL,
+                       const bool decomposed = false) {
   if (!decomposed && !DecomposeLDL<TYPE>(N, A, eps)) {
     return false;
   }
@@ -189,22 +192,24 @@ template<typename TYPE> inline bool InverseLDL(const int N, TYPE **A, const TYPE
   }
   return true;
 }
-
 }
 }
 
 #ifdef CFG_DEBUG_EIGEN
 #include <Eigen/Eigen>
-template<int N, int Nm>
-inline void EigenMarginalize(Eigen::Matrix<float, N, N> &e_A, Eigen::Matrix<float, N, 1> &e_b) {
-  const Eigen::Matrix<float, Eigen::Dynamic, Eigen::Dynamic> e_M = e_A.block(Nm, 0, N - Nm, Nm) *
-                                                                  (e_A.block(0, 0, Nm, Nm).inverse());
+template <int N, int Nm>
+inline void EigenMarginalize(Eigen::Matrix<float, N, N> &e_A,
+                             Eigen::Matrix<float, N, 1> &e_b) {
+  const Eigen::Matrix<float, Eigen::Dynamic, Eigen::Dynamic> e_M =
+      e_A.block(Nm, 0, N - Nm, Nm) * (e_A.block(0, 0, Nm, Nm).inverse());
   e_A.block(Nm, 0, N - Nm, N) -= e_M * e_A.block(0, 0, Nm, N);
   e_b.block(Nm, 0, N - Nm, 1) -= e_M * e_b.block(0, 0, Nm, 1);
 }
-template<typename TYPE, int N>
-inline Eigen::Matrix<TYPE, N, N> EigenSqrt(const Eigen::Matrix<TYPE, N, N> &e_A) {
-  const Eigen::JacobiSVD<Eigen::Matrix<TYPE, N, N> > svd(e_A, Eigen::ComputeFullU);
+template <typename TYPE, int N>
+inline Eigen::Matrix<TYPE, N, N> EigenSqrt(
+    const Eigen::Matrix<TYPE, N, N> &e_A) {
+  const Eigen::JacobiSVD<Eigen::Matrix<TYPE, N, N> > svd(e_A,
+                                                         Eigen::ComputeFullU);
   const Eigen::Matrix<TYPE, N, N> e_U = svd.matrixU();
   Eigen::Matrix<TYPE, N, 1> e_S = svd.singularValues();
   for (int i = 0; i < N; ++i) {
@@ -212,12 +217,12 @@ inline Eigen::Matrix<TYPE, N, N> EigenSqrt(const Eigen::Matrix<TYPE, N, N> &e_A)
   }
   return e_U * e_S.asDiagonal() * e_U.transpose();
 }
-template<typename TYPE>
-inline void EigenDecomposeLDL(const Eigen::Matrix<TYPE, Eigen::Dynamic, Eigen::Dynamic,
-                                                  Eigen::RowMajor> &e_A,
-                              Eigen::Matrix<TYPE, Eigen::Dynamic, Eigen::Dynamic,
-                                            Eigen::RowMajor> *e_L,
-                              Eigen::Matrix<TYPE, Eigen::Dynamic, 1> *e_d, const TYPE *eps = NULL) {
+template <typename TYPE>
+inline void EigenDecomposeLDL(
+    const Eigen::Matrix<TYPE, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
+        &e_A,
+    Eigen::Matrix<TYPE, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> *e_L,
+    Eigen::Matrix<TYPE, Eigen::Dynamic, 1> *e_d, const TYPE *eps = NULL) {
   const int N = e_A.rows();
 #ifdef CFG_DEBUG
   UT_ASSERT(e_A.cols() == N);
@@ -240,12 +245,14 @@ inline void EigenDecomposeLDL(const Eigen::Matrix<TYPE, Eigen::Dynamic, Eigen::D
     (*e_d)(i, 0) = aii == 0 ? 0 : 1 / aii;
   }
 }
-template<typename TYPE>
-inline TYPE EigenConditionNumber(const Eigen::Matrix<TYPE, Eigen::Dynamic, Eigen::Dynamic,
-                                                     Eigen::RowMajor> &e_A,
-                                 Eigen::Matrix<TYPE, Eigen::Dynamic, 1> *e_s = NULL) {
-  const Eigen::JacobiSVD<Eigen::Matrix<TYPE, Eigen::Dynamic, Eigen::Dynamic,
-                                       Eigen::RowMajor> > e_svd(e_A);
+template <typename TYPE>
+inline TYPE EigenConditionNumber(
+    const Eigen::Matrix<TYPE, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
+        &e_A,
+    Eigen::Matrix<TYPE, Eigen::Dynamic, 1> *e_s = NULL) {
+  const Eigen::JacobiSVD<
+      Eigen::Matrix<TYPE, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> >
+      e_svd(e_A);
   const int N = e_svd.singularValues().size();
   const TYPE cond = e_svd.singularValues()(0) / e_svd.singularValues()(N - 1);
   if (e_s) {
@@ -253,18 +260,20 @@ inline TYPE EigenConditionNumber(const Eigen::Matrix<TYPE, Eigen::Dynamic, Eigen
   }
   return cond;
 }
-template<typename TYPE>
+template <typename TYPE>
 inline int EigenRankLU(const Eigen::Matrix<TYPE, Eigen::Dynamic, Eigen::Dynamic,
                                            Eigen::RowMajor> &e_A) {
-  const Eigen::FullPivLU<Eigen::Matrix<TYPE, Eigen::Dynamic, Eigen::Dynamic,
-                                       Eigen::RowMajor> > e_lu(e_A);
+  const Eigen::FullPivLU<
+      Eigen::Matrix<TYPE, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> >
+      e_lu(e_A);
   return int(e_lu.rank());
 }
-template<typename TYPE>
+template <typename TYPE>
 inline int EigenRankQR(const Eigen::Matrix<TYPE, Eigen::Dynamic, Eigen::Dynamic,
                                            Eigen::RowMajor> &e_A) {
-  const Eigen::ColPivHouseholderQR<Eigen::Matrix<TYPE, Eigen::Dynamic, Eigen::Dynamic,
-                                                 Eigen::RowMajor> > e_qr(e_A);
+  const Eigen::ColPivHouseholderQR<
+      Eigen::Matrix<TYPE, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> >
+      e_qr(e_A);
   return int(e_qr.rank());
 }
 #endif

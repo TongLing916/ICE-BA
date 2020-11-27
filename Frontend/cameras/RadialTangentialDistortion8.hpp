@@ -4,7 +4,7 @@
  *
  *  Redistribution and use in source and binary forms, with or without
  *  modification, are permitted provided that the following conditions are met:
- * 
+ *
  *   * Redistributions of source code must retain the above copyright notice,
  *     this list of conditions and the following disclaimer.
  *   * Redistributions in binary form must reproduce the above copyright notice,
@@ -67,20 +67,20 @@ class RadialTangentialDistortion8 : public DistortionBase {
   /// @param[in] k5 radial parameter 5
   /// @param[in] k6 radial parameter 6
   inline RadialTangentialDistortion8(float k1, float k2, float p1, float p2,
-                                     float k3, float k4, float k5,
-                                     float k6);
+                                     float k3, float k4, float k5, float k6);
 
   //////////////////////////////////////////////////////////////
   /// \name Methods related to generic parameters
   /// @{
 
   /// \brief set the generic parameters
-  /// @param[in] parameters Parameter vector -- length must correspond numDistortionIntrinsics().
+  /// @param[in] parameters Parameter vector -- length must correspond
+  /// numDistortionIntrinsics().
   /// @return    True if the requirements were followed.
-  inline bool setParameters(const Eigen::VectorXd & parameters) override;
+  inline bool setParameters(const Eigen::VectorXd& parameters) override;
 
   /// \brief Obtain the generic parameters.
-  inline bool getParameters(Eigen::VectorXd & parameters) const override {
+  inline bool getParameters(Eigen::VectorXd& parameters) const override {
     parameters = parameters_.cast<double>();
     return true;
   }
@@ -95,21 +95,23 @@ class RadialTangentialDistortion8 : public DistortionBase {
     return NumDistortionIntrinsics;
   }
 
-  static const int NumDistortionIntrinsics = 8;  ///< The Number of distortion parameters.
+  static const int NumDistortionIntrinsics =
+      8;  ///< The Number of distortion parameters.
   /// @}
 
   /// \brief Unit test support -- create a test distortion object
   /// The distortion coefficients are copied from DUO MLX
   static std::shared_ptr<DistortionBase> createTestObject() {
-    return std::shared_ptr<DistortionBase>(
-        new RadialTangentialDistortion8(2.710e+01, 5.254e+01, -1.800e-03, -4.265e-04,
-                                        5.976e+00, 2.751e+01, 6.474e+01, 2.519e+01));
+    return std::shared_ptr<DistortionBase>(new RadialTangentialDistortion8(
+        2.710e+01, 5.254e+01, -1.800e-03, -4.265e-04, 5.976e+00, 2.751e+01,
+        6.474e+01, 2.519e+01));
   }
   /// \brief Unit test support -- create a test distortion object
   /// The distortion coefficients are copied from DUO MLX
   static RadialTangentialDistortion8 testObject() {
-    return RadialTangentialDistortion8(2.710e+01, 5.254e+01, -1.800e-03, -4.265e-04,
-                                       5.976e+00, 2.751e+01, 6.474e+01, 2.519e+01);
+    return RadialTangentialDistortion8(2.710e+01, 5.254e+01, -1.800e-03,
+                                       -4.265e-04, 5.976e+00, 2.751e+01,
+                                       6.474e+01, 2.519e+01);
   }
 
   //////////////////////////////////////////////////////////////
@@ -120,21 +122,22 @@ class RadialTangentialDistortion8 : public DistortionBase {
   /// @param[in]  pointUndistorted The undistorted normalised (!) image point.
   /// @param[out] pointDistorted   The distorted normalised (!) image point.
   /// @return     True on success (no singularity)
-  template<typename T> inline bool distortT(const Eigen::Matrix<T, 2, 1> & pointUndistorted,
-                                            Eigen::Matrix<T, 2, 1> * pointDistorted) const;
+  template <typename T>
+  inline bool distortT(const Eigen::Matrix<T, 2, 1>& pointUndistorted,
+                       Eigen::Matrix<T, 2, 1>* pointDistorted) const;
 #ifdef __ARM_NEON__
-  inline void distortT4f(const float* pointUndistorted,
-    float* pointDistorted, unsigned int status[4]) const;
+  inline void distortT4f(const float* pointUndistorted, float* pointDistorted,
+                         unsigned int status[4]) const;
 
   inline void distortT4f(const float* pointUndistorted, float* pointDistorted,
-    float* pointJacobian, unsigned int status[4]) const;
+                         float* pointJacobian, unsigned int status[4]) const;
   void distort4f(const float* uv_undist4f, float* uv_dist4f,
                  unsigned int status[4]) const override {
     this->distortT4f(uv_undist4f, uv_dist4f, status);
   }
 #endif  // __ARM_NEON__
-  inline bool distort(const Eigen::Vector2d & pointUndistorted,
-                      Eigen::Vector2d * pointDistorted) const override {
+  inline bool distort(const Eigen::Vector2d& pointUndistorted,
+                      Eigen::Vector2d* pointDistorted) const override {
     return this->distortT<double>(pointUndistorted, pointDistorted);
   };
 
@@ -142,8 +145,8 @@ class RadialTangentialDistortion8 : public DistortionBase {
   /// @param[in]  pointUndistorted The undistorted normalised (!) image point.
   /// @param[out] pointDistorted   The distorted normalised (!) image point.
   /// @return     True on success (no singularity)
-  inline bool distort(const Eigen::Vector2f & pointUndistorted,
-                      Eigen::Vector2f * pointDistorted) const override {
+  inline bool distort(const Eigen::Vector2f& pointUndistorted,
+                      Eigen::Vector2f* pointDistorted) const override {
     // this shows much better result than using lookup table
     return this->distortT<float>(pointUndistorted, pointDistorted);
   };
@@ -152,56 +155,65 @@ class RadialTangentialDistortion8 : public DistortionBase {
   ///        Computing parameterJacobian is currently NOT supported!
   /// @param[in]  pointUndistorted  The undistorted normalised (!) image point.
   /// @param[out] pointDistorted    The distorted normalised (!) image point.
-  /// @param[out] pointJacobian     The Jacobian w.r.t. changes on the image point.
-  /// @param[out] parameterJacobian The Jacobian w.r.t. changes on the intrinsics vector.
+  /// @param[out] pointJacobian     The Jacobian w.r.t. changes on the image
+  /// point.
+  /// @param[out] parameterJacobian The Jacobian w.r.t. changes on the
+  /// intrinsics vector.
   /// @return     True on success (no singularity)
-  template<typename T> inline bool distortT(
-      const Eigen::Matrix<T, 2, 1> & pointUndistorted,
-      Eigen::Matrix<T, 2, 1>  * pointDistorted,
-      Eigen::Matrix<T, 2, 2> * pointJacobian,
-      Eigen::Matrix<T, 2, Eigen::Dynamic> * parameterJacobian = NULL) const;
+  template <typename T>
+  inline bool distortT(
+      const Eigen::Matrix<T, 2, 1>& pointUndistorted,
+      Eigen::Matrix<T, 2, 1>* pointDistorted,
+      Eigen::Matrix<T, 2, 2>* pointJacobian,
+      Eigen::Matrix<T, 2, Eigen::Dynamic>* parameterJacobian = NULL) const;
 
   /// \brief Distortion and Jacobians (the slow version)
   /// @param[in]  pointUndistorted  The undistorted normalised (!) image point.
   /// @param[out] pointDistorted    The distorted normalised (!) image point.
-  /// @param[out] pointJacobian     The Jacobian w.r.t. changes on the image point.
-  /// @param[out] parameterJacobian The Jacobian w.r.t. changes on the intrinsics vector.
+  /// @param[out] pointJacobian     The Jacobian w.r.t. changes on the image
+  /// point.
+  /// @param[out] parameterJacobian The Jacobian w.r.t. changes on the
+  /// intrinsics vector.
   /// @return     True on success (no singularity)
-  template<typename T> inline bool distortT_slow(
-      const Eigen::Matrix<T, 2, 1> & pointUndistorted,
-      Eigen::Matrix<T, 2, 1>  * pointDistorted,
-      Eigen::Matrix<T, 2, 2> * pointJacobian,
-      Eigen::Matrix<T, 2, Eigen::Dynamic> * parameterJacobian = NULL) const;
+  template <typename T>
+  inline bool distortT_slow(
+      const Eigen::Matrix<T, 2, 1>& pointUndistorted,
+      Eigen::Matrix<T, 2, 1>* pointDistorted,
+      Eigen::Matrix<T, 2, 2>* pointJacobian,
+      Eigen::Matrix<T, 2, Eigen::Dynamic>* parameterJacobian = NULL) const;
 
-  inline bool distort(const Eigen::Vector2d& pointUndistorted,
-                      Eigen::Vector2d* pointDistorted,
-                      Eigen::Matrix2d* pointJacobian,
-                      Eigen::Matrix2Xd* parameterJacobian = NULL) const override {
+  inline bool distort(
+      const Eigen::Vector2d& pointUndistorted, Eigen::Vector2d* pointDistorted,
+      Eigen::Matrix2d* pointJacobian,
+      Eigen::Matrix2Xd* parameterJacobian = NULL) const override {
     return this->distortT<double>(pointUndistorted, pointDistorted,
                                   pointJacobian, parameterJacobian);
   }
 
   /// \brief Distortion and Jacobians.
-  inline bool distort(const Eigen::Vector2f& pointUndistorted,
-                      Eigen::Vector2f* pointDistorted,
-                      Eigen::Matrix2f* pointJacobian,
-                      Eigen::Matrix2Xf* parameterJacobian = NULL) const override {
+  inline bool distort(
+      const Eigen::Vector2f& pointUndistorted, Eigen::Vector2f* pointDistorted,
+      Eigen::Matrix2f* pointJacobian,
+      Eigen::Matrix2Xf* parameterJacobian = NULL) const override {
     return this->distortT<float>(pointUndistorted, pointDistorted,
                                  pointJacobian, parameterJacobian);
   }
 
-  /// \brief Distortion and Jacobians using external distortion intrinsics parameters.
+  /// \brief Distortion and Jacobians using external distortion intrinsics
+  /// parameters.
   /// @param[in]  pointUndistorted  The undistorted normalised (!) image point.
   /// @param[in]  parameters        The distortion intrinsics vector.
   /// @param[out] pointDistorted    The distorted normalised (!) image point.
-  /// @param[out] pointJacobian     The Jacobian w.r.t. changes on the image point.
-  /// @param[out] parameterJacobian The Jacobian w.r.t. changes on the intrinsics vector.
+  /// @param[out] pointJacobian     The Jacobian w.r.t. changes on the image
+  /// point.
+  /// @param[out] parameterJacobian The Jacobian w.r.t. changes on the
+  /// intrinsics vector.
   /// @return     True on success (no singularity)
   inline bool distortWithExternalParameters(
-      const Eigen::Vector2d & pointUndistorted,
-      const Eigen::VectorXd & parameters, Eigen::Vector2d * pointDistorted,
-      Eigen::Matrix2d * pointJacobian = NULL,
-      Eigen::Matrix2Xd * parameterJacobian = NULL) const override;
+      const Eigen::Vector2d& pointUndistorted,
+      const Eigen::VectorXd& parameters, Eigen::Vector2d* pointDistorted,
+      Eigen::Matrix2d* pointJacobian = NULL,
+      Eigen::Matrix2Xd* parameterJacobian = NULL) const override;
   /// @}
 
   //////////////////////////////////////////////////////////////
@@ -212,41 +224,47 @@ class RadialTangentialDistortion8 : public DistortionBase {
   /// @param[in]  pointDistorted   The distorted normalised (!) image point.
   /// @param[out] pointUndistorted The undistorted normalised (!) image point.
   /// @return     True on success (no singularity)
-  inline bool undistort(const Eigen::Vector2d & pointDistorted,
-                        Eigen::Vector2d * pointUndistorted) const override;
-  inline bool undistort(const Eigen::Vector2f & pointDistorted,
-                        Eigen::Vector2f * pointUndistorted) const override;
+  inline bool undistort(const Eigen::Vector2d& pointDistorted,
+                        Eigen::Vector2d* pointUndistorted) const override;
+  inline bool undistort(const Eigen::Vector2f& pointDistorted,
+                        Eigen::Vector2f* pointUndistorted) const override;
 
   /// \brief Undistortion only (use undistort Gauss Newton)
   /// @param[in]  pointDistorted   The distorted normalised (!) image point.
   /// @param[out] pointUndistorted The undistorted normalised (!) image point.
-  /// @param[out] pointJacobian    The Jacobian w.r.t. changes on the image point.
+  /// @param[out] pointJacobian    The Jacobian w.r.t. changes on the image
+  /// point.
   /// @return     True on success (no singularity)
-  inline bool undistort(const Eigen::Vector2d & pointDistorted,
-                        Eigen::Vector2d * pointUndistorted,
-                        Eigen::Matrix2d * pointJacobian) const override;
+  inline bool undistort(const Eigen::Vector2d& pointDistorted,
+                        Eigen::Vector2d* pointUndistorted,
+                        Eigen::Matrix2d* pointJacobian) const override;
 
-  /// \brief Undistortion: use look up table for pointUndistorted & pointJacobian
+  /// \brief Undistortion: use look up table for pointUndistorted &
+  /// pointJacobian
   /// @param[in]  pointDistorted   The distorted normalised (!) image point.
   /// @param[out] pointUndistorted The undistorted normalised (!) image point.
-  /// @param[out] pointJacobian    The Jacobian w.r.t. changes on the image point.
+  /// @param[out] pointJacobian    The Jacobian w.r.t. changes on the image
+  /// point.
   /// @return     True on success (no singularity)
-  inline bool undistort(const Eigen::Vector2f & pointDistorted,
-                        Eigen::Vector2f * pointUndistorted,
-                        Eigen::Matrix2f * pointJacobian) const override;
-  /// @}
+  inline bool undistort(const Eigen::Vector2f& pointDistorted,
+                        Eigen::Vector2f* pointUndistorted,
+                        Eigen::Matrix2f* pointJacobian) const override;
+/// @}
 #ifdef __ARM_NEON__
   inline void undistort4f(const float* uv_dist4f, float* uv_undist4f,
                           unsigned int status[4]) const override;
   inline void undistort4f(const float* uv_dist4f, float* uv_undist4f,
-                          float* jacobians_out, unsigned int status[4]) const override;
+                          float* jacobians_out,
+                          unsigned int status[4]) const override;
 #endif
 
  protected:
   // Gauss-Newton iterative solution for undistortion
-  inline bool undistort_GN(float u_dist, float v_dist, float* u_undist, float* v_undist,
-                           Eigen::Matrix2f * pointJacobian = nullptr) const;
-  Eigen::Matrix<float, NumDistortionIntrinsics, 1> parameters_;  ///< all distortion parameters
+  inline bool undistort_GN(float u_dist, float v_dist, float* u_undist,
+                           float* v_undist,
+                           Eigen::Matrix2f* pointJacobian = nullptr) const;
+  Eigen::Matrix<float, NumDistortionIntrinsics, 1>
+      parameters_;  ///< all distortion parameters
 
   float k1_;  ///< radial parameter 1
   float k2_;  ///< radial parameter 2

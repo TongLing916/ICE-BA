@@ -44,7 +44,8 @@ void LocalMap::IBA_PushKeyFrame(const GlobalMap::InputKeyFrame &KF) {
   const int NX = static_cast<int>(KF.m_Xs.size());
   for (int iX1 = 0, iX2 = 0; iX1 < NX; iX1 = iX2) {
     const int iKF = KF.m_Xs[iX1].m_iKF;
-    for (iX2 = iX1 + 1; iX2 < NX && KF.m_Xs[iX2].m_iKF == iKF; ++iX2) {}
+    for (iX2 = iX1 + 1; iX2 < NX && KF.m_Xs[iX2].m_iKF == iKF; ++iX2) {
+    }
     const int id = m_iKF2d[iKF + 1], Nx = iX2 - iX1;
     for (int jKF = iKF + 1; jKF <= nKFs; ++jKF) {
       m_iKF2d[jKF] += Nx;
@@ -83,17 +84,20 @@ ubyte LocalMap::IBA_Synchronize(const int iFrm, std::list<CameraLF> &CsLF,
   if (m_Uc) {
     if (m_Uc & LM_FLAG_FRAME_UPDATE_CAMERA_LF) {
       CsLF = m_CsLF;
-      for (std::list<CameraLF>::iterator C = m_CsLF.begin(); C != m_CsLF.end(); ++C) {
+      for (std::list<CameraLF>::iterator C = m_CsLF.begin(); C != m_CsLF.end();
+           ++C) {
         C->m_uc = LM_FLAG_FRAME_DEFAULT;
       }
     }
     Uc = m_Uc;
     m_Uc = LM_FLAG_FRAME_DEFAULT;
-    const ubyte uc = Uc & LM_FLAG_FRAME_UPDATE_CAMERA_KF, ud = Uc & LM_FLAG_FRAME_UPDATE_DEPTH;
+    const ubyte uc = Uc & LM_FLAG_FRAME_UPDATE_CAMERA_KF,
+                ud = Uc & LM_FLAG_FRAME_UPDATE_DEPTH;
     if (uc || ud) {
       const int nKFs = static_cast<int>(m_CsKF.size());
 #ifdef CFG_DEBUG
-      UT_ASSERT(static_cast<int>(CsKF.size()) == nKFs && ds.size() == m_ds.size());
+      UT_ASSERT(static_cast<int>(CsKF.size()) == nKFs &&
+                ds.size() == m_ds.size());
 #endif
       if (ud) {
         m_uds.swap(uds);
@@ -116,7 +120,8 @@ ubyte LocalMap::IBA_Synchronize(const int iFrm, std::list<CameraLF> &CsLF,
         }
         if (C1.m_uc & LM_FLAG_FRAME_UPDATE_DEPTH) {
           const int id1 = m_iKF2d[iKF], id2 = m_iKF2d[iKF + 1], Nx = id2 - id1;
-          memcpy(ds.data() + id1, m_ds.data() + id1, sizeof(Depth::InverseGaussian) * Nx);
+          memcpy(ds.data() + id1, m_ds.data() + id1,
+                 sizeof(Depth::InverseGaussian) * Nx);
         }
         C2.m_uc = C1.m_uc;
         C1.m_uc = LM_FLAG_FRAME_DEFAULT;
@@ -127,17 +132,18 @@ ubyte LocalMap::IBA_Synchronize(const int iFrm, std::list<CameraLF> &CsLF,
   return Uc;
 }
 
-void LocalMap::LBA_Update(const int iFrm1, const int iFrm2, const std::vector<int> &ic2LF,
-                          const AlignedVector<Camera> &CsLF, const std::vector<ubyte> &ucsLF,
-                          const std::vector<int> &iFrmsKF, const AlignedVector<Rigid3D> &CsKF,
-                          const std::vector<ubyte> &ucsKF, const std::vector<int> &iKF2d,
-                          const std::vector<Depth::InverseGaussian> &ds,
-                          const std::vector<ubyte> &uds
+void LocalMap::LBA_Update(
+    const int iFrm1, const int iFrm2, const std::vector<int> &ic2LF,
+    const AlignedVector<Camera> &CsLF, const std::vector<ubyte> &ucsLF,
+    const std::vector<int> &iFrmsKF, const AlignedVector<Rigid3D> &CsKF,
+    const std::vector<ubyte> &ucsKF, const std::vector<int> &iKF2d,
+    const std::vector<Depth::InverseGaussian> &ds, const std::vector<ubyte> &uds
 #ifdef CFG_CHECK_REPROJECTION
-                        , const std::vector<std::pair<float, float> > &esLF,
-                          const std::vector<std::pair<float, float> > &esKF
+    ,
+    const std::vector<std::pair<float, float> > &esLF,
+    const std::vector<std::pair<float, float> > &esKF
 #endif
-                        ) {
+    ) {
   MT_WRITE_LOCK_BEGIN(m_MT, iFrm2, MT_TASK_LM_LBA_Update);
   const int nLFs = CsLF.Size();
 #ifdef CFG_DEBUG
@@ -186,7 +192,8 @@ void LocalMap::LBA_Update(const int iFrm1, const int iFrm2, const std::vector<in
 #ifdef CFG_DEBUG
       UT_ASSERT(Nx <= _id2 - _id1);
 #endif
-      memcpy(m_ds.data() + _id1, ds.data() + id1, sizeof(Depth::InverseGaussian) * Nx);
+      memcpy(m_ds.data() + _id1, ds.data() + id1,
+             sizeof(Depth::InverseGaussian) * Nx);
       const ubyte *uds1 = uds.data() + id1;
       ubyte *uds2 = m_uds.data() + _id1;
       for (int ix = 0; ix < Nx; ++ix) {
@@ -226,15 +233,18 @@ void LocalMap::LoadB(FILE *fp) {
 
 void LocalMap::AssertConsistency() {
   MT_READ_LOCK_BEGIN(m_MT, MT_TASK_NONE, MT_TASK_NONE);
-  for (std::list<CameraLF>::const_iterator C = m_CsLF.begin(); C != m_CsLF.end(); ++C) {
+  for (std::list<CameraLF>::const_iterator C = m_CsLF.begin();
+       C != m_CsLF.end(); ++C) {
     C->m_C.AssertConsistency();
   }
-  for (std::list<CameraLF>::const_iterator C1 = m_CsLF.begin(), C2 = m_CsLF.begin();
+  for (std::list<CameraLF>::const_iterator C1 = m_CsLF.begin(),
+                                           C2 = m_CsLF.begin();
        ++C2 != m_CsLF.end(); C1 = C2) {
     UT_ASSERT(C1->m_iFrm < C2->m_iFrm);
   }
   ubyte Uc = GM_FLAG_FRAME_DEFAULT;
-  for (std::list<CameraLF>::const_iterator C = m_CsLF.begin(); C != m_CsLF.end(); ++C) {
+  for (std::list<CameraLF>::const_iterator C = m_CsLF.begin();
+       C != m_CsLF.end(); ++C) {
     C->m_C.AssertConsistency();
     Uc |= C->m_uc;
   }

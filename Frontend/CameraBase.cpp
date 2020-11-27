@@ -4,7 +4,7 @@
  *
  *  Redistribution and use in source and binary forms, with or without
  *  modification, are permitted provided that the following conditions are met:
- * 
+ *
  *   * Redistributions of source code must retain the above copyright notice,
  *     this list of conditions and the following disclaimer.
  *   * Redistributions in binary form must reproduce the above copyright notice,
@@ -71,8 +71,8 @@ Eigen::Vector2f CameraBase::createRandomImagePoint2f() const {
   return outPoint;
 }
 
-
-Eigen::Vector2d CameraBase::createRandomImagePointAtRadius(double radius) const {
+Eigen::Vector2d CameraBase::createRandomImagePointAtRadius(
+    double radius) const {
   Eigen::Vector2d outPoint = Eigen::Vector2d::Random();
   outPoint.normalize();
   outPoint *= radius;
@@ -94,7 +94,8 @@ Eigen::Vector3d CameraBase::createRandomVisiblePoint(double minDist,
     imagePoint = createRandomImagePoint();
   }
   ray.normalize();
-  ray *= (0.5 * (maxDist - minDist) * (depth[0] + 1.0) + minDist);  // rescale and offset
+  ray *= (0.5 * (maxDist - minDist) * (depth[0] + 1.0) +
+          minDist);  // rescale and offset
   return ray;
 }
 

@@ -24,10 +24,8 @@
 
 class Timer {
  public:
-  inline Timer(const int N = 1) {
-    this->Reset(N);
-  }
-  inline ~Timer() { }
+  inline Timer(const int N = 1) { this->Reset(N); }
+  inline ~Timer() {}
   inline void Reset(const int N = 1) {
     m_first = true;
     m_idx = 0;
@@ -64,7 +62,9 @@ class Timer {
   }
   inline double GetAverageSeconds() const { return m_avg; }
   inline double GetAverageMilliseconds() const { return m_avg * 1000.0; }
-  inline double GetFPS() const { return m_avg == 0.0 ? 0.0 : 1 / GetAverageSeconds(); }
+  inline double GetFPS() const {
+    return m_avg == 0.0 ? 0.0 : 1 / GetAverageSeconds();
+  }
 
   inline void SaveB(FILE *fp) const {
     UT::SaveB(m_first, fp);
@@ -89,10 +89,10 @@ class Timer {
 #else
     SYSTEMTIME systime;
     GetSystemTime(&systime);
-    return 0.001 * static_cast<double>(systime.wMilliseconds)
-        +    1.0 * static_cast<double>(systime.wSecond)
-        +   60.0 * static_cast<double>(systime.wMinute)
-        + 3600.0 * static_cast<double>(systime.wHour);
+    return 0.001 * static_cast<double>(systime.wMilliseconds) +
+           1.0 * static_cast<double>(systime.wSecond) +
+           60.0 * static_cast<double>(systime.wMinute) +
+           3600.0 * static_cast<double>(systime.wHour);
 #endif
   }
 

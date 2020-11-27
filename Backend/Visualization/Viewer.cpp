@@ -13,8 +13,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  *****************************************************************************/
-#include "stdafx.h"
 #include "Viewer.h"
+#include "stdafx.h"
 
 std::vector<LA::Vector2f> Viewer::g_xsCircle;
 
@@ -32,7 +32,7 @@ void Viewer::Initialize(const int w, const int h) {
 #ifndef WIN32
     // TODO(mingyu): Why no need to glutInit on Windows?
     int argc = 0;
-    char** argv;
+    char **argv;
     glutInit(&argc, argv);
 #endif
     m_pWnd = new CVD::GLWindow(CVD::ImageRef(w, h));
@@ -47,19 +47,21 @@ void Viewer::Initialize(const int w, const int h) {
     XRRScreenSize *xrrs = XRRSizes(dpy, 0, &num_sizes);
     XRRScreenConfiguration *conf = XRRGetScreenInfo(dpy, root);
     Rotation original_rotation;
-    SizeID original_size_id = XRRConfigCurrentConfiguration(conf, &original_rotation);
+    SizeID original_size_id =
+        XRRConfigCurrentConfiguration(conf, &original_rotation);
     x_pos = (xrrs[original_size_id].width - w) / 2;
     y_pos = (xrrs[original_size_id].height - h) / 2;
     XCloseDisplay(dpy);
 #else
-    // TODO(mingyu): OSX support
+// TODO(mingyu): OSX support
 #endif
     m_pWnd->set_position(CVD::ImageRef(x_pos, y_pos));
     glewInit();
   }
   OnResize(CVD::ImageRef(w, h));
-  m_handler.Initialize(this, &Viewer::OnKeyDown, &Viewer::OnKeyUp, &Viewer::OnMouseMove,
-                       &Viewer::OnMouseDown, &Viewer::OnMouseUp, &Viewer::OnMouseDraging,
+  m_handler.Initialize(this, &Viewer::OnKeyDown, &Viewer::OnKeyUp,
+                       &Viewer::OnMouseMove, &Viewer::OnMouseDown,
+                       &Viewer::OnMouseUp, &Viewer::OnMouseDraging,
                        &Viewer::OnMouseDoubleClicked, &Viewer::OnResize);
 }
 
@@ -76,7 +78,7 @@ int Viewer::GetCharacterWidth(void *front, const char c) {
 }
 
 int Viewer::GetStringWidth(void *font, const char *str) {
-  return glutBitmapLength(font, (unsigned char *) str);
+  return glutBitmapLength(font, (unsigned char *)str);
 }
 
 int Viewer::GetStringHeight(void *font) {
@@ -92,12 +94,12 @@ int Viewer::GetStringHeight(void *font) {
 }
 
 int Viewer::GetStringYTopLeft(const int row, void *font) {
-  return VW_STRING_BORDER_Y + VW_STRING_HEIGHT + (VW_STRING_GAP_Y + GetStringHeight(font)) * row;
+  return VW_STRING_BORDER_Y + VW_STRING_HEIGHT +
+         (VW_STRING_GAP_Y + GetStringHeight(font)) * row;
 }
 
 void Viewer::DrawString(void *font, const char *str) {
-  for (const char *c = str; *c; c++)
-    glutBitmapCharacter(font, *c);
+  for (const char *c = str; *c; c++) glutBitmapCharacter(font, *c);
 }
 
 void Viewer::DrawStringCurrent(const char *format, ...) {
@@ -112,7 +114,8 @@ void Viewer::DrawStringCurrent(void *font, const char *format, ...) {
   DrawString(font, str);
 }
 
-void Viewer::DrawStringAt(const int x, const int y, void *font, const char *format, ...) {
+void Viewer::DrawStringAt(const int x, const int y, void *font,
+                          const char *format, ...) {
   glRasterPos2i(x, y);
   char str[UT_STRING_WIDTH_MAX];
   UT_GET_STRING(format, str);
@@ -126,7 +129,8 @@ void Viewer::DrawStringTopLeft(const char *format, ...) {
   DrawString(VW_STRING_FONT, str);
 }
 
-void Viewer::DrawStringTopLeft(const int row, void *font, const char *format, ...) {
+void Viewer::DrawStringTopLeft(const int row, void *font, const char *format,
+                               ...) {
 #ifdef CFG_DEBUG
   UT_ASSERT(row >= 1);
 #endif
@@ -143,9 +147,10 @@ void Viewer::DrawStringBottomLeft(const char *format, ...) {
   DrawString(VW_STRING_FONT, str);
 }
 
-//void Viewer::DrawStringBottomLeft(const int row, const char *format, ...)
+// void Viewer::DrawStringBottomLeft(const int row, const char *format, ...)
 //{
-//  glRasterPos2i(VW_STRING_BORDER_X, m_pWnd->size().y - VW_STRING_BORDER_Y - VW_STRING_HEIGHT * row);
+//  glRasterPos2i(VW_STRING_BORDER_X, m_pWnd->size().y - VW_STRING_BORDER_Y -
+//  VW_STRING_HEIGHT * row);
 //  char str[UT_STRING_WIDTH_MAX];
 //  UT_GET_STRING(format, str);
 //  DrawString(VW_STRING_FONT, str);
@@ -165,7 +170,8 @@ void Viewer::DrawBox(const float x, const float y, const float size) {
 }
 
 void Viewer::DrawBox(const float x, const float y, const LA::Vector2f &size) {
-  DrawBox(Point2D(x - size.x(), y - size.y()), Point2D(x + size.x(), y + size.y()));
+  DrawBox(Point2D(x - size.x(), y - size.y()),
+          Point2D(x + size.x(), y + size.y()));
 }
 
 void Viewer::DrawQuad(const Point2D &x1, const Point2D &x2) {
@@ -178,7 +184,8 @@ void Viewer::DrawQuad(const Point2D &x1, const Point2D &x2) {
 }
 
 void Viewer::DrawQuad(const float x, const float y, const LA::Vector2f &size) {
-  DrawQuad(Point2D(x - size.x(), y - size.y()), Point2D(x + size.x(), y + size.y()));
+  DrawQuad(Point2D(x - size.x(), y - size.y()),
+           Point2D(x + size.x(), y + size.y()));
 }
 
 void Viewer::DrawCross(const Point2D &x, const LA::Vector2f &size) {
@@ -220,7 +227,7 @@ void Viewer::DrawSolidCircle(const Point2D &x, const float r) {
   glBegin(GL_TRIANGLE_FAN);
   glVertex2fv(x);
   const int N = int(g_xsCircle.size());
-  //for(int i = 0; i < N; ++i)
+  // for(int i = 0; i < N; ++i)
   for (int i = N - 1; i >= 0; --i) {
     dx = r * g_xsCircle[i].v0();
     dy = r * g_xsCircle[i].v1();
@@ -229,7 +236,8 @@ void Viewer::DrawSolidCircle(const Point2D &x, const float r) {
   glEnd();
 }
 
-void Viewer::DrawCovariance(const Point2D &x, const Point2DCovariance &S, const float X2) {
+void Viewer::DrawCovariance(const Point2D &x, const Point2DCovariance &S,
+                            const float X2) {
   PrepareCircle();
 
   LA::AlignedMatrix2x2f U;
@@ -237,7 +245,8 @@ void Viewer::DrawCovariance(const Point2D &x, const Point2DCovariance &S, const 
   S.EigenDecompose(U, l, 0.0f);
   l.x() = sqrtf(l.x() * X2);
   l.y() = sqrtf(l.y() * X2);
-  xp128f tmp; tmp.vset_all_lane(l.x(), l.y(), l.x(), l.y());
+  xp128f tmp;
+  tmp.vset_all_lane(l.x(), l.y(), l.x(), l.y());
   U.m_00_01_10_11() = tmp * U.m_00_01_10_11();
 
   glBegin(GL_LINE_LOOP);
@@ -250,14 +259,13 @@ void Viewer::DrawCovariance(const Point2D &x, const Point2DCovariance &S, const 
 }
 
 void Viewer::PrepareCircle() {
-  if (!g_xsCircle.empty())
-    return;
+  if (!g_xsCircle.empty()) return;
   LA::Vector2f csth;
   const float dth = 1.0f * UT_FACTOR_DEG_TO_RAD;
-  //const float dth = 5.0f * UT_FACTOR_DEG_TO_RAD;
-  //const float dth = 10.0f * UT_FACTOR_DEG_TO_RAD;
-  //const float dth = 20.0f * UT_FACTOR_DEG_TO_RAD;
-  //const float dth = 90.0f * UT_FACTOR_DEG_TO_RAD;
+  // const float dth = 5.0f * UT_FACTOR_DEG_TO_RAD;
+  // const float dth = 10.0f * UT_FACTOR_DEG_TO_RAD;
+  // const float dth = 20.0f * UT_FACTOR_DEG_TO_RAD;
+  // const float dth = 90.0f * UT_FACTOR_DEG_TO_RAD;
   for (float th = 0; th < UT_2PI; th = dth + th) {
     csth.v0() = cosf(th);
     csth.v1() = sinf(th);
@@ -286,26 +294,24 @@ bool Viewer::OnKeyDown(const int key) {
 
 bool Viewer::OnKeyUp(const int key) {
 #ifdef __linux__
-  if (key == VW_KEY_CTRL_KEY_VALUE)
-    m_ctrlDown = false;
+  if (key == VW_KEY_CTRL_KEY_VALUE) m_ctrlDown = false;
 #endif
   return false;
 }
 
-void Viewer::OnMouseMove(const CVD::ImageRef &where) {
-}
+void Viewer::OnMouseMove(const CVD::ImageRef &where) {}
 
-void Viewer::OnMouseDown(const CVD::ImageRef &where, const int button) {
-}
+void Viewer::OnMouseDown(const CVD::ImageRef &where, const int button) {}
 
-void Viewer::OnMouseUp(const CVD::ImageRef &where, const int button) {
-}
+void Viewer::OnMouseUp(const CVD::ImageRef &where, const int button) {}
 
-bool Viewer::OnMouseDraging(const CVD::ImageRef &from, const CVD::ImageRef &to, const int button) {
+bool Viewer::OnMouseDraging(const CVD::ImageRef &from, const CVD::ImageRef &to,
+                            const int button) {
   return false;
 }
 
-bool Viewer::OnMouseDoubleClicked(const CVD::ImageRef &where, const int button) {
+bool Viewer::OnMouseDoubleClicked(const CVD::ImageRef &where,
+                                  const int button) {
   return false;
 }
 
@@ -322,12 +328,13 @@ void Viewer::OnResize(const CVD::ImageRef &size) {
   XRRScreenSize *xrrs = XRRSizes(dpy, 0, &num_sizes);
   XRRScreenConfiguration *conf = XRRGetScreenInfo(dpy, root);
   Rotation original_rotation;
-  SizeID original_size_id = XRRConfigCurrentConfiguration(conf, &original_rotation);
+  SizeID original_size_id =
+      XRRConfigCurrentConfiguration(conf, &original_rotation);
   x_pos = (xrrs[original_size_id].width - size.x) / 2;
   y_pos = (xrrs[original_size_id].height - size.y) / 2;
   XCloseDisplay(dpy);
 #else
-  // TODO(mingyu): OSX support
+// TODO(mingyu): OSX support
 #endif
   m_pWnd->set_position(CVD::ImageRef(x_pos, y_pos));
   glViewport(0, 0, size.x, size.y);

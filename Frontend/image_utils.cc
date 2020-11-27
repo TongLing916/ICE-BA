@@ -14,13 +14,13 @@
  * limitations under the License.
  *****************************************************************************/
 
-#include <glog/logging.h>
 #include "image_utils.h"
+#include <glog/logging.h>
 //#include <driver/xp_aec_table.h>
-#include <opencv2/imgproc/imgproc.hpp>
-#include <opencv2/highgui.hpp>
 #include <boost/lexical_cast.hpp>
 #include <iostream>
+#include <opencv2/highgui.hpp>
+#include <opencv2/imgproc/imgproc.hpp>
 
 #ifndef __DEVELOPMENT_DEBUG_MODE__
 #define __IMAGE_UTILS_NO_DEBUG__
@@ -33,7 +33,8 @@ constexpr int kMarginRow = 50;
 constexpr int kMarginCol = 100;
 constexpr int kPixelStep = 2;
 
-// Compute the histogram of a sampled area of the input image and return the number of
+// Compute the histogram of a sampled area of the input image and return the
+// number of
 // sampled pixels
 // [NOTE] This function is hardcoded for VGA / WVGA images for now
 int sampleBrightnessHistogram(const cv::Mat& raw_img,
@@ -64,8 +65,10 @@ int sampleBrightnessHistogram(const cv::Mat& raw_img,
   return pixel_num;
 }
 
-// [NOTE] Instead of matching the cdf(s), we brute-force scale the histograms and match them
-// directly.  This matchingHistogram is intended to match two histograms of images taken with
+// [NOTE] Instead of matching the cdf(s), we brute-force scale the histograms
+// and match them
+// directly.  This matchingHistogram is intended to match two histograms of
+// images taken with
 // different gain/exposure settings.
 float matchingHistogram(const std::vector<int>& hist_src,
                         const std::vector<int>& hist_tgt,
@@ -101,7 +104,8 @@ float matchingHistogram(const std::vector<int>& hist_src,
       int L1_dist = std::abs(cdf_src_cumsum - cdf_tgt[i]);
       cdf_L1_dist += L1_dist;
     }
-    // We simply assume these histograms are sampled from the same size of images
+    // We simply assume these histograms are sampled from the same size of
+    // images
     CHECK_EQ(cdf_src_cumsum, cdf_tgt[255]);
     VLOG(1) << "scale = " << scale << " cdf_L1_dist = " << cdf_L1_dist;
     if (cdf_L1_dist < best_cdf_L1_dist) {
@@ -117,7 +121,7 @@ float matchingHistogram(const std::vector<int>& hist_src,
         hist_canvas.setTo(0x00);
         cv::Mat hist_img_src = hist_canvas(cv::Rect(0, 0, width, height));
         drawHistogram(&hist_img_src, hist_src_scale);
-        cv::Mat hist_img_tgt = hist_canvas(cv::Rect(0, height,  width, height));
+        cv::Mat hist_img_tgt = hist_canvas(cv::Rect(0, height, width, height));
         drawHistogram(&hist_img_tgt, hist_tgt);
         cv::imshow("matchingHistogram", hist_canvas);
         cv::waitKey(0);
@@ -125,7 +129,8 @@ float matchingHistogram(const std::vector<int>& hist_src,
     }
   }
   CHECK_GT(best_scale, 0.f);
-  VLOG(1) << "best scale = " << best_scale << " cdf_L1_dist = " << best_cdf_L1_dist;
+  VLOG(1) << "best scale = " << best_scale
+          << " cdf_L1_dist = " << best_cdf_L1_dist;
   return best_scale;
 }
 
@@ -164,10 +169,14 @@ void drawHistogram(cv::Mat* img_hist, const std::vector<int>& histogram) {
     cv::Rect rect(i * scale, height * (1 - val), scale, height * val);
     cv::rectangle(*img_hist, rect, cv::Scalar(0, 0, 255));
   }
-  cv::putText(*img_hist, "mean: " + boost::lexical_cast<std::string>(avg_pixel_val),
-              cv::Point(15, 15), cv::FONT_HERSHEY_SIMPLEX, .5, cv::Scalar(255, 255, 255));
-  cv::putText(*img_hist, "median: " + boost::lexical_cast<std::string>(median_pixel_val),
-              cv::Point(15, 30), cv::FONT_HERSHEY_SIMPLEX, .5, cv::Scalar(255, 255, 255));
+  cv::putText(*img_hist,
+              "mean: " + boost::lexical_cast<std::string>(avg_pixel_val),
+              cv::Point(15, 15), cv::FONT_HERSHEY_SIMPLEX, .5,
+              cv::Scalar(255, 255, 255));
+  cv::putText(*img_hist,
+              "median: " + boost::lexical_cast<std::string>(median_pixel_val),
+              cv::Point(15, 30), cv::FONT_HERSHEY_SIMPLEX, .5,
+              cv::Scalar(255, 255, 255));
 }
 
 }  // namespace XP

@@ -18,48 +18,49 @@
 
 #include <IBA_config.h>
 
-#define IBA_SERIAL_NONE   0x00000000
-#define IBA_SERIAL_LBA    0x00000001
-#define IBA_SERIAL_GBA    0x00000100
+#define IBA_SERIAL_NONE 0x00000000
+#define IBA_SERIAL_LBA 0x00000001
+#define IBA_SERIAL_GBA 0x00000100
 
-#define IBA_VERBOSE_NONE  0x00000000
-#define IBA_VERBOSE_LBA   0x00000001
-#define IBA_VERBOSE_GBA   0x00000100
+#define IBA_VERBOSE_NONE 0x00000000
+#define IBA_VERBOSE_LBA 0x00000001
+#define IBA_VERBOSE_GBA 0x00000100
 
-#define IBA_DEBUG_NONE    0x00000000
-#define IBA_DEBUG_LBA     0x00000001
-#define IBA_DEBUG_GBA     0x00000100
+#define IBA_DEBUG_NONE 0x00000000
+#define IBA_DEBUG_LBA 0x00000001
+#define IBA_DEBUG_GBA 0x00000100
 
-#define IBA_HISTORY_NONE  0x00000000
-#define IBA_HISTORY_LBA   0x00000001
-#define IBA_HISTORY_GBA   0x00000100
+#define IBA_HISTORY_NONE 0x00000000
+#define IBA_HISTORY_LBA 0x00000001
+#define IBA_HISTORY_GBA 0x00000100
 
 namespace IBA {
 
 struct Intrinsic {
-  float fx, fy;   // focal length
-  float cx, cy;   // optic center
-  float ds[8];    // distortion parameters
+  float fx, fy;  // focal length
+  float cx, cy;  // optic center
+  float ds[8];   // distortion parameters
 };
 
 struct Calibration {
-  int w, h;       // image resolution
-  bool fishEye;   // fish eye distortion model
-  float Tu[3][4]; // X_cam = Tu * X_imu
-  float ba[3];    // initial acceleration bias
-  float bw[3];    // initial gyroscope bias
-  //float sa[3];
-  Intrinsic K;    // intrinsic parameters
+  int w, h;        // image resolution
+  bool fishEye;    // fish eye distortion model
+  float Tu[3][4];  // X_cam = Tu * X_imu
+  float ba[3];     // initial acceleration bias
+  float bw[3];     // initial gyroscope bias
+  // float sa[3];
+  Intrinsic K;  // intrinsic parameters
 #ifdef CFG_STEREO
-  float Tr[3][4]; // X_left = Tr * X_right
-  Intrinsic Kr;   // intrinsic parameters for right camera
+  float Tr[3][4];  // X_left = Tr * X_right
+  Intrinsic Kr;    // intrinsic parameters for right camera
 #endif
 };
 
 struct CameraPose {
   float R[3][3];  // rotation matrix, R[0][0] = FLT_MAX for unknown camera pose
   float p[3];     // position
-};                // for a 3D point in world frame X, its coordinate in camera frame is obtained by R * (X - p)
+};  // for a 3D point in world frame X, its coordinate in camera frame is
+    // obtained by R * (X - p)
 
 struct CameraPoseCovariance {
   float S[6][6];  // position + rotation
@@ -68,10 +69,11 @@ struct CameraPoseCovariance {
 };
 
 struct CameraIMUState {
-  CameraPose C;   // camera pose
-  float v[3];     // velocity, v[0] = FLT_MAX for unknown velocity
-  float ba[3];    // acceleration bias, ba[0] = FLT_MAX for unknown acceleration bias
-  float bw[3];    // gyroscope bias, bw[0] = FLT_MAX for unknown gyroscope bias
+  CameraPose C;  // camera pose
+  float v[3];    // velocity, v[0] = FLT_MAX for unknown velocity
+  float ba[3];   // acceleration bias, ba[0] = FLT_MAX for unknown acceleration
+                 // bias
+  float bw[3];   // gyroscope bias, bw[0] = FLT_MAX for unknown gyroscope bias
 };
 
 struct Depth {
@@ -85,26 +87,26 @@ struct Point2D {
 };
 
 struct Point3D {
-  int idx;    // global point index
-  float X[3]; // 3D position, X[0] = FLT_MAX for unknown 3D position
+  int idx;     // global point index
+  float X[3];  // 3D position, X[0] = FLT_MAX for unknown 3D position
 };
 
 struct MapPointMeasurement {
   union {
-    int iFrm; // frame ID
-    int idx;  // global point ID
+    int iFrm;  // frame ID
+    int idx;   // global point ID
   };
-  inline bool operator < (const MapPointMeasurement &X) const {
+  inline bool operator<(const MapPointMeasurement &X) const {
     return iFrm < X.iFrm
 #ifdef CFG_STEREO
-//#if 1
-        || iFrm <= X.iFrm && !right && X.right
+           //#if 1
+           || iFrm <= X.iFrm && !right && X.right
 #endif
         ;
   }
   Point2D x;
 #ifdef CFG_STEREO
-//#if 1
+  //#if 1
   ubyte right;
 #endif
 };
@@ -120,23 +122,25 @@ struct FeatureTrack {
 };
 
 struct IMUMeasurement {
-  float a[3];     // acceleration
-  float w[3];     // gyroscope
-  float t;        // timestamp
+  float a[3];  // acceleration
+  float w[3];  // gyroscope
+  float t;     // timestamp
 };
 
 struct CurrentFrame {
-  int iFrm;                             // frame index
-  CameraIMUState C;                     // initial camera/IMU state of current frame
+  int iFrm;          // frame index
+  CameraIMUState C;  // initial camera/IMU state of current frame
   std::vector<MapPointMeasurement> zs;  // feature measurements of current frame
-  std::vector<IMUMeasurement> us;       // IMU measurements between last frame and current frame;
-                                        // the timestamp of first IMU must be the same as last frame
-  float t;                              // timestamp of current frame, should be greater than the timestamp of last IMU
-  Depth d;                              // a rough depth estimate for current frame
-                                        // (e.g. average over all visible points in current frame)
-  std::string fileName;                 // image file name, just for visualization
+  std::vector<IMUMeasurement>
+      us;   // IMU measurements between last frame and current frame;
+            // the timestamp of first IMU must be the same as last frame
+  float t;  // timestamp of current frame, should be greater than the timestamp
+            // of last IMU
+  Depth d;  // a rough depth estimate for current frame
+            // (e.g. average over all visible points in current frame)
+  std::string fileName;  // image file name, just for visualization
 #ifdef CFG_STEREO
-//#if 1
+  //#if 1
   std::string fileNameRight;
 #endif
 };
@@ -150,13 +154,14 @@ struct KeyFrame {
 };
 
 struct SlidingWindow {
-  std::vector<int> iFrms;           // frame indexes of those sliding window frames whose
-                                    // camera/IMU state has been updated since last call
-  std::vector<CameraIMUState> CsLF; // camera/IMU states corresponding to iFrms
-  std::vector<int> iFrmsKF;         // frame indexes of those keyframes whose camera pose
-                                    // has been updated since last call
-  std::vector<CameraPose> CsKF;     // camera poses corresponding to iFrmsKF
-  std::vector<Point3D> Xs;          // updated 3D points since last call
+  std::vector<int> iFrms;  // frame indexes of those sliding window frames whose
+                           // camera/IMU state has been updated since last call
+  std::vector<CameraIMUState> CsLF;  // camera/IMU states corresponding to iFrms
+  std::vector<int>
+      iFrmsKF;  // frame indexes of those keyframes whose camera pose
+                // has been updated since last call
+  std::vector<CameraPose> CsKF;  // camera poses corresponding to iFrmsKF
+  std::vector<Point3D> Xs;       // updated 3D points since last call
 #ifdef CFG_CHECK_REPROJECTION
   std::vector<std::pair<float, float> > esLF, esKF;
 #endif
@@ -164,8 +169,8 @@ struct SlidingWindow {
 
 struct RelativeConstraint {
   int iFrm1, iFrm2;
-  CameraPose T;       // X2 = T * X1 = R * (X1 - p)
-  CameraPoseCovariance S;      
+  CameraPose T;  // X2 = T * X1 = R * (X1 - p)
+  CameraPoseCovariance S;
 };
 
 struct Error {

@@ -30,27 +30,27 @@ const int W_BITS = 14;
 const int half_patch_size = 4;
 const int patch_size = 8;
 const int patch_area = 64;
-bool align1D(const cv::Mat& cur_img,
-             const Vector2f& dir,  // direction in which the patch is allowed to move
-             uint8_t* ref_patch_with_border,
-             uint8_t* ref_patch,
-             const int n_iter,
-             Vector2f* cur_px_estimate,
-             float* h_inv) {
+bool align1D(
+    const cv::Mat& cur_img,
+    const Vector2f& dir,  // direction in which the patch is allowed to move
+    uint8_t* ref_patch_with_border, uint8_t* ref_patch, const int n_iter,
+    Vector2f* cur_px_estimate, float* h_inv) {
   bool converged = false;
 
   // compute derivative of template and prepare inverse compositional
   float __attribute__((__aligned__(16))) ref_patch_dv[patch_area];
-  Matrix2f H; H.setZero();
+  Matrix2f H;
+  H.setZero();
 
   // compute gradient and hessian
   const int ref_step = patch_size + 2;
   float* it_dv = ref_patch_dv;
-  for (int y=0; y < patch_size; ++y) {
+  for (int y = 0; y < patch_size; ++y) {
     uint8_t* it = ref_patch_with_border + (y + 1) * ref_step + 1;
     for (int x = 0; x < patch_size; ++x, ++it, ++it_dv) {
       Vector2f J;
-      J[0] = 0.5*(dir[0] * (it[1] - it[-1]) + dir[1] * (it[ref_step] - it[-ref_step]));
+      J[0] = 0.5 * (dir[0] * (it[1] - it[-1]) +
+                    dir[1] * (it[ref_step] - it[-ref_step]));
       J[1] = 1;
       *it_dv = J[0];
       H += J * J.transpose();
@@ -68,16 +68,19 @@ bool align1D(const cv::Mat& cur_img,
   const float min_update_squared = 0.03 * 0.03;
   const int cur_step = cur_img.step.p[0];
   float chi2 = 0;
-  Vector2f update; update.setZero();
+  Vector2f update;
+  update.setZero();
   for (int iter = 0; iter < n_iter; ++iter) {
     int u_r = floor(u);
     int v_r = floor(v);
     if (u_r < half_patch_size || v_r < half_patch_size ||
-        u_r >= cur_img.cols-half_patch_size || v_r >= cur_img.rows - half_patch_size) {
+        u_r >= cur_img.cols - half_patch_size ||
+        v_r >= cur_img.rows - half_patch_size) {
       break;
     }
     if (std::isnan(u) || std::isnan(v)) {
-      // TODO(SVO): very rarely this can happen, maybe H is singular? should not be at corner.
+      // TODO(SVO): very rarely this can happen, maybe H is singular? should not
+      // be at corner.
       return false;
     }
 
@@ -93,12 +96,15 @@ bool align1D(const cv::Mat& cur_img,
     uint8_t* it_ref = ref_patch;
     float* it_ref_dv = ref_patch_dv;
     float new_chi2 = 0.0;
-    Vector2f Jres; Jres.setZero();
+    Vector2f Jres;
+    Jres.setZero();
     for (int y = 0; y < patch_size; ++y) {
       uint8_t* it = static_cast<uint8_t*>(cur_img.data) +
-          (v_r + y - half_patch_size) * cur_step + u_r - half_patch_size;
+                    (v_r + y - half_patch_size) * cur_step + u_r -
+                    half_patch_size;
       for (int x = 0; x < patch_size; ++x, ++it, ++it_ref, ++it_ref_dv) {
-        float search_pixel = wTL * it[0] + wTR * it[1] + wBL * it[cur_step] + wBR * it[cur_step+1];
+        float search_pixel = wTL * it[0] + wTR * it[1] + wBL * it[cur_step] +
+                             wBR * it[cur_step + 1];
         float res = search_pixel - *it_ref + mean_diff;
         Jres[0] -= res * (*it_ref_dv);
         Jres[1] -= res;
@@ -123,9 +129,8 @@ bool align1D(const cv::Mat& cur_img,
 
 #if SUBPIX_VERBOSE
     VLOG(2) << "Iter " << iter << ":"
-            << "\t u=" << u << ", v=" << v
-            << "\t update = " << update[0] << ", " << update[1]
-            << "\t new chi2 = " << new_chi2;
+            << "\t u=" << u << ", v=" << v << "\t update = " << update[0]
+            << ", " << update[1] << "\t new chi2 = " << new_chi2;
 #endif
 
     if (update[0] * update[0] + update[1] * update[1] < min_update_squared) {
@@ -141,31 +146,28 @@ bool align1D(const cv::Mat& cur_img,
   return converged;
 }
 
-
-
-bool align2D(const cv::Mat& cur_img,
-             uint8_t* ref_patch_with_border,
-             uint8_t* ref_patch,
-             const int n_iter,
-             Vector2f* cur_px_estimate,
+bool align2D(const cv::Mat& cur_img, uint8_t* ref_patch_with_border,
+             uint8_t* ref_patch, const int n_iter, Vector2f* cur_px_estimate,
              bool no_simd) {
-/*
-#ifdef __ARM_NEON__
-  Vector2f cur_px_estimate_neon = *cur_px_estimate;
-  if (!no_simd) {
-    align2D_NEON(cur_img, ref_patch_with_border, ref_patch, n_iter, &cur_px_estimate_neon);
-  }
-#endif
-*/
+  /*
+  #ifdef __ARM_NEON__
+    Vector2f cur_px_estimate_neon = *cur_px_estimate;
+    if (!no_simd) {
+      align2D_NEON(cur_img, ref_patch_with_border, ref_patch, n_iter,
+  &cur_px_estimate_neon);
+    }
+  #endif
+  */
   bool converged = false;
 
   // compute derivative of template and prepare inverse compositional
   float __attribute__((__aligned__(16))) ref_patch_dx[patch_area];
   float __attribute__((__aligned__(16))) ref_patch_dy[patch_area];
-  Matrix3f H; H.setZero();
+  Matrix3f H;
+  H.setZero();
 
   // compute gradient and hessian
-  const int ref_step = patch_size+2;
+  const int ref_step = patch_size + 2;
   float* it_dx = ref_patch_dx;
   float* it_dy = ref_patch_dy;
   for (int y = 0; y < patch_size; ++y) {
@@ -177,7 +179,7 @@ bool align2D(const cv::Mat& cur_img,
       J[2] = 1;
       *it_dx = J[0];
       *it_dy = J[1];
-      H += J*J.transpose();
+      H += J * J.transpose();
     }
   }
   Matrix3f Hinv = H.inverse();
@@ -191,16 +193,19 @@ bool align2D(const cv::Mat& cur_img,
   const float min_update_squared = 0.03 * 0.03;
   const int cur_step = cur_img.step.p[0];
   float chi2 = std::numeric_limits<int>::max();
-  Vector3f update; update.setZero();
+  Vector3f update;
+  update.setZero();
   for (int iter = 0; iter < n_iter; ++iter) {
     int u_r = floor(u);
     int v_r = floor(v);
     if (u_r < half_patch_size || v_r < half_patch_size ||
-        u_r >= cur_img.cols-half_patch_size || v_r >= cur_img.rows-half_patch_size) {
+        u_r >= cur_img.cols - half_patch_size ||
+        v_r >= cur_img.rows - half_patch_size) {
       break;
     }
     if (std::isnan(u) || std::isnan(v)) {
-      // TODO(SVO): very rarely this can happen, maybe H is singular? should not be at corner
+      // TODO(SVO): very rarely this can happen, maybe H is singular? should not
+      // be at corner
       return false;
     }
 
@@ -217,17 +222,21 @@ bool align2D(const cv::Mat& cur_img,
     float* it_ref_dx = ref_patch_dx;
     float* it_ref_dy = ref_patch_dy;
     float new_chi2 = 0.0;
-    Vector3f Jres; Jres.setZero();
+    Vector3f Jres;
+    Jres.setZero();
     for (int y = 0; y < patch_size; ++y) {
       uint8_t* it = static_cast<uint8_t*>(cur_img.data) +
-          (v_r + y - half_patch_size) * cur_step + u_r - half_patch_size;
-      for (int x = 0; x < patch_size; ++x, ++it, ++it_ref, ++it_ref_dx, ++it_ref_dy) {
-        float search_pixel = wTL*it[0] + wTR*it[1] + wBL*it[cur_step] + wBR*it[cur_step+1];
+                    (v_r + y - half_patch_size) * cur_step + u_r -
+                    half_patch_size;
+      for (int x = 0; x < patch_size;
+           ++x, ++it, ++it_ref, ++it_ref_dx, ++it_ref_dy) {
+        float search_pixel = wTL * it[0] + wTR * it[1] + wBL * it[cur_step] +
+                             wBR * it[cur_step + 1];
         float res = search_pixel - *it_ref + mean_diff;
-        Jres[0] -= res*(*it_ref_dx);
-        Jres[1] -= res*(*it_ref_dy);
+        Jres[0] -= res * (*it_ref_dx);
+        Jres[1] -= res * (*it_ref_dy);
         Jres[2] -= res;
-        new_chi2 += res*res;
+        new_chi2 += res * res;
       }
     }
 
@@ -250,9 +259,8 @@ bool align2D(const cv::Mat& cur_img,
 
 #if SUBPIX_VERBOSE
     VLOG(2) << "Iter " << iter << ":"
-            << "\t u=" << u << ", v=" << v
-            << "\t update = " << update[0] << ", " << update[1]
-            << "\t chi2 = " << chi2;
+            << "\t u=" << u << ", v=" << v << "\t update = " << update[0]
+            << ", " << update[1] << "\t chi2 = " << chi2;
 #endif
 
     if (update[0] * update[0] + update[1] * update[1] < min_update_squared) {
@@ -268,19 +276,15 @@ bool align2D(const cv::Mat& cur_img,
 }
 
 // TODO(mingyu): Add the SSE and NEON version
-bool align2D_SSE2(const cv::Mat& cur_img,
-                  uint8_t* ref_patch_with_border,
-                  uint8_t* ref_patch,
-                  const int n_iter,
+bool align2D_SSE2(const cv::Mat& cur_img, uint8_t* ref_patch_with_border,
+                  uint8_t* ref_patch, const int n_iter,
                   Vector2f* cur_px_estimate) {
   LOG(FATAL) << "align2D_SSE2 is not implemented";
   return false;
 }
 #ifdef __ARM_NEON__
-bool align2D_NEON(const cv::Mat& cur_img,
-                  const uint8_t* ref_patch_with_border,
-                  const uint8_t* ref_patch,
-                  const int n_iter,
+bool align2D_NEON(const cv::Mat& cur_img, const uint8_t* ref_patch_with_border,
+                  const uint8_t* ref_patch, const int n_iter,
                   Vector2f* cur_px_estimate) {
   bool converged = false;
 
@@ -298,24 +302,29 @@ bool align2D_NEON(const cv::Mat& cur_img,
     const uint8_t* it = ref_patch_with_border + (n + 1) * ref_step + 1;
     int16x8_t horizontal_diff, vertical_diff;
     {
-      int16x8_t raw_data_mid_left = vreinterpretq_s16_u16(vmovl_u8(vld1_u8(it - 1)));
-      int16x8_t raw_data_mid_right = vreinterpretq_s16_u16(vmovl_u8(vld1_u8(it + 1)));
-      int16x8_t raw_data_top = vreinterpretq_s16_u16(vmovl_u8(vld1_u8(it - ref_step)));
-      int16x8_t raw_data_bot = vreinterpretq_s16_u16(vmovl_u8(vld1_u8(it + ref_step)));
+      int16x8_t raw_data_mid_left =
+          vreinterpretq_s16_u16(vmovl_u8(vld1_u8(it - 1)));
+      int16x8_t raw_data_mid_right =
+          vreinterpretq_s16_u16(vmovl_u8(vld1_u8(it + 1)));
+      int16x8_t raw_data_top =
+          vreinterpretq_s16_u16(vmovl_u8(vld1_u8(it - ref_step)));
+      int16x8_t raw_data_bot =
+          vreinterpretq_s16_u16(vmovl_u8(vld1_u8(it + ref_step)));
       horizontal_diff = vsubq_s16(raw_data_mid_right, raw_data_mid_left);
       vertical_diff = vsubq_s16(raw_data_bot, raw_data_top);
     }
     float32x4x3_t left4 = {
-      vmulq_n_f32(vcvtq_f32_s32(vmovl_s16(vget_low_s16(horizontal_diff))), 0.5),
-      vmulq_n_f32(vcvtq_f32_s32(vmovl_s16(vget_low_s16(vertical_diff))), 0.5),
-      vdupq_n_f32(1.f)
-    };
+        vmulq_n_f32(vcvtq_f32_s32(vmovl_s16(vget_low_s16(horizontal_diff))),
+                    0.5),
+        vmulq_n_f32(vcvtq_f32_s32(vmovl_s16(vget_low_s16(vertical_diff))), 0.5),
+        vdupq_n_f32(1.f)};
     vst3q_f32(ref_patch_dx_dy + n * 24, left4);
     float32x4x3_t right4 = {
-      vmulq_n_f32(vcvtq_f32_s32(vmovl_s16(vget_high_s16(horizontal_diff))), 0.5),
-      vmulq_n_f32(vcvtq_f32_s32(vmovl_s16(vget_high_s16(vertical_diff))), 0.5),
-      vdupq_n_f32(1.f)
-    };
+        vmulq_n_f32(vcvtq_f32_s32(vmovl_s16(vget_high_s16(horizontal_diff))),
+                    0.5),
+        vmulq_n_f32(vcvtq_f32_s32(vmovl_s16(vget_high_s16(vertical_diff))),
+                    0.5),
+        vdupq_n_f32(1.f)};
     vst3q_f32(ref_patch_dx_dy + n * 24 + 12, right4);
   }
   // compute hessian
@@ -341,14 +350,14 @@ bool align2D_NEON(const cv::Mat& cur_img,
   for (int iter = 0; iter < n_iter; ++iter) {
     int u_r = floor(u);
     int v_r = floor(v);
-    if (u_r < half_patch_size ||
-        v_r < half_patch_size ||
+    if (u_r < half_patch_size || v_r < half_patch_size ||
         u_r >= cur_img.cols - half_patch_size ||
         v_r >= cur_img.rows - half_patch_size) {
       break;
     }
     if (std::isnan(u) || std::isnan(v)) {
-      // TODO(SVO): very rarely this can happen, maybe H is singular? should not be at corner
+      // TODO(SVO): very rarely this can happen, maybe H is singular? should not
+      // be at corner
       return false;
     }
 
@@ -373,36 +382,41 @@ bool align2D_NEON(const cv::Mat& cur_img,
     Vector3f Jres = Vector3f::Zero();
     for (int n = 0; n < patch_size; ++n, it_ref += 8) {
       uint8_t* it = static_cast<uint8_t*>(cur_img.data) +
-          (v_r + n - half_patch_size) * cur_step + u_r - half_patch_size;
+                    (v_r + n - half_patch_size) * cur_step + u_r -
+                    half_patch_size;
       int16x8_t topleft = vreinterpretq_s16_u16(vmovl_u8(vld1_u8(it)));
       int16x8_t topright = vreinterpretq_s16_u16(vmovl_u8(vld1_u8(it + 1)));
-      int16x8_t botleft = vreinterpretq_s16_u16(vmovl_u8(vld1_u8(it + cur_step)));
-      int16x8_t botright = vreinterpretq_s16_u16(vmovl_u8(vld1_u8(it + cur_step + 1)));
+      int16x8_t botleft =
+          vreinterpretq_s16_u16(vmovl_u8(vld1_u8(it + cur_step)));
+      int16x8_t botright =
+          vreinterpretq_s16_u16(vmovl_u8(vld1_u8(it + cur_step + 1)));
 
-      int32x4_t left_half1 = vaddq_s32(
-                  vmull_s16(vget_low_s16(topleft), viw00),
-                  vmull_s16(vget_low_s16(topright), viw01));
-      int32x4_t left_half2 = vaddq_s32(
-                  vmull_s16(vget_low_s16(botleft), viw10),
-                  vmull_s16(vget_low_s16(botright), viw11));
+      int32x4_t left_half1 =
+          vaddq_s32(vmull_s16(vget_low_s16(topleft), viw00),
+                    vmull_s16(vget_low_s16(topright), viw01));
+      int32x4_t left_half2 =
+          vaddq_s32(vmull_s16(vget_low_s16(botleft), viw10),
+                    vmull_s16(vget_low_s16(botright), viw11));
 
-      int32x4_t right_half1 = vaddq_s32(
-                  vmull_s16(vget_high_s16(topleft), viw00),
-                  vmull_s16(vget_high_s16(topright), viw01));
-      int32x4_t right_half2 = vaddq_s32(
-                  vmull_s16(vget_high_s16(botleft), viw10),
-                  vmull_s16(vget_high_s16(botright), viw11));
+      int32x4_t right_half1 =
+          vaddq_s32(vmull_s16(vget_high_s16(topleft), viw00),
+                    vmull_s16(vget_high_s16(topright), viw01));
+      int32x4_t right_half2 =
+          vaddq_s32(vmull_s16(vget_high_s16(botleft), viw10),
+                    vmull_s16(vget_high_s16(botright), viw11));
 
       int16x8_t v_it_ref8 = vreinterpretq_s16_u16(vmovl_u8(vld1_u8(it_ref)));
       float32x4x2_t search_pixel = {
-        vcvtq_f32_s32(vqrshlq_s32(vaddq_s32(left_half1, left_half2), shift)),
-        vcvtq_f32_s32(vqrshlq_s32(vaddq_s32(right_half1, right_half2), shift))
-      };
+          vcvtq_f32_s32(vqrshlq_s32(vaddq_s32(left_half1, left_half2), shift)),
+          vcvtq_f32_s32(
+              vqrshlq_s32(vaddq_s32(right_half1, right_half2), shift))};
 
-      search_pixel.val[0] = vsubq_f32(search_pixel.val[0],
-                           vcvtq_f32_s32(vmovl_s16(vget_low_s16(v_it_ref8))));
-      search_pixel.val[1] = vsubq_f32(search_pixel.val[1],
-                           vcvtq_f32_s32(vmovl_s16(vget_high_s16(v_it_ref8))));
+      search_pixel.val[0] =
+          vsubq_f32(search_pixel.val[0],
+                    vcvtq_f32_s32(vmovl_s16(vget_low_s16(v_it_ref8))));
+      search_pixel.val[1] =
+          vsubq_f32(search_pixel.val[1],
+                    vcvtq_f32_s32(vmovl_s16(vget_high_s16(v_it_ref8))));
       search_pixel.val[0] = vaddq_f32(search_pixel.val[0], vmean_diff);
       search_pixel.val[1] = vaddq_f32(search_pixel.val[1], vmean_diff);
 
@@ -410,28 +424,38 @@ bool align2D_NEON(const cv::Mat& cur_img,
       float32x4x3_t dxy_right = vld3q_f32(ref_patch_dx_dy + n * 24 + 12);
 
       // dx
-      dxy_left.val[0]  = vmulq_f32(dxy_left.val[0], search_pixel.val[0]);
+      dxy_left.val[0] = vmulq_f32(dxy_left.val[0], search_pixel.val[0]);
       dxy_right.val[0] = vmulq_f32(dxy_right.val[0], search_pixel.val[1]);
       // dy
-      dxy_left.val[1]  = vmulq_f32(dxy_left.val[1], search_pixel.val[0]);
+      dxy_left.val[1] = vmulq_f32(dxy_left.val[1], search_pixel.val[0]);
       dxy_right.val[1] = vmulq_f32(dxy_right.val[1], search_pixel.val[1]);
 
-      Jres[2] -= (vgetq_lane_f32(search_pixel.val[0], 0) + vgetq_lane_f32(search_pixel.val[0], 1) +
-                  vgetq_lane_f32(search_pixel.val[0], 2) + vgetq_lane_f32(search_pixel.val[0], 3) +
-                  vgetq_lane_f32(search_pixel.val[1], 0) + vgetq_lane_f32(search_pixel.val[1], 1) +
-                  vgetq_lane_f32(search_pixel.val[1], 2) + vgetq_lane_f32(search_pixel.val[1], 3));
+      Jres[2] -= (vgetq_lane_f32(search_pixel.val[0], 0) +
+                  vgetq_lane_f32(search_pixel.val[0], 1) +
+                  vgetq_lane_f32(search_pixel.val[0], 2) +
+                  vgetq_lane_f32(search_pixel.val[0], 3) +
+                  vgetq_lane_f32(search_pixel.val[1], 0) +
+                  vgetq_lane_f32(search_pixel.val[1], 1) +
+                  vgetq_lane_f32(search_pixel.val[1], 2) +
+                  vgetq_lane_f32(search_pixel.val[1], 3));
 
       search_pixel.val[0] = vmulq_f32(search_pixel.val[0], search_pixel.val[0]);
       search_pixel.val[1] = vmulq_f32(search_pixel.val[1], search_pixel.val[1]);
       dxy_left.val[0] = vaddq_f32(dxy_left.val[0], dxy_right.val[0]);
       dxy_left.val[1] = vaddq_f32(dxy_left.val[1], dxy_right.val[1]);
-      Jres[0] -= (vgetq_lane_f32(dxy_left.val[0], 0)  + vgetq_lane_f32(dxy_left.val[0], 1) +
-                  vgetq_lane_f32(dxy_left.val[0], 2)  + vgetq_lane_f32(dxy_left.val[0], 3));
-      Jres[1] -= (vgetq_lane_f32(dxy_left.val[1], 0)  + vgetq_lane_f32(dxy_left.val[1], 1) +
-                  vgetq_lane_f32(dxy_left.val[1], 2)  + vgetq_lane_f32(dxy_left.val[1], 3));
+      Jres[0] -= (vgetq_lane_f32(dxy_left.val[0], 0) +
+                  vgetq_lane_f32(dxy_left.val[0], 1) +
+                  vgetq_lane_f32(dxy_left.val[0], 2) +
+                  vgetq_lane_f32(dxy_left.val[0], 3));
+      Jres[1] -= (vgetq_lane_f32(dxy_left.val[1], 0) +
+                  vgetq_lane_f32(dxy_left.val[1], 1) +
+                  vgetq_lane_f32(dxy_left.val[1], 2) +
+                  vgetq_lane_f32(dxy_left.val[1], 3));
       search_pixel.val[0] = vaddq_f32(search_pixel.val[0], search_pixel.val[1]);
-      new_chi2 += vgetq_lane_f32(search_pixel.val[0], 0) + vgetq_lane_f32(search_pixel.val[0], 1) +
-                  vgetq_lane_f32(search_pixel.val[0], 2) + vgetq_lane_f32(search_pixel.val[0], 3);
+      new_chi2 += vgetq_lane_f32(search_pixel.val[0], 0) +
+                  vgetq_lane_f32(search_pixel.val[0], 1) +
+                  vgetq_lane_f32(search_pixel.val[0], 2) +
+                  vgetq_lane_f32(search_pixel.val[0], 3);
     }
     /*
     if(iter > 0 && new_chi2 > chi2) {
@@ -452,9 +476,8 @@ bool align2D_NEON(const cv::Mat& cur_img,
 
 #if SUBPIX_VERBOSE
     VLOG(2) << "Iter " << iter << ":"
-            << "\t u=" << u << ", v=" << v
-            << "\t update = " << update[0] << ", " << update[1]
-            << "\t chi2 = " << chi2;
+            << "\t u=" << u << ", v=" << v << "\t update = " << update[0]
+            << ", " << update[1] << "\t chi2 = " << chi2;
 #endif
 
     if (update[0] * update[0] + update[1] * update[1] < min_update_squared) {

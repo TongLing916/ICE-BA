@@ -32,18 +32,17 @@
 namespace XP {
 namespace patch_score {
 
-
 #if __SSE2__
 // Horizontal sum of uint16s stored in an XMM register
-inline int SumXMM_16(__m128i &target) {  // NOLINT
+inline int SumXMM_16(__m128i& target) {  // NOLINT
   uint16_t sums_store[8];
   _mm_storeu_si128((__m128i*)sums_store, target);  // NOLINT
   return sums_store[0] + sums_store[1] + sums_store[2] + sums_store[3] +
-      sums_store[4] + sums_store[5] + sums_store[6] + sums_store[7];
+         sums_store[4] + sums_store[5] + sums_store[6] + sums_store[7];
 }
 
 // Horizontal sum of uint32s stored in an XMM register
-inline int SumXMM_32(__m128i &target) {  // NOLINT
+inline int SumXMM_32(__m128i& target) {  // NOLINT
   uint32_t sums_store[4];
   _mm_storeu_si128((__m128i*)sums_store, target);  // NOLINT
   return sums_store[0] + sums_store[1] + sums_store[2] + sums_store[3];
@@ -51,12 +50,12 @@ inline int SumXMM_32(__m128i &target) {  // NOLINT
 #endif
 
 /// Zero Mean Sum of Squared Differences Cost
-template<int HALF_PATCH_SIZE>
+template <int HALF_PATCH_SIZE>
 class ZMSSD {
  public:
   static const int patch_size_ = 2 * HALF_PATCH_SIZE;
   static const int patch_area_ = patch_size_ * patch_size_;
-  static const int threshold_  = 2000 * patch_area_;
+  static const int threshold_ = 2000 * patch_area_;
   uint8_t* ref_patch_;
   int sumA_, sumAA_;
   int sumB_ = 0;
@@ -67,7 +66,7 @@ class ZMSSD {
     for (int r = 0; r < patch_area_; r++) {
       uint8_t n = ref_patch_[r];
       sumA_uint += n;
-      sumAA_uint += n*n;
+      sumAA_uint += n * n;
     }
     sumA_ = sumA_uint;
     sumAA_ = sumAA_uint;
@@ -84,18 +83,19 @@ class ZMSSD {
     uint32_t sumAB_uint = 0;
     for (int r = 0; r < patch_area_; r++) {
       const uint8_t cur_pixel = cur_patch[r];
-      sumB_uint  += cur_pixel;
+      sumB_uint += cur_pixel;
       sumBB_uint += cur_pixel * cur_pixel;
       sumAB_uint += cur_pixel * ref_patch_[r];
     }
     const int sumB = sumB_uint;
     const int sumBB = sumBB_uint;
     const int sumAB = sumAB_uint;
-    return sumAA_ - 2 * sumAB + sumBB
-        - (sumA_ * sumA_ - 2 * sumA_ * sumB + sumB * sumB) / patch_area_;
+    return sumAA_ - 2 * sumAB + sumBB -
+           (sumA_ * sumA_ - 2 * sumA_ * sumB + sumB * sumB) / patch_area_;
   }
 
-  // Return zero-mean sum of squared difference (zmssd) and sum of squared difference (ssd)
+  // Return zero-mean sum of squared difference (zmssd) and sum of squared
+  // difference (ssd)
   void computeScore(uint8_t* cur_patch, int stride, int* zmssd, int* ssd) {
     int sumB, sumBB, sumAB;
 #if __SSE2__
@@ -120,18 +120,19 @@ class ZMSSD {
       uint8_t* templatepointer = ref_patch_;
       size_t cur_stride = stride;
 
-      xImageAsEightBytes = _mm_loadl_epi64((__m128i*) imagepointer);  // NOLINT
+      xImageAsEightBytes = _mm_loadl_epi64((__m128i*)imagepointer);  // NOLINT
       imagepointer += cur_stride;
       xImageAsWords = _mm_unpacklo_epi8(xImageAsEightBytes, xZero);
       xImageSums = _mm_adds_epu16(xImageAsWords, xImageSums);
       xProduct = _mm_madd_epi16(xImageAsWords, xImageAsWords);
       xImageSqSums = _mm_add_epi32(xProduct, xImageSqSums);
-      xTemplateAsEightBytes=_mm_load_si128((__m128i*) templatepointer);  // NOLINT
+      xTemplateAsEightBytes =
+          _mm_load_si128((__m128i*)templatepointer);  // NOLINT
       templatepointer += 16;
       xTemplateAsWords = _mm_unpacklo_epi8(xTemplateAsEightBytes, xZero);
       xProduct = _mm_madd_epi16(xImageAsWords, xTemplateAsWords);
       xCrossSums = _mm_add_epi32(xProduct, xCrossSums);
-      xImageAsEightBytes=_mm_loadl_epi64((__m128i*) imagepointer);  // NOLINT
+      xImageAsEightBytes = _mm_loadl_epi64((__m128i*)imagepointer);  // NOLINT
       imagepointer += cur_stride;
       xImageAsWords = _mm_unpacklo_epi8(xImageAsEightBytes, xZero);
       xImageSums = _mm_adds_epu16(xImageAsWords, xImageSums);
@@ -141,18 +142,19 @@ class ZMSSD {
       xProduct = _mm_madd_epi16(xImageAsWords, xTemplateAsWords);
       xCrossSums = _mm_add_epi32(xProduct, xCrossSums);
 
-      xImageAsEightBytes=_mm_loadl_epi64((__m128i*) imagepointer);  // NOLINT
+      xImageAsEightBytes = _mm_loadl_epi64((__m128i*)imagepointer);  // NOLINT
       imagepointer += cur_stride;
       xImageAsWords = _mm_unpacklo_epi8(xImageAsEightBytes, xZero);
       xImageSums = _mm_adds_epu16(xImageAsWords, xImageSums);
       xProduct = _mm_madd_epi16(xImageAsWords, xImageAsWords);
       xImageSqSums = _mm_add_epi32(xProduct, xImageSqSums);
-      xTemplateAsEightBytes=_mm_load_si128((__m128i*) templatepointer);  // NOLINT
+      xTemplateAsEightBytes =
+          _mm_load_si128((__m128i*)templatepointer);  // NOLINT
       templatepointer += 16;
       xTemplateAsWords = _mm_unpacklo_epi8(xTemplateAsEightBytes, xZero);
       xProduct = _mm_madd_epi16(xImageAsWords, xTemplateAsWords);
       xCrossSums = _mm_add_epi32(xProduct, xCrossSums);
-      xImageAsEightBytes=_mm_loadl_epi64((__m128i*) imagepointer);  // NOLINT
+      xImageAsEightBytes = _mm_loadl_epi64((__m128i*)imagepointer);  // NOLINT
       imagepointer += cur_stride;
       xImageAsWords = _mm_unpacklo_epi8(xImageAsEightBytes, xZero);
       xImageSums = _mm_adds_epu16(xImageAsWords, xImageSums);
@@ -162,18 +164,19 @@ class ZMSSD {
       xProduct = _mm_madd_epi16(xImageAsWords, xTemplateAsWords);
       xCrossSums = _mm_add_epi32(xProduct, xCrossSums);
 
-      xImageAsEightBytes=_mm_loadl_epi64((__m128i*) imagepointer);  // NOLINT
+      xImageAsEightBytes = _mm_loadl_epi64((__m128i*)imagepointer);  // NOLINT
       imagepointer += cur_stride;
       xImageAsWords = _mm_unpacklo_epi8(xImageAsEightBytes, xZero);
       xImageSums = _mm_adds_epu16(xImageAsWords, xImageSums);
       xProduct = _mm_madd_epi16(xImageAsWords, xImageAsWords);
       xImageSqSums = _mm_add_epi32(xProduct, xImageSqSums);
-      xTemplateAsEightBytes=_mm_load_si128((__m128i*) templatepointer);  // NOLINT
+      xTemplateAsEightBytes =
+          _mm_load_si128((__m128i*)templatepointer);  // NOLINT
       templatepointer += 16;
       xTemplateAsWords = _mm_unpacklo_epi8(xTemplateAsEightBytes, xZero);
       xProduct = _mm_madd_epi16(xImageAsWords, xTemplateAsWords);
       xCrossSums = _mm_add_epi32(xProduct, xCrossSums);
-      xImageAsEightBytes=_mm_loadl_epi64((__m128i*) imagepointer);  // NOLINT
+      xImageAsEightBytes = _mm_loadl_epi64((__m128i*)imagepointer);  // NOLINT
       imagepointer += cur_stride;
       xImageAsWords = _mm_unpacklo_epi8(xImageAsEightBytes, xZero);
       xImageSums = _mm_adds_epu16(xImageAsWords, xImageSums);
@@ -183,18 +186,19 @@ class ZMSSD {
       xProduct = _mm_madd_epi16(xImageAsWords, xTemplateAsWords);
       xCrossSums = _mm_add_epi32(xProduct, xCrossSums);
 
-      xImageAsEightBytes=_mm_loadl_epi64((__m128i*) imagepointer);  // NOLINT
+      xImageAsEightBytes = _mm_loadl_epi64((__m128i*)imagepointer);  // NOLINT
       imagepointer += cur_stride;
       xImageAsWords = _mm_unpacklo_epi8(xImageAsEightBytes, xZero);
       xImageSums = _mm_adds_epu16(xImageAsWords, xImageSums);
       xProduct = _mm_madd_epi16(xImageAsWords, xImageAsWords);
       xImageSqSums = _mm_add_epi32(xProduct, xImageSqSums);
-      xTemplateAsEightBytes=_mm_load_si128((__m128i*) templatepointer);  // NOLINT
+      xTemplateAsEightBytes =
+          _mm_load_si128((__m128i*)templatepointer);  // NOLINT
       templatepointer += 16;
       xTemplateAsWords = _mm_unpacklo_epi8(xTemplateAsEightBytes, xZero);
       xProduct = _mm_madd_epi16(xImageAsWords, xTemplateAsWords);
       xCrossSums = _mm_add_epi32(xProduct, xCrossSums);
-      xImageAsEightBytes=_mm_loadl_epi64((__m128i*) imagepointer);  // NOLINT
+      xImageAsEightBytes = _mm_loadl_epi64((__m128i*)imagepointer);  // NOLINT
       xImageAsWords = _mm_unpacklo_epi8(xImageAsEightBytes, xZero);
       xImageSums = _mm_adds_epu16(xImageAsWords, xImageSums);
       xProduct = _mm_madd_epi16(xImageAsWords, xImageAsWords);
@@ -208,7 +212,7 @@ class ZMSSD {
       sumBB = SumXMM_32(xImageSqSums);
     } else {
 #else
-      {
+    {
 #endif
       uint32_t sumB_uint = 0;
       uint32_t sumBB_uint = 0;
@@ -217,7 +221,7 @@ class ZMSSD {
         uint8_t* cur_patch_ptr = cur_patch + y * stride;
         for (int x = 0; x < patch_size_; ++x, ++r) {
           const uint8_t cur_px = cur_patch_ptr[x];
-          sumB_uint  += cur_px;
+          sumB_uint += cur_px;
           sumBB_uint += cur_px * cur_px;
           sumAB_uint += cur_px * ref_patch_[r];
         }
@@ -229,7 +233,8 @@ class ZMSSD {
     sumB_ = sumB;  // store sumB
 
     *ssd = sumAA_ - 2 * sumAB + sumBB;
-    *zmssd = *ssd - (sumA_ * sumA_ - 2 * sumA_ * sumB + sumB * sumB) / patch_area_;
+    *zmssd =
+        *ssd - (sumA_ * sumA_ - 2 * sumA_ * sumB + sumB * sumB) / patch_area_;
   }
 
   int computeSsdScoreSlow(uint8_t* cur_patch, int stride) const {
@@ -239,14 +244,16 @@ class ZMSSD {
       uint8_t* cur_patch_ptr = cur_patch + y * stride;
       for (int x = 0; x < patch_size_; ++x, ++r) {
         const uint8_t cur_px = cur_patch_ptr[x];
-        int32_t d = static_cast<int32_t>(cur_px) - static_cast<int32_t>(ref_patch_[r]);
+        int32_t d =
+            static_cast<int32_t>(cur_px) - static_cast<int32_t>(ref_patch_[r]);
         sum_ssd += d * d;
       }
     }
     return sum_ssd;
   }
 
-  // The result is slightly different (off by 1) comparing to computeScore due to rounding issue
+  // The result is slightly different (off by 1) comparing to computeScore due
+  // to rounding issue
   // in integer division
   int computeZmssdScoreSlow(uint8_t* cur_patch, int stride) const {
     int32_t sumA = 0;
@@ -264,8 +271,9 @@ class ZMSSD {
     for (int y = 0, r = 0; y < patch_size_; ++y) {
       uint8_t* cur_patch_ptr = cur_patch + y * stride;
       for (int x = 0; x < patch_size_; ++x, ++r) {
-        int32_t zmd = static_cast<int32_t>(ref_patch_[r]) * patch_area_ - sumA
-            - static_cast<int32_t>(cur_patch_ptr[x]) * patch_area_ + sumB;
+        int32_t zmd = static_cast<int32_t>(ref_patch_[r]) * patch_area_ - sumA -
+                      static_cast<int32_t>(cur_patch_ptr[x]) * patch_area_ +
+                      sumB;
         zmssd += zmd * zmd;
       }
     }
@@ -277,4 +285,4 @@ class ZMSSD {
 }  // namespace patch_score
 }  // namespace XP
 
-#endif // _XP_UTIL_PATCH_SCORE_H_
+#endif  // _XP_UTIL_PATCH_SCORE_H_

@@ -13,9 +13,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  *****************************************************************************/
-#include "stdafx.h"
 #include "Utility.h"
 #include "MultiThread.h"
+#include "stdafx.h"
 
 #ifndef _WIN32
 #include <boost/filesystem.hpp>
@@ -25,8 +25,8 @@
 
 namespace UT {
 static boost::mutex g_mutex;
-//static std::string g_fileName = "";
-//static FILE *g_fp = NULL;
+// static std::string g_fileName = "";
+// static FILE *g_fp = NULL;
 class File {
  public:
   inline File() : m_fp(NULL) {}
@@ -39,11 +39,11 @@ class File {
     }
   }
   inline void Stop() {
-    //if (!m_fp)
+    // if (!m_fp)
     //  return;
-    //fclose(m_fp);
-    //m_fp = NULL;
-    //UT::PrintSaved(m_fileName);
+    // fclose(m_fp);
+    // m_fp = NULL;
+    // UT::PrintSaved(m_fileName);
   }
   inline bool Valid() const { return m_fp != NULL; }
   inline void Print(const char *str) {
@@ -55,6 +55,7 @@ class File {
       printf("%s", str);
     }
   }
+
  public:
   FILE *m_fp;
   std::string m_fileName;
@@ -63,7 +64,7 @@ static File g_fp;
 static int g_N = 0;
 
 void Assert(const bool expression, const char *format, ...) {
-  //assert(expression);
+  // assert(expression);
   if (expression) {
     return;
   }
@@ -71,7 +72,7 @@ void Assert(const bool expression, const char *format, ...) {
   UT_GET_STRING(format, str);
   Print("%s", str);
   exit(-1);
-  //EXPECT_TRUE(expression);
+  // EXPECT_TRUE(expression);
 }
 
 static bool g_debug = false;
@@ -120,15 +121,15 @@ void PrintStop() {
 void Print(const char *format, ...) {
   char str[UT_STRING_WIDTH_MAX];
   UT_GET_STRING(format, str);
-  //MT_SCOPE_LOCK_BEGIN(g_mutex);
-  //g_fp.Print(str);
-  //const int len = int(strlen(str));
-  //if (len == 0 || str[len - 1] == '\n') {
+  // MT_SCOPE_LOCK_BEGIN(g_mutex);
+  // g_fp.Print(str);
+  // const int len = int(strlen(str));
+  // if (len == 0 || str[len - 1] == '\n') {
   //  g_N = 0;
   //} else {
   //  g_N += len;
   //}
-  //MT_SCOPE_LOCK_END(g_mutex);
+  // MT_SCOPE_LOCK_END(g_mutex);
   printf("%s", str);
 }
 
@@ -171,7 +172,6 @@ void Check(const char *format, ...) {
 #endif
 }
 
-
 bool FileExists(const std::string fileName) {
 #ifdef WIN32
   return _access(fileName.c_str(), 0) == 0;
@@ -180,7 +180,8 @@ bool FileExists(const std::string fileName) {
 #endif
 }
 
-FILE* FileOpen(const std::string fileName, const char *mode, const char *format, ...) {
+FILE *FileOpen(const std::string fileName, const char *mode, const char *format,
+               ...) {
   FILE *fp = fopen(fileName.c_str(), mode);
   if (fp) {
     return fp;
@@ -209,7 +210,8 @@ bool FileCopy(const std::string fileNameSrc, const std::string fileNameDst) {
 #endif
 }
 
-bool FileDelete(const std::string fileName, const bool check, const bool verbose) {
+bool FileDelete(const std::string fileName, const bool check,
+                const bool verbose) {
 #ifdef CFG_DEBUG
   UT_ASSERT(UT::FileExists(fileName));
 #endif
@@ -247,8 +249,9 @@ bool FileDelete(const std::string fileName, const bool check, const bool verbose
 //    Return:  /path/to/files/log_0008.txt   <-- step is 2
 //    Return:  /path/to/files/log_0010.txt
 //    Return:  /path/to/files/log_0012.txt   <-- ends at 12 <= 12 (12 = 1 + 11)
-std::vector<std::string> FilesSearch(const std::string fileNameFirst, const int iStart,
-                                     const int iStep, const int iEnd, const bool verbose) {
+std::vector<std::string> FilesSearch(const std::string fileNameFirst,
+                                     const int iStart, const int iStep,
+                                     const int iEnd, const bool verbose) {
   std::vector<std::string> fileNames;
   if (FileNameRemoveDirectoryExtension(fileNameFirst) == "*") {
     const std::string dir = FileNameExtractDirectory(fileNameFirst);
@@ -285,7 +288,7 @@ std::vector<std::string> FilesSearch(const std::string fileNameFirst, const int 
     sort(fileNames.begin(), fileNames.end());
 #ifdef CFG_VERBOSE
     if (verbose) {
-      for (const std::string& f : fileNames) {
+      for (const std::string &f : fileNames) {
         printf("\rFound \'%s\'", f.c_str());
       }
     }
@@ -306,8 +309,7 @@ std::vector<std::string> FilesSearch(const std::string fileNameFirst, const int 
       }
       fileNames.push_back(fileName);
 #ifdef CFG_VERBOSE
-      if (verbose)
-        printf("\rFound \'%s\'", fileName.c_str());
+      if (verbose) printf("\rFound \'%s\'", fileName.c_str());
 #endif
       if (iStep == 0) {
         break;
@@ -327,7 +329,8 @@ std::vector<std::string> FilesSearch(const std::string fileNameFirst, const int 
 }
 
 std::vector<std::string> FilesSearch(const std::vector<std::string> &fileNames,
-                                     const std::string dir, const std::string ext) {
+                                     const std::string dir,
+                                     const std::string ext) {
   std::string fileName;
   std::vector<std::string> fileNamesReplace;
   const int N = static_cast<int>(fileNames.size());
@@ -342,11 +345,14 @@ std::vector<std::string> FilesSearch(const std::vector<std::string> &fileNames,
   return fileNamesReplace;
 }
 
-// If the target dir doesn't exist, create it.  Otherwise, delete all related files.
-void FilesStartSaving(const std::string fileNameFirst, const bool check, const bool verbose) {
+// If the target dir doesn't exist, create it.  Otherwise, delete all related
+// files.
+void FilesStartSaving(const std::string fileNameFirst, const bool check,
+                      const bool verbose) {
   const std::string dir = FileNameExtractDirectory(fileNameFirst);
   if (FileExists(dir)) {
-    const std::vector<std::string> fileNames = FilesSearch(fileNameFirst, 0, 1, INT_MAX, verbose);
+    const std::vector<std::string> fileNames =
+        FilesSearch(fileNameFirst, 0, 1, INT_MAX, verbose);
     const int N = static_cast<int>(fileNames.size());
     for (int i = 0; i < N; ++i) {
       if (!FileDelete(fileNames[i], check && i == 0, verbose)) {
@@ -363,7 +369,8 @@ void FilesStartSaving(const std::string fileNameFirst, const bool check, const b
 }
 
 std::string FileNameExtractDirectory(const std::string fileName) {
-  const std::string::size_type i1 = fileName.rfind('/'), i2 = fileName.rfind('\\');
+  const std::string::size_type i1 = fileName.rfind('/'),
+                               i2 = fileName.rfind('\\');
   if (i1 == std::string::npos && i2 == std::string::npos) {
     return std::string();
   } else if (i1 != std::string::npos && i2 == std::string::npos) {
@@ -378,7 +385,8 @@ std::string FileNameExtractDirectory(const std::string fileName) {
 }
 
 std::string FileNameRemoveDirectory(const std::string fileName) {
-  const std::string::size_type i1 = fileName.rfind('/'), i2 = fileName.rfind('\\');
+  const std::string::size_type i1 = fileName.rfind('/'),
+                               i2 = fileName.rfind('\\');
   if (i1 == std::string::npos && i2 == std::string::npos) {
     return fileName;
   } else if (i1 != std::string::npos && i2 == std::string::npos) {
@@ -414,7 +422,8 @@ std::string FileNameRemoveDirectoryExtension(const std::string fileName) {
   return FileNameRemoveDirectory(FileNameRemoveExtension(fileName));
 }
 
-std::string FileNameRemovePrefix(const std::string fileName, const std::string prefix) {
+std::string FileNameRemovePrefix(const std::string fileName,
+                                 const std::string prefix) {
   if (fileName == "" || fileName.find(prefix) != 0) {
     return fileName;
   } else {
@@ -422,8 +431,10 @@ std::string FileNameRemovePrefix(const std::string fileName, const std::string p
   }
 }
 
-std::string FileNameAppendSuffix(const std::string fileName, const std::string suffix) {
-  return FileNameRemoveExtension(fileName) + suffix + "." + FileNameExtractExtension(fileName);
+std::string FileNameAppendSuffix(const std::string fileName,
+                                 const std::string suffix) {
+  return FileNameRemoveExtension(fileName) + suffix + "." +
+         FileNameExtractExtension(fileName);
 }
 
 std::string FileNameAppendSuffix(const std::string fileName, const int suffix) {
@@ -440,7 +451,8 @@ std::string FileNameAppendSuffix(const std::string fileName) {
   return fileNameAppend;
 }
 
-std::string FileNameReplaceDirectory(const std::string fileName, const std::string dirSrc,
+std::string FileNameReplaceDirectory(const std::string fileName,
+                                     const std::string dirSrc,
                                      const std::string dirDst) {
   if (fileName == "" || (dirSrc != "" && fileName.find(dirSrc) != 0)) {
     return fileName;
@@ -458,25 +470,49 @@ std::string FileNameIncreaseSuffix(const std::string fileName, const int incr) {
     return "";
   }
   int i2 = len;
-  while (--i2 >= 0 && !isdigit(fileName[i2]));
+  while (--i2 >= 0 && !isdigit(fileName[i2]))
+    ;
   int i1 = ++i2;
-  while (--i1 >= 0 && isdigit(fileName[i1]));
-  const int number = ++i1 == i2 ? incr : atoi(fileName.substr(i1, i2 - i1).c_str()) + incr;
+  while (--i1 >= 0 && isdigit(fileName[i1]))
+    ;
+  const int number =
+      ++i1 == i2 ? incr : atoi(fileName.substr(i1, i2 - i1).c_str()) + incr;
   const int width1 = i2 - i1, width2 = int(log10f(float(number)));
   const int width = width1 > width2 ? width1 : width2;
   char buf[UT_STRING_WIDTH_MAX];
   switch (width) {
-  case 0:   return "";
-  case 2:   sprintf(buf, "%.2d", number); break;
-  case 3:   sprintf(buf, "%.3d", number); break;
-  case 4:   sprintf(buf, "%.4d", number); break;
-  case 5:   sprintf(buf, "%.5d", number); break;
-  case 6:   sprintf(buf, "%.6d", number); break;
-  case 7:   sprintf(buf, "%.7d", number); break;
-  case 8:   sprintf(buf, "%.8d", number); break;
-  case 9:   sprintf(buf, "%.9d", number); break;
-  case 10:  sprintf(buf, "%.10d", number);  break;
-  default:  sprintf(buf, "%d", number);   break;
+    case 0:
+      return "";
+    case 2:
+      sprintf(buf, "%.2d", number);
+      break;
+    case 3:
+      sprintf(buf, "%.3d", number);
+      break;
+    case 4:
+      sprintf(buf, "%.4d", number);
+      break;
+    case 5:
+      sprintf(buf, "%.5d", number);
+      break;
+    case 6:
+      sprintf(buf, "%.6d", number);
+      break;
+    case 7:
+      sprintf(buf, "%.7d", number);
+      break;
+    case 8:
+      sprintf(buf, "%.8d", number);
+      break;
+    case 9:
+      sprintf(buf, "%.9d", number);
+      break;
+    case 10:
+      sprintf(buf, "%.10d", number);
+      break;
+    default:
+      sprintf(buf, "%d", number);
+      break;
   }
   return fileName.substr(0, i1) + buf + fileName.substr(i2, len - i2);
 }
@@ -487,7 +523,8 @@ std::vector<std::string> Strings(const std::string str0) {
   return strs;
 }
 
-std::vector<std::string> Strings(const std::string str0, const std::string str1) {
+std::vector<std::string> Strings(const std::string str0,
+                                 const std::string str1) {
   std::vector<std::string> strs(2);
   strs[0] = str0;
   strs[1] = str1;
@@ -504,7 +541,8 @@ std::vector<std::string> Strings(const std::string str0, const std::string str1,
 }
 
 std::vector<std::string> Strings(const std::string str0, const std::string str1,
-                                 const std::string str2, const std::string str3) {
+                                 const std::string str2,
+                                 const std::string str3) {
   std::vector<std::string> strs(4);
   strs[0] = str0;
   strs[1] = str1;
@@ -514,7 +552,8 @@ std::vector<std::string> Strings(const std::string str0, const std::string str1,
 }
 
 std::vector<std::string> Strings(const std::string str0, const std::string str1,
-                                 const std::string str2, const std::string str3, const std::string str4) {
+                                 const std::string str2, const std::string str3,
+                                 const std::string str4) {
   std::vector<std::string> strs(5);
   strs[0] = str0;
   strs[1] = str1;
@@ -525,7 +564,9 @@ std::vector<std::string> Strings(const std::string str0, const std::string str1,
 }
 
 std::vector<std::string> Strings(const std::string str0, const std::string str1,
-                                 const std::string str2, const std::string str3, const std::string str4, const std::string str5) {
+                                 const std::string str2, const std::string str3,
+                                 const std::string str4,
+                                 const std::string str5) {
   std::vector<std::string> strs(6);
   strs[0] = str0;
   strs[1] = str1;
@@ -537,7 +578,8 @@ std::vector<std::string> Strings(const std::string str0, const std::string str1,
 }
 
 std::vector<std::string> Strings(const std::string str0, const std::string str1,
-                                 const std::string str2, const std::string str3, const std::string str4, const std::string str5,
+                                 const std::string str2, const std::string str3,
+                                 const std::string str4, const std::string str5,
                                  const std::string str6) {
   std::vector<std::string> strs(7);
   strs[0] = str0;
@@ -551,8 +593,10 @@ std::vector<std::string> Strings(const std::string str0, const std::string str1,
 }
 
 std::vector<std::string> Strings(const std::string str0, const std::string str1,
-                                 const std::string str2, const std::string str3, const std::string str4, const std::string str5,
-                                 const std::string str6, const std::string str7) {
+                                 const std::string str2, const std::string str3,
+                                 const std::string str4, const std::string str5,
+                                 const std::string str6,
+                                 const std::string str7) {
   std::vector<std::string> strs(8);
   strs[0] = str0;
   strs[1] = str1;
@@ -567,8 +611,7 @@ std::vector<std::string> Strings(const std::string str0, const std::string str1,
 
 std::vector<std::string> Strings(const std::string *strs, const int N) {
   std::vector<std::string> _strs(N);
-  for (int i = 0; i < N; ++i)
-    _strs[i] = strs[i];
+  for (int i = 0; i < N; ++i) _strs[i] = strs[i];
   return _strs;
 }
 
@@ -612,8 +655,7 @@ std::string StringReplace(const std::string str, const std::string strSrc,
   std::string::size_type pos;
   std::string res = str;
   while (1) {
-    if ((pos = res.find(strSrc)) == std::string::npos)
-      break;
+    if ((pos = res.find(strSrc)) == std::string::npos) break;
     res.replace(pos, strSrc.length(), strDst);
   }
   return res;
@@ -622,15 +664,13 @@ std::string StringReplace(const std::string str, const std::string strSrc,
 void StringsSaveB(const std::vector<std::string> &strs, FILE *fp) {
   const int size = int(strs.size());
   SaveB<int>(size, fp);
-  for (int i = 0; i < size; ++i)
-    StringSaveB(strs[i], fp);
+  for (int i = 0; i < size; ++i) StringSaveB(strs[i], fp);
 }
 
 void StringsLoadB(std::vector<std::string> &strs, FILE *fp) {
   const int size = LoadB<int>(fp);
   strs.resize(size);
-  for (int i = 0; i < size; ++i)
-    StringLoadB(strs[i], fp);
+  for (int i = 0; i < size; ++i) StringLoadB(strs[i], fp);
 }
 
 void SaveValues(const std::string fileName, const std::vector<float> &vs) {
@@ -643,8 +683,8 @@ void SaveValues(const std::string fileName, const std::vector<float> &vs) {
   PrintSaved(fileName);
 }
 
-void SaveHistogram(const std::string fileName, const std::vector<float> &vs, const int Nb,
-                   const float vMin, const float vMax) {
+void SaveHistogram(const std::string fileName, const std::vector<float> &vs,
+                   const int Nb, const float vMin, const float vMax) {
   float _vMin, _vMax;
   const int N = int(vs.size());
   if (vMin == FLT_MAX) {
@@ -681,5 +721,4 @@ void SaveHistogram(const std::string fileName, const std::vector<float> &vs, con
   fclose(fp);
   PrintSaved(fileName);
 }
-
 }

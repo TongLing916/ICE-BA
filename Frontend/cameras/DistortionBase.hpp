@@ -4,7 +4,7 @@
  *
  *  Redistribution and use in source and binary forms, with or without
  *  modification, are permitted provided that the following conditions are met:
- * 
+ *
  *   * Redistributions of source code must retain the above copyright notice,
  *     this list of conditions and the following disclaimer.
  *   * Redistributions in binary form must reproduce the above copyright notice,
@@ -39,10 +39,10 @@
 #ifndef INCLUDE_VIO_CAMERAS_DISTORTIONBASE_HPP_
 #define INCLUDE_VIO_CAMERAS_DISTORTIONBASE_HPP_
 
-#include <Eigen/Core>
-#include "CameraBase.hpp"
 #include <glog/logging.h>
+#include <Eigen/Core>
 #include <string>
+#include "CameraBase.hpp"
 
 /// \brief vio Main namespace of this package.
 namespace vio {
@@ -56,20 +56,20 @@ class DistortionBase {
   EIGEN_MAKE_ALIGNED_OPERATOR_NEW
 
   /// \brief Destructor -- not doing anything
-  virtual ~DistortionBase() {
-  }
+  virtual ~DistortionBase() {}
 
   //////////////////////////////////////////////////////////////
   /// \name Methods related to generic parameters
   /// @{
 
   /// \brief set the generic parameters
-  /// @param[in] parameters Parameter vector -- length must correspond numDistortionIntrinsics().
+  /// @param[in] parameters Parameter vector -- length must correspond
+  /// numDistortionIntrinsics().
   /// @return    True if the requirements were followed.
-  virtual bool setParameters(const Eigen::VectorXd & parameters) = 0;
+  virtual bool setParameters(const Eigen::VectorXd& parameters) = 0;
 
   /// \brief Obtain the generic parameters.
-  virtual bool getParameters(Eigen::VectorXd & parameters) const = 0;  // NOLINT
+  virtual bool getParameters(Eigen::VectorXd& parameters) const = 0;  // NOLINT
 
   /// \brief The derived class type.
   virtual std::string type() const = 0;
@@ -86,44 +86,49 @@ class DistortionBase {
   /// @param[in]  pointUndistorted The undistorted normalised (!) image point.
   /// @param[out] pointDistorted   The distorted normalised (!) image point.
   /// @return     True on success (no singularity)
-  virtual bool distort(const Eigen::Vector2f & pointUndistorted,
-                       Eigen::Vector2f * pointDistorted) const {
+  virtual bool distort(const Eigen::Vector2f& pointUndistorted,
+                       Eigen::Vector2f* pointDistorted) const {
     LOG(FATAL) << "not implemented in derived class";
     return false;
   }
-  virtual bool distort(const Eigen::Vector2d & pointUndistorted,
-                       Eigen::Vector2d * pointDistorted) const = 0;
+  virtual bool distort(const Eigen::Vector2d& pointUndistorted,
+                       Eigen::Vector2d* pointDistorted) const = 0;
 
   /// \brief Distortion and Jacobians.
   /// @param[in]  pointUndistorted  The undistorted normalised (!) image point.
   /// @param[out] pointDistorted    The distorted normalised (!) image point.
-  /// @param[out] pointJacobian     The Jacobian w.r.t. changes on the image point.
-  /// @param[out] parameterJacobian The Jacobian w.r.t. changes on the intrinsics vector.
+  /// @param[out] pointJacobian     The Jacobian w.r.t. changes on the image
+  /// point.
+  /// @param[out] parameterJacobian The Jacobian w.r.t. changes on the
+  /// intrinsics vector.
   /// @return     True on success (no singularity)
-  virtual bool distort(const Eigen::Vector2f & pointUndistorted,
-                       Eigen::Vector2f * pointDistorted,
-                       Eigen::Matrix2f * pointJacobian,
-                       Eigen::Matrix2Xf * parameterJacobian = NULL) const {
+  virtual bool distort(const Eigen::Vector2f& pointUndistorted,
+                       Eigen::Vector2f* pointDistorted,
+                       Eigen::Matrix2f* pointJacobian,
+                       Eigen::Matrix2Xf* parameterJacobian = NULL) const {
     LOG(FATAL) << "not implemented in derived class";
     return false;
   }
-  virtual bool distort(const Eigen::Vector2d & pointUndistorted,
-                       Eigen::Vector2d * pointDistorted,
-                       Eigen::Matrix2d * pointJacobian,
-                       Eigen::Matrix2Xd * parameterJacobian = NULL) const = 0;
+  virtual bool distort(const Eigen::Vector2d& pointUndistorted,
+                       Eigen::Vector2d* pointDistorted,
+                       Eigen::Matrix2d* pointJacobian,
+                       Eigen::Matrix2Xd* parameterJacobian = NULL) const = 0;
 
-  /// \brief Distortion and Jacobians using external distortion intrinsics parameters.
+  /// \brief Distortion and Jacobians using external distortion intrinsics
+  /// parameters.
   /// @param[in]  pointUndistorted  The undistorted normalised (!) image point.
   /// @param[in]  parameters        The distortion intrinsics vector.
   /// @param[out] pointDistorted    The distorted normalised (!) image point.
-  /// @param[out] pointJacobian     The Jacobian w.r.t. changes on the image point.
-  /// @param[out] parameterJacobian The Jacobian w.r.t. changes on the intrinsics vector.
+  /// @param[out] pointJacobian     The Jacobian w.r.t. changes on the image
+  /// point.
+  /// @param[out] parameterJacobian The Jacobian w.r.t. changes on the
+  /// intrinsics vector.
   /// @return     True on success (no singularity)
   virtual bool distortWithExternalParameters(
-      const Eigen::Vector2d & pointUndistorted,
-      const Eigen::VectorXd & parameters, Eigen::Vector2d * pointDistorted,
-      Eigen::Matrix2d * pointJacobian = NULL,
-      Eigen::Matrix2Xd * parameterJacobian = NULL) const = 0;
+      const Eigen::Vector2d& pointUndistorted,
+      const Eigen::VectorXd& parameters, Eigen::Vector2d* pointDistorted,
+      Eigen::Matrix2d* pointJacobian = NULL,
+      Eigen::Matrix2Xd* parameterJacobian = NULL) const = 0;
   /// @}
 
   //////////////////////////////////////////////////////////////
@@ -134,10 +139,10 @@ class DistortionBase {
   /// @param[in]  pointDistorted   The distorted normalised (!) image point.
   /// @param[out] pointUndistorted The undistorted normalised (!) image point.
   /// @return     True on success (no singularity)
-  virtual bool undistort(const Eigen::Vector2d & pointDistorted,
-                         Eigen::Vector2d * pointUndistorted) const = 0;
-  virtual bool undistort(const Eigen::Vector2f & pointDistorted,
-                         Eigen::Vector2f * pointUndistorted) const {
+  virtual bool undistort(const Eigen::Vector2d& pointDistorted,
+                         Eigen::Vector2d* pointUndistorted) const = 0;
+  virtual bool undistort(const Eigen::Vector2f& pointDistorted,
+                         Eigen::Vector2f* pointUndistorted) const {
     LOG(FATAL) << "not implemented in derived class";
     return false;
   }
@@ -159,11 +164,12 @@ class DistortionBase {
   /// \brief Undistortion only
   /// @param[in]  pointDistorted   The distorted normalised (!) image point.
   /// @param[out] pointUndistorted The undistorted normalised (!) image point.
-  /// @param[out] pointJacobian    The Jacobian w.r.t. changes on the image point.
+  /// @param[out] pointJacobian    The Jacobian w.r.t. changes on the image
+  /// point.
   /// @return     True on success (no singularity)
-  virtual bool undistort(const Eigen::Vector2d & pointDistorted,
-                         Eigen::Vector2d * pointUndistorted,
-                         Eigen::Matrix2d * pointJacobian) const = 0;
+  virtual bool undistort(const Eigen::Vector2d& pointDistorted,
+                         Eigen::Vector2d* pointUndistorted,
+                         Eigen::Matrix2d* pointJacobian) const = 0;
   virtual bool undistort(const Eigen::Vector2f& pointDistorted,
                          Eigen::Vector2f* pointUndistorted,
                          Eigen::Matrix2f* pointJacobian) const = 0;

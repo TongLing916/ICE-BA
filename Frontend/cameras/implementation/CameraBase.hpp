@@ -4,7 +4,7 @@
  *
  *  Redistribution and use in source and binary forms, with or without
  *  modification, are permitted provided that the following conditions are met:
- * 
+ *
  *   * Redistributions of source code must retain the above copyright notice,
  *     this list of conditions and the following disclaimer.
  *   * Redistributions in binary form must reproduce the above copyright notice,
@@ -44,7 +44,7 @@ namespace vio {
 namespace cameras {
 
 // Set the mask. It must be the same size as the image and
-bool CameraBase::setMask(const cv::Mat & mask) {
+bool CameraBase::setMask(const cv::Mat& mask) {
   // check type
   if (mask.type() != CV_8UC1) {
     return false;
@@ -67,14 +67,10 @@ bool CameraBase::removeMask() {
 }
 
 // Was a nonzero mask set?
-bool CameraBase::hasMask() const {
-  return (mask_.data);
-}
+bool CameraBase::hasMask() const { return (mask_.data); }
 
 // Get the mask.
-const cv::Mat & CameraBase::mask() const {
-  return mask_;
-}
+const cv::Mat& CameraBase::mask() const { return mask_; }
 
 bool CameraBase::isMasked(const Eigen::Vector2d& imagePoint) const {
   if (!isInImage(imagePoint)) {
@@ -83,7 +79,8 @@ bool CameraBase::isMasked(const Eigen::Vector2d& imagePoint) const {
   if (!hasMask()) {
     return false;
   }
-  return mask_.at<uchar>(static_cast<int>(imagePoint[1]), static_cast<int>(imagePoint[0]));
+  return mask_.at<uchar>(static_cast<int>(imagePoint[1]),
+                         static_cast<int>(imagePoint[0]));
 }
 bool CameraBase::isMasked(const Eigen::Vector2f& imagePoint) const {
   if (!isInImage(imagePoint)) {
@@ -92,7 +89,8 @@ bool CameraBase::isMasked(const Eigen::Vector2f& imagePoint) const {
   if (!hasMask()) {
     return false;
   }
-  return mask_.at<uchar>(static_cast<int>(imagePoint[1]), static_cast<int>(imagePoint[0]));
+  return mask_.at<uchar>(static_cast<int>(imagePoint[1]),
+                         static_cast<int>(imagePoint[0]));
 }
 
 // Check if the keypoint is in the image.
@@ -134,4 +132,3 @@ void CameraBase::isInImage(const float* ipts, unsigned int status[4]) const {
 
 }  // namespace cameras
 }  // namespace vio
-

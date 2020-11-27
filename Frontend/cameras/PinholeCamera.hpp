@@ -4,7 +4,7 @@
  *
  *  Redistribution and use in source and binary forms, with or without
  *  modification, are permitted provided that the following conditions are met:
- * 
+ *
  *   * Redistributions of source code must retain the above copyright notice,
  *     this list of conditions and the following disclaimer.
  *   * Redistributions in binary form must reproduce the above copyright notice,
@@ -47,9 +47,9 @@
 #pragma GCC diagnostic ignored "-Wnon-virtual-dtor"
 #include <opencv2/core/core.hpp>  // Code that causes warning goes here
 #pragma GCC diagnostic pop
-#include <vector>
 #include <memory>
 #include <string>
+#include <vector>
 #include "CameraBase.hpp"
 #include "DistortionBase.hpp"
 
@@ -60,8 +60,9 @@ namespace cameras {
 
 /// \class PinholeCamera<DISTORTION_T>
 /// \brief This implements a standard pinhole camera projection model.
-/// \tparam DISTORTION_T the distortion type, e.g. vio::cameras::RadialTangentialDistortion
-template<class DISTORTION_T>
+/// \tparam DISTORTION_T the distortion type, e.g.
+/// vio::cameras::RadialTangentialDistortion
+template <class DISTORTION_T>
 class PinholeCamera : public CameraBase {
  public:
   EIGEN_MAKE_ALIGNED_OPERATOR_NEW
@@ -78,39 +79,32 @@ class PinholeCamera : public CameraBase {
   /// @param[in] id Assign a generic ID, if desired.
   PinholeCamera(int imageWidth, int imageHeight, double focalLengthU,
                 double focalLengthV, double imageCenterU, double imageCenterV,
-                const distortion_t & distortion, uint64_t id = -1);
+                const distortion_t& distortion, uint64_t id = -1);
 
   /// \brief Destructor.
-  ~PinholeCamera() {
-  }
+  ~PinholeCamera() {}
 
-  static const int NumProjectionIntrinsics = 4;  ///< optimisable projection intrinsics
-  static const int NumIntrinsics = NumProjectionIntrinsics
-      + distortion_t::NumDistortionIntrinsics;  ///< total number of intrinsics
+  static const int NumProjectionIntrinsics =
+      4;  ///< optimisable projection intrinsics
+  static const int NumIntrinsics =
+      NumProjectionIntrinsics +
+      distortion_t::NumDistortionIntrinsics;  ///< total number of intrinsics
 
   /// \brief Get the focal length along the u-dimension.
   /// \return The horizontal focal length in pixels.
-  double focalLengthU() const {
-    return fu_;
-  }
+  double focalLengthU() const { return fu_; }
 
   /// \brief Get the focal length along the v-dimension.
   /// \return The vertical focal length in pixels.
-  double focalLengthV() const {
-    return fv_;
-  }
+  double focalLengthV() const { return fv_; }
 
   /// \brief Get the image centre along the u-dimension.
   /// \return The horizontal centre in pixels.
-  double imageCenterU() const {
-    return cu_;
-  }
+  double imageCenterU() const { return cu_; }
 
   /// \brief Get the focal image centre along the v-dimension.
   /// \return The vertical centre in pixels.
-  double imageCenterV() const {
-    return cv_;
-  }
+  double imageCenterV() const { return cv_; }
 
   /// \brief Get the intrinsics as a concatenated vector.
   /// \return The intrinsics as a concatenated vector.
@@ -118,13 +112,11 @@ class PinholeCamera : public CameraBase {
 
   /// \brief overwrite all intrinsics - use with caution !
   /// \param[in] intrinsics The intrinsics as a concatenated vector.
-  inline bool setIntrinsics(const Eigen::VectorXd & intrinsics);
+  inline bool setIntrinsics(const Eigen::VectorXd& intrinsics);
 
   /// \brief Get the total number of intrinsics.
   /// \return Number of intrinsics parameters.
-  inline int noIntrinsicsParameters() const {
-    return NumIntrinsics;
-  }
+  inline int noIntrinsicsParameters() const { return NumIntrinsics; }
 
   //////////////////////////////////////////////////////////////
   /// \name Methods to project points
@@ -137,9 +129,9 @@ class PinholeCamera : public CameraBase {
   /// @return     Get information about the success of the projection. See
   ///             \ref ProjectionStatus for more information.
   inline CameraBase::ProjectionStatus project(
-      const Eigen::Vector3d & point, Eigen::Vector2d * imagePoint) const override;
+      const Eigen::Vector3d& point, Eigen::Vector2d* imagePoint) const override;
   inline CameraBase::ProjectionStatus project(
-      const Eigen::Vector3f & point, Eigen::Vector2f * imagePoint) const override;
+      const Eigen::Vector3f& point, Eigen::Vector2f* imagePoint) const override;
 #ifdef __ARM_NEON__
   void project4f(const float* points, float* imagePoints,
                  CameraBase::ProjectionStatus status[4]) const override;
@@ -148,19 +140,21 @@ class PinholeCamera : public CameraBase {
   ///        Uses projection including distortion models.
   /// @param[in]  point              The point in Euclidean coordinates.
   /// @param[out] imagePoint         The image point.
-  /// @param[out] pointJacobian      The Jacobian of the projection function w.r.t. the point..
-  /// @param[out] intrinsicsJacobian The Jacobian of the projection function w.r.t. the intinsics.
+  /// @param[out] pointJacobian      The Jacobian of the projection function
+  /// w.r.t. the point..
+  /// @param[out] intrinsicsJacobian The Jacobian of the projection function
+  /// w.r.t. the intinsics.
   /// @return     Get information about the success of the projection. See
   ///             \ref ProjectionStatus for more information.
   inline CameraBase::ProjectionStatus project(
-      const Eigen::Vector3d & point, Eigen::Vector2d * imagePoint,
-      Eigen::Matrix<double, 2, 3> * pointJacobian,
-      Eigen::Matrix2Xd * intrinsicsJacobian = NULL,
+      const Eigen::Vector3d& point, Eigen::Vector2d* imagePoint,
+      Eigen::Matrix<double, 2, 3>* pointJacobian,
+      Eigen::Matrix2Xd* intrinsicsJacobian = NULL,
       Eigen::Matrix2d* distortJacobian = NULL) const override;
   inline CameraBase::ProjectionStatus project(
-      const Eigen::Vector3f & point, Eigen::Vector2f * imagePoint,
-      Eigen::Matrix<float, 2, 3> * pointJacobian,
-      Eigen::Matrix2Xf * intrinsicsJacobian = NULL,
+      const Eigen::Vector3f& point, Eigen::Vector2f* imagePoint,
+      Eigen::Matrix<float, 2, 3>* pointJacobian,
+      Eigen::Matrix2Xf* intrinsicsJacobian = NULL,
       Eigen::Matrix2f* distortJacobian = NULL) const override;
 
   /// \brief Projects a Euclidean point to a 2d image point (projection).
@@ -168,204 +162,238 @@ class PinholeCamera : public CameraBase {
   /// @param[in]  point              The point in Euclidean coordinates.
   /// @param[in]  parameters         The intrinsics.
   /// @param[out] imagePoint         The image point.
-  /// @param[out] pointJacobian      The Jacobian of the projection function w.r.t. the point..
-  /// @param[out] intrinsicsJacobian The Jacobian of the projection function w.r.t. the intinsics.
+  /// @param[out] pointJacobian      The Jacobian of the projection function
+  /// w.r.t. the point..
+  /// @param[out] intrinsicsJacobian The Jacobian of the projection function
+  /// w.r.t. the intinsics.
   /// @return     Get information about the success of the projection. See
   ///             \ref ProjectionStatus for more information.
   inline CameraBase::ProjectionStatus projectWithExternalParameters(
-      const Eigen::Vector3d & point, const Eigen::VectorXd & parameters,
-      Eigen::Vector2d * imagePoint, Eigen::Matrix<double, 2, 3> * pointJacobian,
-      Eigen::Matrix2Xd * intrinsicsJacobian = NULL) const override;
+      const Eigen::Vector3d& point, const Eigen::VectorXd& parameters,
+      Eigen::Vector2d* imagePoint, Eigen::Matrix<double, 2, 3>* pointJacobian,
+      Eigen::Matrix2Xd* intrinsicsJacobian = NULL) const override;
 
-  /// \brief Projects Euclidean points to 2d image points (projection) in a batch.
+  /// \brief Projects Euclidean points to 2d image points (projection) in a
+  /// batch.
   ///        Uses projection including distortion models.
-  /// @param[in]  points      The points in Euclidean coordinates (one point per column).
+  /// @param[in]  points      The points in Euclidean coordinates (one point per
+  /// column).
   /// @param[out] imagePoints The image points (one point per column).
-  /// @param[out] stati       Get information about the success of the projections. See
+  /// @param[out] stati       Get information about the success of the
+  /// projections. See
   ///                         \ref ProjectionStatus for more information.
   inline void projectBatch(
-      const Eigen::Matrix3Xd & points, Eigen::Matrix2Xd * imagePoints,
-      std::vector<CameraBase::ProjectionStatus> * stati) const override;
+      const Eigen::Matrix3Xd& points, Eigen::Matrix2Xd* imagePoints,
+      std::vector<CameraBase::ProjectionStatus>* stati) const override;
 
-  /// \brief Projects a point in homogenous coordinates to a 2d image point (projection).
+  /// \brief Projects a point in homogenous coordinates to a 2d image point
+  /// (projection).
   ///        Uses projection including distortion models.
   /// @param[in]  point      The point in Homogeneous coordinates.
   /// @param[out] imagePoint The image point.
   /// @return     Get information about the success of the projection. See
   ///             \ref ProjectionStatus for more information.
   inline CameraBase::ProjectionStatus projectHomogeneous(
-      const Eigen::Vector4d & point, Eigen::Vector2d * imagePoint) const override;
+      const Eigen::Vector4d& point, Eigen::Vector2d* imagePoint) const override;
   inline CameraBase::ProjectionStatus projectHomogeneous(
-      const Eigen::Vector4f & point, Eigen::Vector2f * imagePoint) const override;
+      const Eigen::Vector4f& point, Eigen::Vector2f* imagePoint) const override;
 
-  /// \brief Projects a point in homogenous coordinates to a 2d image point (projection).
+  /// \brief Projects a point in homogenous coordinates to a 2d image point
+  /// (projection).
   ///        Uses projection including distortion models.
   /// @param[in]  point              The point in Homogeneous coordinates.
   /// @param[out] imagePoint         The image point.
-  /// @param[out] pointJacobian      The Jacobian of the projection function w.r.t. the point.
-  /// @param[out] intrinsicsJacobian The Jacobian of the projection function w.r.t. the intrinsics.
+  /// @param[out] pointJacobian      The Jacobian of the projection function
+  /// w.r.t. the point.
+  /// @param[out] intrinsicsJacobian The Jacobian of the projection function
+  /// w.r.t. the intrinsics.
   /// @return     Get information about the success of the projection. See
   ///             \ref ProjectionStatus for more information.
   inline CameraBase::ProjectionStatus projectHomogeneous(
-      const Eigen::Vector4d & point, Eigen::Vector2d * imagePoint,
-      Eigen::Matrix<double, 2, 4> * pointJacobian,
-      Eigen::Matrix2Xd * intrinsicsJacobian = NULL) const override;
+      const Eigen::Vector4d& point, Eigen::Vector2d* imagePoint,
+      Eigen::Matrix<double, 2, 4>* pointJacobian,
+      Eigen::Matrix2Xd* intrinsicsJacobian = NULL) const override;
   inline CameraBase::ProjectionStatus projectHomogeneous(
-      const Eigen::Vector4f & point,
-      Eigen::Vector2f * imagePoint,
-      Eigen::Matrix<float, 2, 4> * pointJacobian,
-      Eigen::Matrix2Xf * intrinsicsJacobian = NULL) const override;
+      const Eigen::Vector4f& point, Eigen::Vector2f* imagePoint,
+      Eigen::Matrix<float, 2, 4>* pointJacobian,
+      Eigen::Matrix2Xf* intrinsicsJacobian = NULL) const override;
 
-
-  /// \brief Projects a point in homogenous coordinates to a 2d image point (projection).
+  /// \brief Projects a point in homogenous coordinates to a 2d image point
+  /// (projection).
   ///        Uses projection including distortion models.
   /// @param[in]  point              The point in Homogeneous coordinates.
   /// @param[in]  parameters         The intrinsics.
   /// @param[out] imagePoint         The image point.
-  /// @param[out] pointJacobian      The Jacobian of the projection function w.r.t. the point.
-  /// @param[out] intrinsicsJacobian The Jacobian of the projection function w.r.t. the intrinsics.
+  /// @param[out] pointJacobian      The Jacobian of the projection function
+  /// w.r.t. the point.
+  /// @param[out] intrinsicsJacobian The Jacobian of the projection function
+  /// w.r.t. the intrinsics.
   /// @return     Get information about the success of the projection. See
   ///             \ref ProjectionStatus for more information.
   inline CameraBase::ProjectionStatus projectHomogeneousWithExternalParameters(
-      const Eigen::Vector4d & point, const Eigen::VectorXd & parameters,
-      Eigen::Vector2d * imagePoint,
-      Eigen::Matrix<double, 2, 4> * pointJacobian = NULL,
-      Eigen::Matrix2Xd * intrinsicsJacobian = NULL) const override;
+      const Eigen::Vector4d& point, const Eigen::VectorXd& parameters,
+      Eigen::Vector2d* imagePoint,
+      Eigen::Matrix<double, 2, 4>* pointJacobian = NULL,
+      Eigen::Matrix2Xd* intrinsicsJacobian = NULL) const override;
 
-  /// \brief Projects points in homogenous coordinates to 2d image points (projection) in a batch.
+  /// \brief Projects points in homogenous coordinates to 2d image points
+  /// (projection) in a batch.
   ///        Uses projection including distortion models.
-  /// @param[in]  points      The points in homogeneous coordinates (one point per column).
+  /// @param[in]  points      The points in homogeneous coordinates (one point
+  /// per column).
   /// @param[out] imagePoints The image points (one point per column).
-  /// @param[out] stati       Get information about the success of the projections. See
+  /// @param[out] stati       Get information about the success of the
+  /// projections. See
   ///                         \ref ProjectionStatus for more information.
   inline void projectHomogeneousBatch(
-      const Eigen::Matrix4Xd & points, Eigen::Matrix2Xd * imagePoints,
-      std::vector<CameraBase::ProjectionStatus> * stati) const override;
+      const Eigen::Matrix4Xd& points, Eigen::Matrix2Xd* imagePoints,
+      std::vector<CameraBase::ProjectionStatus>* stati) const override;
   /// @}
 
   //////////////////////////////////////////////////////////////
   /// \name Methods to backproject points
   /// @{
 
-  /// \brief Back-project a 2d image point into Euclidean space (direction vector).
+  /// \brief Back-project a 2d image point into Euclidean space (direction
+  /// vector).
   /// @param[in]  imagePoint The image point.
   /// @param[out] direction  The Euclidean direction vector.
   /// @return     true on success.
-  inline bool backProject(const Eigen::Vector2d & imagePoint,
-                          Eigen::Vector3d * direction) const override;
-  inline bool backProject(const Eigen::Vector2f & imagePoint,
-                          Eigen::Vector3f * direction) const override;
-  #ifdef __ARM_NEON__
-  inline void backProject4f(const float* imagePoints,
-    float* direction, float* pixelJacobian, unsigned int status[4]) const;
+  inline bool backProject(const Eigen::Vector2d& imagePoint,
+                          Eigen::Vector3d* direction) const override;
+  inline bool backProject(const Eigen::Vector2f& imagePoint,
+                          Eigen::Vector3f* direction) const override;
+#ifdef __ARM_NEON__
+  inline void backProject4f(const float* imagePoints, float* direction,
+                            float* pixelJacobian, unsigned int status[4]) const;
 
-  inline void backProject4f(const float* imagePoints,
-    float* direction, unsigned int status[4]) const;
-  #endif
+  inline void backProject4f(const float* imagePoints, float* direction,
+                            unsigned int status[4]) const;
+#endif
 
-  /// \brief Back-project a 2d image point into Euclidean space (direction vector).
+  /// \brief Back-project a 2d image point into Euclidean space (direction
+  /// vector).
   /// @param[in]  imagePoint         The image point.
   /// @param[out] direction          The Euclidean direction vector.
-  /// @param[out] pointJacobian      Jacobian of the back-projection function  w.r.t. the point.
+  /// @param[out] pointJacobian      Jacobian of the back-projection function
+  /// w.r.t. the point.
   /// @return     true on success.
-  inline bool backProject(const Eigen::Vector2d & imagePoint,
-                          Eigen::Vector3d * direction,
-                          Eigen::Matrix<double, 3, 2> * pointJacobian) const override;
+  inline bool backProject(
+      const Eigen::Vector2d& imagePoint, Eigen::Vector3d* direction,
+      Eigen::Matrix<double, 3, 2>* pointJacobian) const override;
 
-  /// \brief Back-project a 2d image point into Euclidean space (direction vector).
+  /// \brief Back-project a 2d image point into Euclidean space (direction
+  /// vector).
   /// @param[in]  imagePoint      The image point.
   /// @param[out] direction       The Euclidean direction vector.
-  /// @param[out] pixelJacobian   Jacobian of the back-projection function (ray) w.r.t.
+  /// @param[out] pixelJacobian   Jacobian of the back-projection function (ray)
+  /// w.r.t.
   //                              the pt in pixel.
   /// @return     true on success.
-  inline bool backProject(const Eigen::Vector2f& imagePoint, Eigen::Vector3f* direction,
-    Eigen::Matrix<float, 3, 2>* pixelJacobian) const override;
+  inline bool backProject(
+      const Eigen::Vector2f& imagePoint, Eigen::Vector3f* direction,
+      Eigen::Matrix<float, 3, 2>* pixelJacobian) const override;
 
-  /// \brief Back-project 2d image points into Euclidean space (direction vectors).
+  /// \brief Back-project 2d image points into Euclidean space (direction
+  /// vectors).
   /// @param[in]  imagePoints The image points (one point per column).
-  /// @param[out] directions  The Euclidean direction vectors (one point per column).
+  /// @param[out] directions  The Euclidean direction vectors (one point per
+  /// column).
   /// @param[out] success     Success of each of the back-projection
-  inline bool backProjectBatch(const Eigen::Matrix2Xd & imagePoints,
-                               Eigen::Matrix3Xd * directions,
-                               std::vector<bool> * success) const;
-  inline bool backProjectBatch(const Eigen::Matrix2Xf & imagePoints,
-                               Eigen::Matrix3Xf * directions,
-                               std::vector<bool> * success) const;
+  inline bool backProjectBatch(const Eigen::Matrix2Xd& imagePoints,
+                               Eigen::Matrix3Xd* directions,
+                               std::vector<bool>* success) const;
+  inline bool backProjectBatch(const Eigen::Matrix2Xf& imagePoints,
+                               Eigen::Matrix3Xf* directions,
+                               std::vector<bool>* success) const;
 
-  /// \brief Back-project 2d image points into Euclidean space (direction vectors).
+  /// \brief Back-project 2d image points into Euclidean space (direction
+  /// vectors).
   /// @param[in]  imagePoints The image points (one point per column).
-  /// @param[out] directions  The Euclidean direction vectors (one point per column).
-  /// @param[out] pixelJacobians Jacobian of the back-projection function (undist ray) w.r.t.
+  /// @param[out] directions  The Euclidean direction vectors (one point per
+  /// column).
+  /// @param[out] pixelJacobians Jacobian of the back-projection function
+  /// (undist ray) w.r.t.
   ///                            the distorted point in pixel.
-  ///                            Only store the top two rows of each pixelJacobian
-  ///                            (as the bottom row is 0) and stack them to for a 2X by 2 matrix.
+  ///                            Only store the top two rows of each
+  ///                            pixelJacobian
+  ///                            (as the bottom row is 0) and stack them to for
+  ///                            a 2X by 2 matrix.
   /// @param[out] success     Success of each of the back-projection
   inline bool backProjectBatch(
-      const Eigen::Matrix2Xf & imagePoints,
-      Eigen::Matrix3Xf* directions,
+      const Eigen::Matrix2Xf& imagePoints, Eigen::Matrix3Xf* directions,
       Eigen::Matrix<float, Eigen::Dynamic, 2, Eigen::RowMajor>* pixelJacobians,
-      std::vector<bool> * success) const;
+      std::vector<bool>* success) const;
 
-  #ifdef __ARM_NEON__
+#ifdef __ARM_NEON__
   inline void backProjectBatchNeon(const Eigen::Matrix2Xf& imagePoints,
-                                   Eigen::Matrix3Xf* directions, unsigned int* success) const;
-  #endif
-  /// \brief Back-project a 2d image point into homogeneous point (direction vector).
+                                   Eigen::Matrix3Xf* directions,
+                                   unsigned int* success) const;
+#endif
+  /// \brief Back-project a 2d image point into homogeneous point (direction
+  /// vector).
   /// @param[in]  imagePoint The image point.
   /// @param[out] direction  The homogeneous point as direction vector.
   /// @return     true on success.
-  inline bool backProjectHomogeneous(const Eigen::Vector2d & imagePoint,
-                                     Eigen::Vector4d * direction) const;
-  inline bool backProjectHomogeneous(const Eigen::Vector2f & imagePoint,
-                                     Eigen::Vector4f * direction) const override;
-  #ifdef __ARM_NEON__
+  inline bool backProjectHomogeneous(const Eigen::Vector2d& imagePoint,
+                                     Eigen::Vector4d* direction) const;
+  inline bool backProjectHomogeneous(const Eigen::Vector2f& imagePoint,
+                                     Eigen::Vector4f* direction) const override;
+#ifdef __ARM_NEON__
   inline void backProjectHomogeneous4f(const float* imagePoints,
-                        float* directions, unsigned int status[4]) const;
-  #endif
-  /// \brief Back-project a 2d image point into homogeneous point (direction vector).
+                                       float* directions,
+                                       unsigned int status[4]) const;
+#endif
+  /// \brief Back-project a 2d image point into homogeneous point (direction
+  /// vector).
   /// @param[in]  imagePoint         The image point.
   /// @param[out] direction          The homogeneous point as direction vector.
   /// @param[out] pointJacobian      Jacobian of the back-projection function.
   /// @return     true on success.
   inline bool backProjectHomogeneous(
-      const Eigen::Vector2d & imagePoint, Eigen::Vector4d * direction,
-      Eigen::Matrix<double, 4, 2> * pointJacobian) const;
+      const Eigen::Vector2d& imagePoint, Eigen::Vector4d* direction,
+      Eigen::Matrix<double, 4, 2>* pointJacobian) const;
   inline bool backProjectHomogeneous(
-      const Eigen::Vector2f & imagePoint, Eigen::Vector4f * direction,
-      Eigen::Matrix<float, 4, 2> * pointJacobian) const override;
+      const Eigen::Vector2f& imagePoint, Eigen::Vector4f* direction,
+      Eigen::Matrix<float, 4, 2>* pointJacobian) const override;
 
-  #ifdef __ARM_NEON__
-  inline void backProjectHomogeneous4f(const float* imagePoints, float* directions,
-     float* pointJacobian, unsigned int status[4]) const;
-  #endif
+#ifdef __ARM_NEON__
+  inline void backProjectHomogeneous4f(const float* imagePoints,
+                                       float* directions, float* pointJacobian,
+                                       unsigned int status[4]) const;
+#endif
 
-  /// \brief Back-project 2d image points into homogeneous points (direction vectors).
+  /// \brief Back-project 2d image points into homogeneous points (direction
+  /// vectors).
   /// @param[in]  imagePoints The image points (one point per column).
-  /// @param[out] directions  The homogeneous points as direction vectors (one point per column).
+  /// @param[out] directions  The homogeneous points as direction vectors (one
+  /// point per column).
   /// @param[out] success     Success of each of the back-projection
-  inline bool backProjectHomogeneousBatch(const Eigen::Matrix2Xd & imagePoints,
-                                          Eigen::Matrix4Xd * directions,
-                                          std::vector<bool> * success) const;
-  #ifdef __ARM_NEON__
-  inline void backProjectHomogeneousBatchNeon(const Eigen::Matrix2Xf& imagePoints,
-                                              Eigen::Matrix4Xf * directions,
-                                              unsigned int* success) const;
-  #endif
+  inline bool backProjectHomogeneousBatch(const Eigen::Matrix2Xd& imagePoints,
+                                          Eigen::Matrix4Xd* directions,
+                                          std::vector<bool>* success) const;
+#ifdef __ARM_NEON__
+  inline void backProjectHomogeneousBatchNeon(
+      const Eigen::Matrix2Xf& imagePoints, Eigen::Matrix4Xf* directions,
+      unsigned int* success) const;
+#endif
   /// @}
 
   /// \brief get a test instance
   static std::shared_ptr<CameraBase> createTestObject() {
-    return std::shared_ptr<CameraBase>(new PinholeCamera(752, 480, 350, 360, 378, 238,
-                         distortion_t::testObject()));
+    return std::shared_ptr<CameraBase>(new PinholeCamera(
+        752, 480, 350, 360, 378, 238, distortion_t::testObject()));
   }
 
   static PinholeCamera<DISTORTION_T>* createTestObjectph() {
-    return new PinholeCamera(752, 480, 350, 360, 378, 238, distortion_t::testObject());
+    return new PinholeCamera(752, 480, 350, 360, 378, 238,
+                             distortion_t::testObject());
   }
 
   /// \brief get a test instance
   static PinholeCamera<DISTORTION_T> testObject() {
-    return PinholeCamera(752, 480, 350, 360, 378, 238, distortion_t::testObject());
+    return PinholeCamera(752, 480, 350, 360, 378, 238,
+                         distortion_t::testObject());
   }
 
   /// \brief Obtain the projection type
@@ -374,14 +402,10 @@ class PinholeCamera : public CameraBase {
   }
 
   /// \brief Obtain the projection type
-  const std::string distortionType() const {
-    return distortion_.type();
-  }
+  const std::string distortionType() const { return distortion_.type(); }
 
   /// \brief Obtain the average focal length
-  inline const float avgFocalLength() const {
-    return (fu_ + fv_) * 0.5f;
-  }
+  inline const float avgFocalLength() const { return (fu_ + fv_) * 0.5f; }
 
  protected:
   /// \brief No default constructor.
@@ -389,14 +413,15 @@ class PinholeCamera : public CameraBase {
 
   distortion_t distortion_;  ///< the distortion to be used
 
-  Eigen::Matrix<double, NumIntrinsics, 1> intrinsics_;  ///< summary of all intrinsics parameters
-  float fu_;  ///< focalLengthU
-  float fv_;  ///< focalLengthV
-  float cu_;  ///< imageCenterU
-  float cv_;  ///< imageCenterV
+  Eigen::Matrix<double, NumIntrinsics, 1>
+      intrinsics_;     ///< summary of all intrinsics parameters
+  float fu_;           ///< focalLengthU
+  float fv_;           ///< focalLengthV
+  float cu_;           ///< imageCenterU
+  float cv_;           ///< imageCenterV
   float one_over_fu_;  ///< 1.0 / fu_
   float one_over_fv_;  ///< 1.0 / fv_
-  float fu_over_fv_;  ///< fu_ / fv_
+  float fu_over_fv_;   ///< fu_ / fv_
 };
 }  // namespace cameras
 }  // namespace vio

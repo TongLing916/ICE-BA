@@ -4,7 +4,7 @@
  *
  *  Redistribution and use in source and binary forms, with or without
  *  modification, are permitted provided that the following conditions are met:
- * 
+ *
  *   * Redistributions of source code must retain the above copyright notice,
  *     this list of conditions and the following disclaimer.
  *   * Redistributions in binary form must reproduce the above copyright notice,
@@ -87,7 +87,7 @@ RadialTangentialDistortion8::RadialTangentialDistortion8(float k1, float k2,
   k6_ = k6;
 }
 bool RadialTangentialDistortion8::setParameters(
-    const Eigen::VectorXd & parameters) {
+    const Eigen::VectorXd& parameters) {
   if (parameters.cols() != NumDistortionIntrinsics) {
     return false;
   }
@@ -105,22 +105,24 @@ bool RadialTangentialDistortion8::setParameters(
 
 #ifdef __ARM_NEON__
 /***********************************************************************************
-* [In]:    pointUndistorted -> the coordinates of point undistorted, size: 8 floats
+* [In]:    pointUndistorted -> the coordinates of point undistorted, size: 8
+* floats
 *          u0, u1, u2, u3, v0, v1, v2, v3
 * [Out]:   pointDistorted -> the coordinates of point distorted, size: 8 floats
 *          u0, u1, u2, u3, v0, v1, v2, v3
 * [Out]:   status, 0 if distorted successfully, or 0xffffffff
 * NO RETURNS
 */
-void RadialTangentialDistortion8::distortT4f(
-    const float* pointUndistorted, float* pointDistorted, unsigned int status[4]) const {
+void RadialTangentialDistortion8::distortT4f(const float* pointUndistorted,
+                                             float* pointDistorted,
+                                             unsigned int status[4]) const {
   float p1 = 2.f * p1_, p2 = 2.f * p2_;
-  float32x4_t u = vld1q_f32(pointUndistorted);  // u = (u0, u1, u2, u3)
+  float32x4_t u = vld1q_f32(pointUndistorted);      // u = (u0, u1, u2, u3)
   float32x4_t v = vld1q_f32(pointUndistorted + 4);  // v = (v0, v1, v2, v3)
   float32x4_t vp1 = vmovq_n_f32(p1), vp2 = vmovq_n_f32(p2);
-  float32x4_t mx = vmulq_f32(u, u);     // mx = u * u
-  float32x4_t my = vmulq_f32(v, v);     // my = v * v
-  float32x4_t mxy = vmulq_f32(u, v);    // mxy = u * v
+  float32x4_t mx = vmulq_f32(u, u);           // mx = u * u
+  float32x4_t my = vmulq_f32(v, v);           // my = v * v
+  float32x4_t mxy = vmulq_f32(u, v);          // mxy = u * v
   const float32x4_t rho = vaddq_f32(mx, my);  // rho = mx + my
   // rho > r_squared, ret = all ones for true, or all zeros
   const uint32x4_t ret = vcgtq_f32(rho, vmovq_n_f32(R_squared));
@@ -130,7 +132,7 @@ void RadialTangentialDistortion8::distortT4f(
   float32x4_t f00 = vmlaq_n_f32(tmp, rho, k6_);  // f00 = vk5 + rho * k6_;
   tmp = vld1q_dup_f32(&k2_);
   float32x4_t f10 = vmlaq_n_f32(tmp, rho, k3_);  // f10 = vk2 + rho * k6_;
-  tmp = vmovq_n_f32(1.f);  // tmp = (1.f, 1.f, 1.f, 1.f)
+  tmp = vmovq_n_f32(1.f);                        // tmp = (1.f, 1.f, 1.f, 1.f)
   const float32x4_t f01 = vmlaq_n_f32(tmp, rho, k4_);  // f01 = 1.f + rho * k4_;
   const float32x4_t f11 = vmlaq_n_f32(tmp, rho, k1_);  // f11 = 1.f + rho * k1_
   float32x4_t m0 = vmulq_n_f32(rho, p2_);
@@ -144,7 +146,8 @@ void RadialTangentialDistortion8::distortT4f(
 
   // TODO(hongtian): handle the corner case of divided by 0 (f00 = 0)
   float32x4_t rad_dist_u = vrecpeq_f32(f00);
-  rad_dist_u = vmulq_f32(vrecpsq_f32(f00, rad_dist_u), rad_dist_u);  // rad_dist_u = 1.f / f00
+  rad_dist_u = vmulq_f32(vrecpsq_f32(f00, rad_dist_u),
+                         rad_dist_u);  // rad_dist_u = 1.f / f00
   rad_dist_u = vmulq_f32(vrecpsq_f32(f00, rad_dist_u), rad_dist_u);
   rad_dist_u = vmulq_f32(rad_dist_u, f10);  // rad_dist_u = f10 / f00;
 
@@ -160,7 +163,8 @@ void RadialTangentialDistortion8::distortT4f(
 }
 
 /***********************************************************************************
-* [In]:    pointUndistorted -> the coordinates of point undistorted, size: 8 floats
+* [In]:    pointUndistorted -> the coordinates of point undistorted, size: 8
+* floats
 *          u0, u1, u2, u3, v0, v1, v2, v3
 * [Out]:   pointDistorted -> the coordinates of point distorted, size: 8 floats
 *          u0, u1, u2, u3, v0, v1, v2, v3
@@ -176,31 +180,37 @@ void RadialTangentialDistortion8::distortT4f(
 * [Out]:   status, 0 if distorted successfully, or 0xffffffff
 * NO RETURNS
 */
-void RadialTangentialDistortion8::distortT4f(
-    const float* pointUndistorted, float* pointDistorted,
-    float* pointJacobian, unsigned int status[4]) const {
+void RadialTangentialDistortion8::distortT4f(const float* pointUndistorted,
+                                             float* pointDistorted,
+                                             float* pointJacobian,
+                                             unsigned int status[4]) const {
   const float32x4_t u = vld1q_f32(pointUndistorted);  // u = (u0, u1, u2, u3)
-  const float32x4_t v = vld1q_f32(pointUndistorted + 4);  // v = (v0, v1, v2, v3)
+  const float32x4_t v =
+      vld1q_f32(pointUndistorted + 4);  // v = (v0, v1, v2, v3)
   const float32x4_t v3f = vmovq_n_f32(3.f);
   const float32x4_t v1f = vmovq_n_f32(1.f);
   const float32x4_t x0 = vmulq_f32(u, u);  // x0 = u * u;
   const float32x4_t x1 = vmulq_f32(v, v);  // x1 = v * v;
   const float32x4_t v2f = vmovq_n_f32(2.f);
-  const float32x4_t x2 = vaddq_f32(x0, x1);  // x2 = x0 + x1;
+  const float32x4_t x2 = vaddq_f32(x0, x1);         // x2 = x0 + x1;
   const float32x4_t x2_power2 = vmulq_f32(x2, x2);  // x2_power2 = x2 * x2;
   const uint32x4_t ret = vcgtq_f32(x2, vmovq_n_f32(R_squared));
 
   float32x4_t kl = vld1q_dup_f32(&k3_), kh = vld1q_dup_f32(&k6_);
   const float32x4_t x2_power3 = vmulq_f32(x2, x2_power2);
-  float32x4_t uv_coeff123 = vmulq_f32(kl, x2_power2);  // uv_coeff123 = k3_ * x2_power2;
-  float32x4_t uv_coeff456 = vmulq_f32(kh, x2_power2);  // uv_coeff456 = k6_ * x2_power2;
+  float32x4_t uv_coeff123 =
+      vmulq_f32(kl, x2_power2);  // uv_coeff123 = k3_ * x2_power2;
+  float32x4_t uv_coeff456 =
+      vmulq_f32(kh, x2_power2);               // uv_coeff456 = k6_ * x2_power2;
   float32x4_t m0 = vmulq_f32(kl, x2_power3);  // m0 = k3_ * x2_power3;
   float32x4_t m1 = vmulq_f32(kh, x2_power3);  // m1 = k6_ * x2_power3;
 
   kl = vld1q_dup_f32(&k2_), kh = vld1q_dup_f32(&k5_);
 
-  uv_coeff123 = vmulq_f32(v3f, uv_coeff123);  // uv_coeff123 = uv_coeff123 * 3.f;
-  uv_coeff456 = vmulq_f32(v3f, uv_coeff456);  // uv_coeff456 = uv_coeff456 * 3.f;
+  uv_coeff123 =
+      vmulq_f32(v3f, uv_coeff123);  // uv_coeff123 = uv_coeff123 * 3.f;
+  uv_coeff456 =
+      vmulq_f32(v3f, uv_coeff456);  // uv_coeff456 = uv_coeff456 * 3.f;
   m0 = vaddq_f32(m0, vmulq_f32(kl, x2_power2));  // m0 = m0 + k2_ * x2_power2;
   m1 = vaddq_f32(m1, vmulq_f32(kh, x2_power2));  // m1 = m1 + k5_ * x2_power2;
   // uv_coeff123 = uv_coeff123 + x2 * k2_ * 2.f
@@ -209,30 +219,32 @@ void RadialTangentialDistortion8::distortT4f(
   uv_coeff456 = vaddq_f32(uv_coeff456, vmulq_f32(v2f, vmulq_f32(kh, x2)));
 
   kl = vld1q_dup_f32(&k1_), kh = vld1q_dup_f32(&k4_);
-  m0 = vaddq_f32(m0, vmulq_f32(kl, x2));  // m0 = m0 + x2 * k1_;
-  m1 = vaddq_f32(m1, vmulq_f32(kh, x2));  // m1 = m1 + x2 * k4_;
+  m0 = vaddq_f32(m0, vmulq_f32(kl, x2));     // m0 = m0 + x2 * k1_;
+  m1 = vaddq_f32(m1, vmulq_f32(kh, x2));     // m1 = m1 + x2 * k4_;
   uv_coeff123 = vaddq_f32(uv_coeff123, kl);  // uv_coeff123 = uv_coeff123 + k1_
   uv_coeff456 = vaddq_f32(uv_coeff456, kh);  // uv_coeff456 = uv_coeff456 + k4_
-  m0 = vaddq_f32(m0, v1f);  // m0 = m0 + 1.f
-  m1 = vaddq_f32(m1, v1f);  // m1 = m1 + 1.f
+  m0 = vaddq_f32(m0, v1f);                   // m0 = m0 + 1.f
+  m1 = vaddq_f32(m1, v1f);                   // m1 = m1 + 1.f
   float32x4_t pd0 = vmlaq_f32(x1, v3f, x0);
   float32x4_t pd1 = vmlaq_f32(x0, v3f, x1);
 
   float32x4_t x13 = vrecpeq_f32(m1);
   x13 = vmulq_f32(vrecpsq_f32(m1, x13), x13);  // x13 = 1.f / m1
   x13 = vmulq_f32(vrecpsq_f32(m1, x13), x13);  // x13 = 1.f / m1
-  float32x4_t x14  = vmulq_f32(m0, x13);  // x14 = m0 * x13;
+  float32x4_t x14 = vmulq_f32(m0, x13);        // x14 = m0 * x13;
   float32x4_t vp1_ = vmulq_n_f32(v, p1_);
   float32x4_t up2_ = vmulq_n_f32(u, p2_);
   x13 = vaddq_f32(x13, x13);
-  const float32x4_t jd0 = vaddq_f32(vmulq_n_f32(up2_, 6.f), vmulq_n_f32(vp1_, 2.f));
-  const float32x4_t jd1 = vaddq_f32(vmulq_n_f32(up2_, 2.f), vmulq_n_f32(vp1_, 6.f));
+  const float32x4_t jd0 =
+      vaddq_f32(vmulq_n_f32(up2_, 6.f), vmulq_n_f32(vp1_, 2.f));
+  const float32x4_t jd1 =
+      vaddq_f32(vmulq_n_f32(up2_, 2.f), vmulq_n_f32(vp1_, 6.f));
 
   const float32x4_t x13_x14 = vmulq_f32(x14, x13);
   const float32x4_t uv = vmulq_f32(u, v);
 
-  const float32x4_t j_coeff = vsubq_f32(vmulq_f32(x13, uv_coeff123),
-                                        vmulq_f32(x13_x14, uv_coeff456));
+  const float32x4_t j_coeff =
+      vsubq_f32(vmulq_f32(x13, uv_coeff123), vmulq_f32(x13_x14, uv_coeff456));
 
   pd0 = vmulq_n_f32(pd0, p2_);
   pd1 = vmulq_n_f32(pd1, p1_);
@@ -261,10 +273,10 @@ void RadialTangentialDistortion8::distortT4f(
 }
 #endif  // __ARM_NEON__
 
-template<typename T>
+template <typename T>
 bool RadialTangentialDistortion8::distortT(
-    const Eigen::Matrix<T, 2, 1> & pointUndistorted,
-    Eigen::Matrix<T, 2, 1> * pointDistorted) const {
+    const Eigen::Matrix<T, 2, 1>& pointUndistorted,
+    Eigen::Matrix<T, 2, 1>* pointDistorted) const {
   // use float for speed
   register float mx_u = pointUndistorted[0] * pointUndistorted[0];
   register float my_u = pointUndistorted[1] * pointUndistorted[1];
@@ -284,8 +296,10 @@ bool RadialTangentialDistortion8::distortT(
   float f11 = k1_ * rho_u + 1.f;
   f00 = f00 * rho_u2 + f01;
   f10 = f10 * rho_u2 + f11;
-  // [NOTE] Depending on calibration, it's actually possible that f00 crosses zero as
-  // r (rho_u) increases. We need to protect distortT from the singular case of division by zero.
+  // [NOTE] Depending on calibration, it's actually possible that f00 crosses
+  // zero as
+  // r (rho_u) increases. We need to protect distortT from the singular case of
+  // division by zero.
   if (fabs(f00) < 1e-6) {
     LOG(WARNING) << "|f00| is smaller than 1e-6 at rho = " << rho_u;
     return false;
@@ -299,12 +313,12 @@ bool RadialTangentialDistortion8::distortT(
   return true;
 }
 
-template<typename T>
+template <typename T>
 bool RadialTangentialDistortion8::distortT(
-    const Eigen::Matrix<T, 2, 1> & pointUndistorted,
-    Eigen::Matrix<T, 2, 1> * pointDistorted,
-    Eigen::Matrix<T, 2, 2> * pointJacobian,
-    Eigen::Matrix<T, 2, Eigen::Dynamic> * parameterJacobian) const {
+    const Eigen::Matrix<T, 2, 1>& pointUndistorted,
+    Eigen::Matrix<T, 2, 1>* pointDistorted,
+    Eigen::Matrix<T, 2, 2>* pointJacobian,
+    Eigen::Matrix<T, 2, Eigen::Dynamic>* parameterJacobian) const {
   const T x0 = pointUndistorted[0] * pointUndistorted[0];
   const T x1 = pointUndistorted[1] * pointUndistorted[1];
   const T u = pointUndistorted[0];
@@ -341,7 +355,7 @@ bool RadialTangentialDistortion8::distortT(
   const T j_coeff = x13 * uv_coeff123 - x13_x14 * uv_coeff456;
 
   (*pointDistorted)[0] = p2_ * pd0 + u * (x14 + 2.f * vp1_);
-  (*pointDistorted)[1] = p1_ * pd1 + v * (x14 + 2.f * up2_ );
+  (*pointDistorted)[1] = p1_ * pd1 + v * (x14 + 2.f * up2_);
 
   Eigen::Matrix<T, 2, 2>& J = *pointJacobian;
 
@@ -350,19 +364,19 @@ bool RadialTangentialDistortion8::distortT(
   J(1, 1) = (jd1 + x14) + x1 * j_coeff;
 
   if (parameterJacobian) {
-    LOG(FATAL) << "parameterjacobian is NOT supported in RadialTangentialDistortion8";
+    LOG(FATAL)
+        << "parameterjacobian is NOT supported in RadialTangentialDistortion8";
   }
 
   return true;
 }
 
-
-template<typename T>
+template <typename T>
 bool RadialTangentialDistortion8::distortT_slow(
-    const Eigen::Matrix<T, 2, 1> & pointUndistorted,
-    Eigen::Matrix<T, 2, 1> * pointDistorted,
-    Eigen::Matrix<T, 2, 2> * pointJacobian,
-    Eigen::Matrix<T, 2, Eigen::Dynamic> * parameterJacobian) const {
+    const Eigen::Matrix<T, 2, 1>& pointUndistorted,
+    Eigen::Matrix<T, 2, 1>* pointDistorted,
+    Eigen::Matrix<T, 2, 2>* pointJacobian,
+    Eigen::Matrix<T, 2, Eigen::Dynamic>* parameterJacobian) const {
   // use float for speed
   // first compute the distorted point
   const T u0 = pointUndistorted[0];
@@ -376,53 +390,109 @@ bool RadialTangentialDistortion8::distortT_slow(
     return false;  // to avoid confusion of this model
   }
 
-  const T c = rho_u*(k4_+rho_u*(k5_+k6_*rho_u))+1.0;
-  const T c2 = c*c;
+  const T c = rho_u * (k4_ + rho_u * (k5_ + k6_ * rho_u)) + 1.0;
+  const T c2 = c * c;
 
   // TODO(mingyu): It's possible to have denominator equals zero!
-  const T rad_dist_u = (1.f + ((k3_ * rho_u + k2_) * rho_u + k1_) * rho_u)
-      / (1.f + ((k6_ * rho_u + k5_) * rho_u + k4_) * rho_u);
-  (*pointDistorted)[0] = u0 * rad_dist_u + 2.f * p1_ * mxy_u + p2_ * (rho_u + 2.f * mx_u);
-  (*pointDistorted)[1] = u1 * rad_dist_u + 2.f * p2_ * mxy_u + p1_ * (rho_u + 2.f * my_u);
+  const T rad_dist_u = (1.f + ((k3_ * rho_u + k2_) * rho_u + k1_) * rho_u) /
+                       (1.f + ((k6_ * rho_u + k5_) * rho_u + k4_) * rho_u);
+  (*pointDistorted)[0] =
+      u0 * rad_dist_u + 2.f * p1_ * mxy_u + p2_ * (rho_u + 2.f * mx_u);
+  (*pointDistorted)[1] =
+      u1 * rad_dist_u + 2.f * p2_ * mxy_u + p1_ * (rho_u + 2.f * my_u);
 
   // next the Jacobian w.r.t. changes on the undistorted point
-  Eigen::Matrix<T, 2, 2> & J = *pointJacobian;
-  J(0,0) = p1_*u1*2.0+p2_*u0*6.0+(rho_u*(k1_+rho_u*(k2_+k3_*rho_u))+1.0)/(rho_u*(k4_+rho_u*(k5_+k6_*rho_u))+1.0)+(u0*(rho_u*(u0*(k2_+k3_*rho_u)*2.0+k3_*u0*rho_u*2.0)+u0*(k1_+rho_u*(k2_+k3_*rho_u))*2.0))/(rho_u*(k4_+rho_u*(k5_+k6_*rho_u))+1.0)-u0*(rho_u*(u0*(k5_+k6_*rho_u)*2.0+k6_*u0*rho_u*2.0)+u0*(k4_+rho_u*(k5_+k6_*rho_u))*2.0)*(rho_u*(k1_+rho_u*(k2_+k3_*rho_u))+1.0)*1.0/c2;  // NOLINT
-  J(0,1) = p1_*u0*2.0+p2_*u1*2.0+(u0*(rho_u*(u1*(k2_+k3_*rho_u)*2.0+k3_*u1*rho_u*2.0)+u1*(k1_+rho_u*(k2_+k3_*rho_u))*2.0))/(rho_u*(k4_+rho_u*(k5_+k6_*rho_u))+1.0)-u0*(rho_u*(u1*(k5_+k6_*rho_u)*2.0+k6_*u1*rho_u*2.0)+u1*(k4_+rho_u*(k5_+k6_*rho_u))*2.0)*(rho_u*(k1_+rho_u*(k2_+k3_*rho_u))+1.0)*1.0/c2;  // NOLINT
-  J(1,0) = p1_*u0*2.0+p2_*u1*2.0+(u1*(rho_u*(u0*(k2_+k3_*rho_u)*2.0+k3_*u0*rho_u*2.0)+u0*(k1_+rho_u*(k2_+k3_*rho_u))*2.0))/(rho_u*(k4_+rho_u*(k5_+k6_*rho_u))+1.0)-u1*(rho_u*(u0*(k5_+k6_*rho_u)*2.0+k6_*u0*rho_u*2.0)+u0*(k4_+rho_u*(k5_+k6_*rho_u))*2.0)*(rho_u*(k1_+rho_u*(k2_+k3_*rho_u))+1.0)*1.0/c2;  // NOLINT
-  J(1,1) = p1_*u1*6.0+p2_*u0*2.0+(rho_u*(k1_+rho_u*(k2_+k3_*rho_u))+1.0)/(rho_u*(k4_+rho_u*(k5_+k6_*rho_u))+1.0)+(u1*(rho_u*(u1*(k2_+k3_*rho_u)*2.0+k3_*u1*rho_u*2.0)+u1*(k1_+rho_u*(k2_+k3_*rho_u))*2.0))/(rho_u*(k4_+rho_u*(k5_+k6_*rho_u))+1.0)-u1*(rho_u*(u1*(k5_+k6_*rho_u)*2.0+k6_*u1*rho_u*2.0)+u1*(k4_+rho_u*(k5_+k6_*rho_u))*2.0)*(rho_u*(k1_+rho_u*(k2_+k3_*rho_u))+1.0)*1.0/c2;  // NOLINT
+  Eigen::Matrix<T, 2, 2>& J = *pointJacobian;
+  J(0, 0) =
+      p1_ * u1 * 2.0 + p2_ * u0 * 6.0 +
+      (rho_u * (k1_ + rho_u * (k2_ + k3_ * rho_u)) + 1.0) /
+          (rho_u * (k4_ + rho_u * (k5_ + k6_ * rho_u)) + 1.0) +
+      (u0 * (rho_u * (u0 * (k2_ + k3_ * rho_u) * 2.0 + k3_ * u0 * rho_u * 2.0) +
+             u0 * (k1_ + rho_u * (k2_ + k3_ * rho_u)) * 2.0)) /
+          (rho_u * (k4_ + rho_u * (k5_ + k6_ * rho_u)) + 1.0) -
+      u0 * (rho_u * (u0 * (k5_ + k6_ * rho_u) * 2.0 + k6_ * u0 * rho_u * 2.0) +
+            u0 * (k4_ + rho_u * (k5_ + k6_ * rho_u)) * 2.0) *
+          (rho_u * (k1_ + rho_u * (k2_ + k3_ * rho_u)) + 1.0) * 1.0 /
+          c2;  // NOLINT
+  J(0, 1) =
+      p1_ * u0 * 2.0 + p2_ * u1 * 2.0 +
+      (u0 * (rho_u * (u1 * (k2_ + k3_ * rho_u) * 2.0 + k3_ * u1 * rho_u * 2.0) +
+             u1 * (k1_ + rho_u * (k2_ + k3_ * rho_u)) * 2.0)) /
+          (rho_u * (k4_ + rho_u * (k5_ + k6_ * rho_u)) + 1.0) -
+      u0 * (rho_u * (u1 * (k5_ + k6_ * rho_u) * 2.0 + k6_ * u1 * rho_u * 2.0) +
+            u1 * (k4_ + rho_u * (k5_ + k6_ * rho_u)) * 2.0) *
+          (rho_u * (k1_ + rho_u * (k2_ + k3_ * rho_u)) + 1.0) * 1.0 /
+          c2;  // NOLINT
+  J(1, 0) =
+      p1_ * u0 * 2.0 + p2_ * u1 * 2.0 +
+      (u1 * (rho_u * (u0 * (k2_ + k3_ * rho_u) * 2.0 + k3_ * u0 * rho_u * 2.0) +
+             u0 * (k1_ + rho_u * (k2_ + k3_ * rho_u)) * 2.0)) /
+          (rho_u * (k4_ + rho_u * (k5_ + k6_ * rho_u)) + 1.0) -
+      u1 * (rho_u * (u0 * (k5_ + k6_ * rho_u) * 2.0 + k6_ * u0 * rho_u * 2.0) +
+            u0 * (k4_ + rho_u * (k5_ + k6_ * rho_u)) * 2.0) *
+          (rho_u * (k1_ + rho_u * (k2_ + k3_ * rho_u)) + 1.0) * 1.0 /
+          c2;  // NOLINT
+  J(1, 1) =
+      p1_ * u1 * 6.0 + p2_ * u0 * 2.0 +
+      (rho_u * (k1_ + rho_u * (k2_ + k3_ * rho_u)) + 1.0) /
+          (rho_u * (k4_ + rho_u * (k5_ + k6_ * rho_u)) + 1.0) +
+      (u1 * (rho_u * (u1 * (k2_ + k3_ * rho_u) * 2.0 + k3_ * u1 * rho_u * 2.0) +
+             u1 * (k1_ + rho_u * (k2_ + k3_ * rho_u)) * 2.0)) /
+          (rho_u * (k4_ + rho_u * (k5_ + k6_ * rho_u)) + 1.0) -
+      u1 * (rho_u * (u1 * (k5_ + k6_ * rho_u) * 2.0 + k6_ * u1 * rho_u * 2.0) +
+            u1 * (k4_ + rho_u * (k5_ + k6_ * rho_u)) * 2.0) *
+          (rho_u * (k1_ + rho_u * (k2_ + k3_ * rho_u)) + 1.0) * 1.0 /
+          c2;  // NOLINT
 
   if (parameterJacobian) {
     // the Jacobian w.r.t. intrinsics parameters
-    const T rho_u2 = rho_u*rho_u;
-    const T rho_u3 = rho_u*rho_u2;
-    Eigen::Matrix<T, 2, Eigen::Dynamic> & Jp = *parameterJacobian;
+    const T rho_u2 = rho_u * rho_u;
+    const T rho_u3 = rho_u * rho_u2;
+    Eigen::Matrix<T, 2, Eigen::Dynamic>& Jp = *parameterJacobian;
     Jp.resize(2, NumDistortionIntrinsics);
-    Jp(0,0) = (u0*rho_u)/(rho_u*(k4_+rho_u*(k5_+k6_*rho_u))+1.0);         // NOLINT
-    Jp(0,1) = (u0*rho_u2)/(rho_u*(k4_+rho_u*(k5_+k6_*rho_u))+1.0);        // NOLINT
-    Jp(0,2) = u0*u1*2.0;                                                  // NOLINT
-    Jp(0,3) = (u0*u0)*3.0+u1*u1;                                          // NOLINT
-    Jp(0,4) = (u0*rho_u3)/(rho_u*(k4_+rho_u*(k5_+k6_*rho_u))+1.0);        // NOLINT
-    Jp(0,5) = -u0*rho_u*(rho_u*(k1_+rho_u*(k2_+k3_*rho_u))+1.0)*1.0/c2;   // NOLINT
-    Jp(0,6) = -u0*rho_u2*(rho_u*(k1_+rho_u*(k2_+k3_*rho_u))+1.0)*1.0/c2;  // NOLINT
-    Jp(0,7) = -u0*rho_u3*(rho_u*(k1_+rho_u*(k2_+k3_*rho_u))+1.0)*1.0/c2;  // NOLINT
-    Jp(1,0) = (u1*rho_u)/(rho_u*(k4_+rho_u*(k5_+k6_*rho_u))+1.0);         // NOLINT
-    Jp(1,1) = (u1*rho_u2)/(rho_u*(k4_+rho_u*(k5_+k6_*rho_u))+1.0);        // NOLINT
-    Jp(1,2) = u0*u0+(u1*u1)*3.0;                                          // NOLINT
-    Jp(1,3) = u0*u1*2.0;                                                  // NOLINT
-    Jp(1,4) = (u1*rho_u3)/(rho_u*(k4_+rho_u*(k5_+k6_*rho_u))+1.0);        // NOLINT
-    Jp(1,5) = -u1*rho_u*(rho_u*(k1_+rho_u*(k2_+k3_*rho_u))+1.0)*1.0/c2;   // NOLINT
-    Jp(1,6) = -u1*rho_u2*(rho_u*(k1_+rho_u*(k2_+k3_*rho_u))+1.0)*1.0/c2;  // NOLINT
-    Jp(1,7) = -u1*rho_u3*(rho_u*(k1_+rho_u*(k2_+k3_*rho_u))+1.0)*1.0/c2;  // NOLINT
+    Jp(0, 0) = (u0 * rho_u) /
+               (rho_u * (k4_ + rho_u * (k5_ + k6_ * rho_u)) + 1.0);  // NOLINT
+    Jp(0, 1) = (u0 * rho_u2) /
+               (rho_u * (k4_ + rho_u * (k5_ + k6_ * rho_u)) + 1.0);  // NOLINT
+    Jp(0, 2) = u0 * u1 * 2.0;                                        // NOLINT
+    Jp(0, 3) = (u0 * u0) * 3.0 + u1 * u1;                            // NOLINT
+    Jp(0, 4) = (u0 * rho_u3) /
+               (rho_u * (k4_ + rho_u * (k5_ + k6_ * rho_u)) + 1.0);  // NOLINT
+    Jp(0, 5) = -u0 * rho_u *
+               (rho_u * (k1_ + rho_u * (k2_ + k3_ * rho_u)) + 1.0) * 1.0 /
+               c2;  // NOLINT
+    Jp(0, 6) = -u0 * rho_u2 *
+               (rho_u * (k1_ + rho_u * (k2_ + k3_ * rho_u)) + 1.0) * 1.0 /
+               c2;  // NOLINT
+    Jp(0, 7) = -u0 * rho_u3 *
+               (rho_u * (k1_ + rho_u * (k2_ + k3_ * rho_u)) + 1.0) * 1.0 /
+               c2;  // NOLINT
+    Jp(1, 0) = (u1 * rho_u) /
+               (rho_u * (k4_ + rho_u * (k5_ + k6_ * rho_u)) + 1.0);  // NOLINT
+    Jp(1, 1) = (u1 * rho_u2) /
+               (rho_u * (k4_ + rho_u * (k5_ + k6_ * rho_u)) + 1.0);  // NOLINT
+    Jp(1, 2) = u0 * u0 + (u1 * u1) * 3.0;                            // NOLINT
+    Jp(1, 3) = u0 * u1 * 2.0;                                        // NOLINT
+    Jp(1, 4) = (u1 * rho_u3) /
+               (rho_u * (k4_ + rho_u * (k5_ + k6_ * rho_u)) + 1.0);  // NOLINT
+    Jp(1, 5) = -u1 * rho_u *
+               (rho_u * (k1_ + rho_u * (k2_ + k3_ * rho_u)) + 1.0) * 1.0 /
+               c2;  // NOLINT
+    Jp(1, 6) = -u1 * rho_u2 *
+               (rho_u * (k1_ + rho_u * (k2_ + k3_ * rho_u)) + 1.0) * 1.0 /
+               c2;  // NOLINT
+    Jp(1, 7) = -u1 * rho_u3 *
+               (rho_u * (k1_ + rho_u * (k2_ + k3_ * rho_u)) + 1.0) * 1.0 /
+               c2;  // NOLINT
   }
 
   return true;
 }
 
 bool RadialTangentialDistortion8::distortWithExternalParameters(
-    const Eigen::Vector2d & pointUndistorted,
-    const Eigen::VectorXd & parameters, Eigen::Vector2d * pointDistorted,
-    Eigen::Matrix2d * pointJacobian, Eigen::Matrix2Xd * parameterJacobian) const {
+    const Eigen::Vector2d& pointUndistorted, const Eigen::VectorXd& parameters,
+    Eigen::Vector2d* pointDistorted, Eigen::Matrix2d* pointJacobian,
+    Eigen::Matrix2Xd* parameterJacobian) const {
   // use float for speed
   // calibration is not accurate anyway
   const float k1 = parameters[0];
@@ -445,49 +515,96 @@ bool RadialTangentialDistortion8::distortWithExternalParameters(
     return false;  // to avoid confusion of this model
   }
 
-  const float c = rho_u*(k4+rho_u*(k5+k6*rho_u))+1.0;
-  const float c2 = c*c;
+  const float c = rho_u * (k4 + rho_u * (k5 + k6 * rho_u)) + 1.0;
+  const float c2 = c * c;
 
-  const float rad_dist_u = (1.0 + ((k3 * rho_u + k2) * rho_u + k1) * rho_u)
-        / (1.0 + ((k6 * rho_u + k5) * rho_u + k4) * rho_u);
-    (*pointDistorted)[0] = u0 * rad_dist_u + 2.0 * p1 * mxy_u
-        + p2 * (rho_u + 2.0 * mx_u);
-    (*pointDistorted)[1] = u1 * rad_dist_u + 2.0 * p2 * mxy_u
-        + p1 * (rho_u + 2.0 * my_u);
+  const float rad_dist_u = (1.0 + ((k3 * rho_u + k2) * rho_u + k1) * rho_u) /
+                           (1.0 + ((k6 * rho_u + k5) * rho_u + k4) * rho_u);
+  (*pointDistorted)[0] =
+      u0 * rad_dist_u + 2.0 * p1 * mxy_u + p2 * (rho_u + 2.0 * mx_u);
+  (*pointDistorted)[1] =
+      u1 * rad_dist_u + 2.0 * p2 * mxy_u + p1 * (rho_u + 2.0 * my_u);
 
   // next the Jacobian w.r.t. changes on the undistorted point
-  Eigen::Matrix2d & J = *pointJacobian;
-  J(0,0) = p1*u1*2.0+p2*u0*6.0+(rho_u*(k1+rho_u*(k2+k3*rho_u))+1.0)/(rho_u*(k4+rho_u*(k5+k6*rho_u))+1.0)+(u0*(rho_u*(u0*(k2+k3*rho_u)*2.0+k3*u0*rho_u*2.0)+u0*(k1+rho_u*(k2+k3*rho_u))*2.0))/(rho_u*(k4+rho_u*(k5+k6*rho_u))+1.0)-u0*(rho_u*(u0*(k5+k6*rho_u)*2.0+k6*u0*rho_u*2.0)+u0*(k4+rho_u*(k5+k6*rho_u))*2.0)*(rho_u*(k1+rho_u*(k2+k3*rho_u))+1.0)*1.0/c2;  // NOLINT
-  J(0,1) = p1*u0*2.0+p2*u1*2.0+(u0*(rho_u*(u1*(k2+k3*rho_u)*2.0+k3*u1*rho_u*2.0)+u1*(k1+rho_u*(k2+k3*rho_u))*2.0))/(rho_u*(k4+rho_u*(k5+k6*rho_u))+1.0)-u0*(rho_u*(u1*(k5+k6*rho_u)*2.0+k6*u1*rho_u*2.0)+u1*(k4+rho_u*(k5+k6*rho_u))*2.0)*(rho_u*(k1+rho_u*(k2+k3*rho_u))+1.0)*1.0/c2;  // NOLINT
-  J(1,0) = p1*u0*2.0+p2*u1*2.0+(u1*(rho_u*(u0*(k2+k3*rho_u)*2.0+k3*u0*rho_u*2.0)+u0*(k1+rho_u*(k2+k3*rho_u))*2.0))/(rho_u*(k4+rho_u*(k5+k6*rho_u))+1.0)-u1*(rho_u*(u0*(k5+k6*rho_u)*2.0+k6*u0*rho_u*2.0)+u0*(k4+rho_u*(k5+k6*rho_u))*2.0)*(rho_u*(k1+rho_u*(k2+k3*rho_u))+1.0)*1.0/c2;  // NOLINT
-  J(1,1) = p1*u1*6.0+p2*u0*2.0+(rho_u*(k1+rho_u*(k2+k3*rho_u))+1.0)/(rho_u*(k4+rho_u*(k5+k6*rho_u))+1.0)+(u1*(rho_u*(u1*(k2+k3*rho_u)*2.0+k3*u1*rho_u*2.0)+u1*(k1+rho_u*(k2+k3*rho_u))*2.0))/(rho_u*(k4+rho_u*(k5+k6*rho_u))+1.0)-u1*(rho_u*(u1*(k5+k6*rho_u)*2.0+k6*u1*rho_u*2.0)+u1*(k4+rho_u*(k5+k6*rho_u))*2.0)*(rho_u*(k1+rho_u*(k2+k3*rho_u))+1.0)*1.0/c2;  // NOLINT
+  Eigen::Matrix2d& J = *pointJacobian;
+  J(0, 0) =
+      p1 * u1 * 2.0 + p2 * u0 * 6.0 +
+      (rho_u * (k1 + rho_u * (k2 + k3 * rho_u)) + 1.0) /
+          (rho_u * (k4 + rho_u * (k5 + k6 * rho_u)) + 1.0) +
+      (u0 * (rho_u * (u0 * (k2 + k3 * rho_u) * 2.0 + k3 * u0 * rho_u * 2.0) +
+             u0 * (k1 + rho_u * (k2 + k3 * rho_u)) * 2.0)) /
+          (rho_u * (k4 + rho_u * (k5 + k6 * rho_u)) + 1.0) -
+      u0 * (rho_u * (u0 * (k5 + k6 * rho_u) * 2.0 + k6 * u0 * rho_u * 2.0) +
+            u0 * (k4 + rho_u * (k5 + k6 * rho_u)) * 2.0) *
+          (rho_u * (k1 + rho_u * (k2 + k3 * rho_u)) + 1.0) * 1.0 /
+          c2;  // NOLINT
+  J(0, 1) =
+      p1 * u0 * 2.0 + p2 * u1 * 2.0 +
+      (u0 * (rho_u * (u1 * (k2 + k3 * rho_u) * 2.0 + k3 * u1 * rho_u * 2.0) +
+             u1 * (k1 + rho_u * (k2 + k3 * rho_u)) * 2.0)) /
+          (rho_u * (k4 + rho_u * (k5 + k6 * rho_u)) + 1.0) -
+      u0 * (rho_u * (u1 * (k5 + k6 * rho_u) * 2.0 + k6 * u1 * rho_u * 2.0) +
+            u1 * (k4 + rho_u * (k5 + k6 * rho_u)) * 2.0) *
+          (rho_u * (k1 + rho_u * (k2 + k3 * rho_u)) + 1.0) * 1.0 /
+          c2;  // NOLINT
+  J(1, 0) =
+      p1 * u0 * 2.0 + p2 * u1 * 2.0 +
+      (u1 * (rho_u * (u0 * (k2 + k3 * rho_u) * 2.0 + k3 * u0 * rho_u * 2.0) +
+             u0 * (k1 + rho_u * (k2 + k3 * rho_u)) * 2.0)) /
+          (rho_u * (k4 + rho_u * (k5 + k6 * rho_u)) + 1.0) -
+      u1 * (rho_u * (u0 * (k5 + k6 * rho_u) * 2.0 + k6 * u0 * rho_u * 2.0) +
+            u0 * (k4 + rho_u * (k5 + k6 * rho_u)) * 2.0) *
+          (rho_u * (k1 + rho_u * (k2 + k3 * rho_u)) + 1.0) * 1.0 /
+          c2;  // NOLINT
+  J(1, 1) =
+      p1 * u1 * 6.0 + p2 * u0 * 2.0 +
+      (rho_u * (k1 + rho_u * (k2 + k3 * rho_u)) + 1.0) /
+          (rho_u * (k4 + rho_u * (k5 + k6 * rho_u)) + 1.0) +
+      (u1 * (rho_u * (u1 * (k2 + k3 * rho_u) * 2.0 + k3 * u1 * rho_u * 2.0) +
+             u1 * (k1 + rho_u * (k2 + k3 * rho_u)) * 2.0)) /
+          (rho_u * (k4 + rho_u * (k5 + k6 * rho_u)) + 1.0) -
+      u1 * (rho_u * (u1 * (k5 + k6 * rho_u) * 2.0 + k6 * u1 * rho_u * 2.0) +
+            u1 * (k4 + rho_u * (k5 + k6 * rho_u)) * 2.0) *
+          (rho_u * (k1 + rho_u * (k2 + k3 * rho_u)) + 1.0) * 1.0 /
+          c2;  // NOLINT
 
   if (parameterJacobian) {
     // the Jacobian w.r.t. intrinsics parameters
-    const float rho_u2 = rho_u*rho_u;
-    const float rho_u3 = rho_u*rho_u2;
-    Eigen::Matrix2Xd & Jp = *parameterJacobian;
+    const float rho_u2 = rho_u * rho_u;
+    const float rho_u3 = rho_u * rho_u2;
+    Eigen::Matrix2Xd& Jp = *parameterJacobian;
     Jp.resize(2, NumDistortionIntrinsics);
-    Jp(0,0) = (u0*rho_u)/(rho_u*(k4+rho_u*(k5+k6*rho_u))+1.0);         // NOLINT
-    Jp(0,1) = (u0*rho_u2)/(rho_u*(k4+rho_u*(k5+k6*rho_u))+1.0);        // NOLINT
-    Jp(0,2) = u0*u1*2.0;                                                  // NOLINT
-    Jp(0,3) = (u0*u0)*3.0+u1*u1;                                          // NOLINT
-    Jp(0,4) = (u0*rho_u3)/(rho_u*(k4+rho_u*(k5+k6*rho_u))+1.0);        // NOLINT
-    Jp(0,5) = -u0*rho_u*(rho_u*(k1+rho_u*(k2+k3*rho_u))+1.0)*1.0/c2;   // NOLINT
-    Jp(0,6) = -u0*rho_u2*(rho_u*(k1+rho_u*(k2+k3*rho_u))+1.0)*1.0/c2;  // NOLINT
-    Jp(0,7) = -u0*rho_u3*(rho_u*(k1+rho_u*(k2+k3*rho_u))+1.0)*1.0/c2;  // NOLINT
-    Jp(1,0) = (u1*rho_u)/(rho_u*(k4+rho_u*(k5+k6*rho_u))+1.0);         // NOLINT
-    Jp(1,1) = (u1*rho_u2)/(rho_u*(k4+rho_u*(k5+k6*rho_u))+1.0);        // NOLINT
-    Jp(1,2) = u0*u0+(u1*u1)*3.0;                                          // NOLINT
-    Jp(1,3) = u0*u1*2.0;                                                  // NOLINT
-    Jp(1,4) = (u1*rho_u3)/(rho_u*(k4+rho_u*(k5+k6*rho_u))+1.0);        // NOLINT
-    Jp(1,5) = -u1*rho_u*(rho_u*(k1+rho_u*(k2+k3*rho_u))+1.0)*1.0/c2;   // NOLINT
-    Jp(1,6) = -u1*rho_u2*(rho_u*(k1+rho_u*(k2+k3*rho_u))+1.0)*1.0/c2;  // NOLINT
-    Jp(1,7) = -u1*rho_u3*(rho_u*(k1+rho_u*(k2+k3*rho_u))+1.0)*1.0/c2;  // NOLINT
+    Jp(0, 0) = (u0 * rho_u) /
+               (rho_u * (k4 + rho_u * (k5 + k6 * rho_u)) + 1.0);  // NOLINT
+    Jp(0, 1) = (u0 * rho_u2) /
+               (rho_u * (k4 + rho_u * (k5 + k6 * rho_u)) + 1.0);  // NOLINT
+    Jp(0, 2) = u0 * u1 * 2.0;                                     // NOLINT
+    Jp(0, 3) = (u0 * u0) * 3.0 + u1 * u1;                         // NOLINT
+    Jp(0, 4) = (u0 * rho_u3) /
+               (rho_u * (k4 + rho_u * (k5 + k6 * rho_u)) + 1.0);  // NOLINT
+    Jp(0, 5) = -u0 * rho_u * (rho_u * (k1 + rho_u * (k2 + k3 * rho_u)) + 1.0) *
+               1.0 / c2;  // NOLINT
+    Jp(0, 6) = -u0 * rho_u2 * (rho_u * (k1 + rho_u * (k2 + k3 * rho_u)) + 1.0) *
+               1.0 / c2;  // NOLINT
+    Jp(0, 7) = -u0 * rho_u3 * (rho_u * (k1 + rho_u * (k2 + k3 * rho_u)) + 1.0) *
+               1.0 / c2;  // NOLINT
+    Jp(1, 0) = (u1 * rho_u) /
+               (rho_u * (k4 + rho_u * (k5 + k6 * rho_u)) + 1.0);  // NOLINT
+    Jp(1, 1) = (u1 * rho_u2) /
+               (rho_u * (k4 + rho_u * (k5 + k6 * rho_u)) + 1.0);  // NOLINT
+    Jp(1, 2) = u0 * u0 + (u1 * u1) * 3.0;                         // NOLINT
+    Jp(1, 3) = u0 * u1 * 2.0;                                     // NOLINT
+    Jp(1, 4) = (u1 * rho_u3) /
+               (rho_u * (k4 + rho_u * (k5 + k6 * rho_u)) + 1.0);  // NOLINT
+    Jp(1, 5) = -u1 * rho_u * (rho_u * (k1 + rho_u * (k2 + k3 * rho_u)) + 1.0) *
+               1.0 / c2;  // NOLINT
+    Jp(1, 6) = -u1 * rho_u2 * (rho_u * (k1 + rho_u * (k2 + k3 * rho_u)) + 1.0) *
+               1.0 / c2;  // NOLINT
+    Jp(1, 7) = -u1 * rho_u3 * (rho_u * (k1 + rho_u * (k2 + k3 * rho_u)) + 1.0) *
+               1.0 / c2;  // NOLINT
   }
   return true;
 }
-
 
 #ifdef __ARM_NEON__
 /***********************************************************************************
@@ -499,7 +616,8 @@ bool RadialTangentialDistortion8::distortWithExternalParameters(
 * NO RETURNS
 */
 void RadialTangentialDistortion8::undistort4f(const float* uv_dist4f,
-                          float* uv_undist4f, unsigned int status[4]) const {
+                                              float* uv_undist4f,
+                                              unsigned int status[4]) const {
   // uv_dist4f has high degreee of temporal locality
   __builtin_prefetch(uv_dist4f, 0, 3);
 
@@ -524,7 +642,8 @@ void RadialTangentialDistortion8::undistort4f(const float* uv_dist4f,
 
   union {
     float pointJacobians[16];
-    float32x4x4_t E;  // E.val[0] = j00, E.val[1] = j01, E.val[2] = j10, E.val[3] = j11
+    float32x4x4_t
+        E;  // E.val[0] = j00, E.val[1] = j01, E.val[2] = j10, E.val[3] = j11
   };
 
   union {
@@ -538,22 +657,24 @@ void RadialTangentialDistortion8::undistort4f(const float* uv_dist4f,
 
   for (int i = iter; i > 0; --i) {
     this->distortT4f(reinterpret_cast<float*>(in.uv),
-        reinterpret_cast<float*>(tmp.uv), reinterpret_cast<float*>(pointJacobians), s);
+                     reinterpret_cast<float*>(tmp.uv),
+                     reinterpret_cast<float*>(pointJacobians), s);
     vsuccess = vorrq_u32(vsuccess, vs);
     e.u = vsubq_f32(src.u, tmp.u);
     e.v = vsubq_f32(src.v, tmp.v);
     // calculate E.inverse() * e
     {
-      float32x4_t det = vsubq_f32(vmulq_f32(E.val[0], E.val[3]), vmulq_f32(E.val[1], E.val[2]));
+      float32x4_t det = vsubq_f32(vmulq_f32(E.val[0], E.val[3]),
+                                  vmulq_f32(E.val[1], E.val[2]));
       // det_1 = 1/det
       det_1 = vrecpeq_f32(det);
       det_1 = vmulq_f32(vrecpsq_f32(det, det_1), det_1);
       det_1 = vmulq_f32(vrecpsq_f32(det, det_1), det_1);
     }
-    float32x4_t duu = vsubq_f32(vmulq_f32(E.val[3], e.u),
-                                vmulq_f32(E.val[1], e.v));
-    float32x4_t duv = vsubq_f32(vmulq_f32(E.val[0], e.v),
-                                vmulq_f32(E.val[2], e.u));
+    float32x4_t duu =
+        vsubq_f32(vmulq_f32(E.val[3], e.u), vmulq_f32(E.val[1], e.v));
+    float32x4_t duv =
+        vsubq_f32(vmulq_f32(E.val[0], e.v), vmulq_f32(E.val[2], e.u));
     // update the input of distortT4f
     in.u = vaddq_f32(in.u, vmulq_f32(duu, det_1));
     in.v = vaddq_f32(in.v, vmulq_f32(duv, det_1));
@@ -561,12 +682,14 @@ void RadialTangentialDistortion8::undistort4f(const float* uv_dist4f,
     chi2 = vaddq_f32(vmulq_f32(e.u, e.u), vmulq_f32(e.v, e.v));
     vsts = vcgtq_f32(chi2, vmovq_n_f32(1e-8));
     if ((sts[0] | sts[1] | sts[2] | sts[3]) == 0) {
-      break;  // if accuracy is all met, jump out from the Gauss-Newton iteration loop
+      break;  // if accuracy is all met, jump out from the Gauss-Newton
+              // iteration loop
     }
   }
 
   chi2 = vaddq_f32(vmulq_f32(e.u, e.u), vmulq_f32(e.v, e.v));
-  // we set 1e-4 accuracy requirement here, if this accuracy is met, we also use the results
+  // we set 1e-4 accuracy requirement here, if this accuracy is met, we also use
+  // the results
   // if e is less than 1e-8, e is also less than 1e-4
   vsts = vcgtq_f32(chi2, vmovq_n_f32(1e-4));
 
@@ -597,8 +720,10 @@ void RadialTangentialDistortion8::undistort4f(const float* uv_dist4f,
 * [Out]:   status, 0 if distorted successfully, or 0xffffffff
 * NO RETURNS
 */
-void RadialTangentialDistortion8::undistort4f(const float* uv_dist4f, float* uv_undist4f,
-           float* jacobians_out, unsigned int status[4]) const {
+void RadialTangentialDistortion8::undistort4f(const float* uv_dist4f,
+                                              float* uv_undist4f,
+                                              float* jacobians_out,
+                                              unsigned int status[4]) const {
   // uv_dist4f has high degreee of temporal locality
   __builtin_prefetch(uv_dist4f, 0, 3);
   __builtin_prefetch(jacobians_out, 1, 0);
@@ -624,7 +749,8 @@ void RadialTangentialDistortion8::undistort4f(const float* uv_dist4f, float* uv_
 
   union {
     float pointJacobians[16];
-    float32x4x4_t E;  // E.val[0] = j00, E.val[1] = j01, E.val[2] = j10, E.val[3] = j11
+    float32x4x4_t
+        E;  // E.val[0] = j00, E.val[1] = j01, E.val[2] = j10, E.val[3] = j11
   };
 
   union {
@@ -638,22 +764,24 @@ void RadialTangentialDistortion8::undistort4f(const float* uv_dist4f, float* uv_
 
   for (int i = iter; i > 0; --i) {
     this->distortT4f(reinterpret_cast<float*>(in.uv),
-        reinterpret_cast<float*>(tmp.uv), reinterpret_cast<float*>(pointJacobians), s);
+                     reinterpret_cast<float*>(tmp.uv),
+                     reinterpret_cast<float*>(pointJacobians), s);
     vsuccess = vorrq_u32(vsuccess, vs);
     e.u = vsubq_f32(src.u, tmp.u);
     e.v = vsubq_f32(src.v, tmp.v);
     // calculate E.inverse() * e
     {
-      float32x4_t det = vsubq_f32(vmulq_f32(E.val[0], E.val[3]), vmulq_f32(E.val[1], E.val[2]));
+      float32x4_t det = vsubq_f32(vmulq_f32(E.val[0], E.val[3]),
+                                  vmulq_f32(E.val[1], E.val[2]));
       // det_1 = 1/det
       det_1 = vrecpeq_f32(det);
       det_1 = vmulq_f32(vrecpsq_f32(det, det_1), det_1);
       det_1 = vmulq_f32(vrecpsq_f32(det, det_1), det_1);
     }
-    float32x4_t duu = vsubq_f32(vmulq_f32(E.val[3], e.u),
-                                vmulq_f32(E.val[1], e.v));
-    float32x4_t duv = vsubq_f32(vmulq_f32(E.val[0], e.v),
-                                vmulq_f32(E.val[2], e.u));
+    float32x4_t duu =
+        vsubq_f32(vmulq_f32(E.val[3], e.u), vmulq_f32(E.val[1], e.v));
+    float32x4_t duv =
+        vsubq_f32(vmulq_f32(E.val[0], e.v), vmulq_f32(E.val[2], e.u));
     // update the input of distortT4f
     in.u = vaddq_f32(in.u, vmulq_f32(duu, det_1));
     in.v = vaddq_f32(in.v, vmulq_f32(duv, det_1));
@@ -661,12 +789,14 @@ void RadialTangentialDistortion8::undistort4f(const float* uv_dist4f, float* uv_
     chi2 = vaddq_f32(vmulq_f32(e.u, e.u), vmulq_f32(e.v, e.v));
     vsts = vcgtq_f32(chi2, vmovq_n_f32(1e-8));
     if ((sts[0] | sts[1] | sts[2] | sts[3]) == 0) {
-      break;  // if accuracy is all met, jump out from the Gauss-Newton iteration loop
+      break;  // if accuracy is all met, jump out from the Gauss-Newton
+              // iteration loop
     }
   }
 
   chi2 = vaddq_f32(vmulq_f32(e.u, e.u), vmulq_f32(e.v, e.v));
-  // we set 1e-4 accuracy requirement here, if this accuracy is met, we also use the results
+  // we set 1e-4 accuracy requirement here, if this accuracy is met, we also use
+  // the results
   // if e is less than 1e-8, e is also less than 1e-4
   vsts = vcgtq_f32(chi2, vmovq_n_f32(1e-4));
 
@@ -688,7 +818,8 @@ void RadialTangentialDistortion8::undistort4f(const float* uv_dist4f, float* uv_
     E.val[2] = vmulq_n_f32(E.val[2], -1.f);
     E.val[1] = vmulq_f32(E.val[2], det_1);
     E.val[2] = E.val[1];
-    // we don't change the order of jacobian data, cause it needs further NEON calculation
+    // we don't change the order of jacobian data, cause it needs further NEON
+    // calculation
     vst1q_f32(jacobians_out, E.val[0]);
     vst1q_f32(jacobians_out + 4, E.val[1]);
     vst1q_f32(jacobians_out + 8, E.val[2]);
@@ -697,15 +828,13 @@ void RadialTangentialDistortion8::undistort4f(const float* uv_dist4f, float* uv_
 }
 #endif
 
-bool RadialTangentialDistortion8::undistort_GN(float u_dist,
-                                               float v_dist,
-                                               float* u_undist,
-                                               float* v_undist,
-                                               Eigen::Matrix2f * pointJacobian) const {
+bool RadialTangentialDistortion8::undistort_GN(
+    float u_dist, float v_dist, float* u_undist, float* v_undist,
+    Eigen::Matrix2f* pointJacobian) const {
   // this is expensive: we solve with Gauss-Newton
   const Eigen::Vector2f uv_dist_in(u_dist, v_dist);
-  Eigen::Vector2f x_bar = uv_dist_in;  // initialise at distorted point
-  const int n = 7;  // just 5 iterations max.
+  Eigen::Vector2f x_bar = uv_dist_in;           // initialise at distorted point
+  const int n = 7;                              // just 5 iterations max.
   Eigen::Matrix2f E = Eigen::Matrix2f::Zero();  // error Jacobian
   bool success = false;
   for (int i = 0; i < n; i++) {
@@ -755,8 +884,9 @@ bool RadialTangentialDistortion8::undistort_GN(float u_dist,
   return success;
 }
 
-bool RadialTangentialDistortion8::undistort(const Eigen::Vector2d & pointDistorted,
-                                            Eigen::Vector2d * pointUndistorted) const {
+bool RadialTangentialDistortion8::undistort(
+    const Eigen::Vector2d& pointDistorted,
+    Eigen::Vector2d* pointUndistorted) const {
   bool success = false;
   /*
   int u_lt = std::round(pointDistorted[0] * undistort_lookup_table_.multiple_
@@ -772,7 +902,8 @@ bool RadialTangentialDistortion8::undistort(const Eigen::Vector2d & pointDistort
       (*pointUndistorted)[1] = undistort_lookup_table_.v_(v_lt, u_lt);
       success = true;
     } else {
-      // LOG(ERROR) << "a point at the margin of the image cannot be undistorted by lookup table"
+      // LOG(ERROR) << "a point at the margin of the image cannot be undistorted
+  by lookup table"
       //            << " (double) v_lt " << v_lt << " u_lt " << u_lt;
     }
   } else {
@@ -792,8 +923,9 @@ bool RadialTangentialDistortion8::undistort(const Eigen::Vector2d & pointDistort
   (*pointUndistorted)[1] = undistort_v;
   return success;
 }
-bool RadialTangentialDistortion8::undistort(const Eigen::Vector2f & pointDistorted,
-                                            Eigen::Vector2f * pointUndistorted) const {
+bool RadialTangentialDistortion8::undistort(
+    const Eigen::Vector2f& pointDistorted,
+    Eigen::Vector2f* pointUndistorted) const {
   // TODO(mingyu): LUT may result in nan values. Need to futher debug
   // TODO(mingyu): We'll directly compute as in undistort for Eigen::Vector2d
   /*
@@ -811,14 +943,17 @@ bool RadialTangentialDistortion8::undistort(const Eigen::Vector2f & pointDistort
       (*pointUndistorted)[1] = undistort_lookup_table_.v_(v_lt, u_lt);
       success = true;
     } else {
-      LOG(ERROR) << "a point at the margin of the image cannot be undistorted by lookup table"
+      LOG(ERROR) << "a point at the margin of the image cannot be undistorted by
+  lookup table"
                  << " (float) v_lt " << v_lt << " u_lt " << u_lt;
     }
   } else {
-    // TODO(mingyu): undistort at the margin is very likely to fail, and the result is inaccurate.
+    // TODO(mingyu): undistort at the margin is very likely to fail, and the
+  result is inaccurate.
     // Don't bother to try?
     success = this->undistort_GN(pointDistorted[0], pointDistorted[1],
-                                 &((*pointUndistorted)[0]), &((*pointUndistorted)[1]));
+                                 &((*pointUndistorted)[0]),
+  &((*pointUndistorted)[1]));
   }
   */
   float undistort_u, undistort_v;
@@ -829,9 +964,9 @@ bool RadialTangentialDistortion8::undistort(const Eigen::Vector2f & pointDistort
   return success;
 }
 
-bool RadialTangentialDistortion8::undistort(const Eigen::Vector2d & pointDistorted,
-                                            Eigen::Vector2d * pointUndistorted,
-                                            Eigen::Matrix2d * pointJacobian) const {
+bool RadialTangentialDistortion8::undistort(
+    const Eigen::Vector2d& pointDistorted, Eigen::Vector2d* pointUndistorted,
+    Eigen::Matrix2d* pointJacobian) const {
   Eigen::Matrix2f J;
   float undistort_u, undistort_v;
   bool success = this->undistort_GN(pointDistorted[0], pointDistorted[1],
@@ -844,9 +979,9 @@ bool RadialTangentialDistortion8::undistort(const Eigen::Vector2d & pointDistort
   return success;
 }
 
-bool RadialTangentialDistortion8::undistort(const Eigen::Vector2f& pointDistorted,
-                                            Eigen::Vector2f* pointUndistorted,
-                                            Eigen::Matrix2f* pointJacobian) const {
+bool RadialTangentialDistortion8::undistort(
+    const Eigen::Vector2f& pointDistorted, Eigen::Vector2f* pointUndistorted,
+    Eigen::Matrix2f* pointJacobian) const {
   /*
   int u_lt = std::round(pointDistorted[0] * undistort_lookup_table_.multiple_
                         + undistort_lookup_table_.shift_u_);
@@ -866,20 +1001,23 @@ bool RadialTangentialDistortion8::undistort(const Eigen::Vector2f& pointDistorte
       (*pointJacobian)(1, 1) = undistort_lookup_table_.J11_(v_lt, u_lt);
       success = true;
     } else {
-      // LOG(ERROR) << "a point at the margin of the image cannot be undistorted by lookup table"
+      // LOG(ERROR) << "a point at the margin of the image cannot be undistorted
+  by lookup table"
       // << " (float) v_lt " << v_lt << " u_lt " << u_lt;
     }
   } else {
-    // TODO(mingyu): undistort at the margin is very likely to fail, and the result is inaccurate.
+    // TODO(mingyu): undistort at the margin is very likely to fail, and the
+  result is inaccurate.
     // Don't bother to try?
     success = this->undistort_GN(pointDistorted[0], pointDistorted[1],
-                                 &((*pointUndistorted)[0]), &((*pointUndistorted)[1]),
+                                 &((*pointUndistorted)[0]),
+  &((*pointUndistorted)[1]),
                                  pointJacobian);
   }
   */
   bool success = this->undistort_GN(pointDistorted[0], pointDistorted[1],
-                                    &((*pointUndistorted)[0]), &((*pointUndistorted)[1]),
-                                    pointJacobian);
+                                    &((*pointUndistorted)[0]),
+                                    &((*pointUndistorted)[1]), pointJacobian);
   return success;
 }
 
